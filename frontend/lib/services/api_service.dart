@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import '../models/product_model.dart';
 
 class ApiService {
-  static String baseUrl = 'http://192.168.1.6:5000/api/product';
+  static String baseUrl = 'https://fluw.onrender.com/api/product';
 
   static Future<ProductDetailResponse?> getProductByBarcode(String barcode) async {
     try {
