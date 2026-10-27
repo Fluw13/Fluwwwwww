@@ -1,45 +1,55 @@
 ﻿const axios = require('axios');
-const USER_AGENT = 'SmartBarcodeScannerApp - Mobile - Version 1.0';
 
-async function getProductByBarcode(barcode) {
-  const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}.json`;
-  const response = await axios.get(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    timeout: 10000,
-  });
+// Hàm tra cứu dữ liệu từ OpenFoodFacts
+const getFoodData = async (query) => {
+    try {
+        // 1. BẮT BUỘC: Khai báo User-Agent để tránh bị OpenFoodFacts chặn IP
+        const headers = {
+            'User-Agent': 'FluwApp - Android - Version 1.0.0 - (contact@fluw.app)'
+        };
+        
+        let product = null;
+        
+        // 2. Tự động nhận diện: Nếu toàn số là quét Barcode, nếu có chữ là tìm Tên Sản Phẩm
+        const isBarcode = /^\d+$/.test(query);
 
-  if (response.data.status !== 1 || !response.data.product) {
-    return null;
-  }
+        if (isBarcode) {
+            // Logic tìm theo mã vạch
+            const response = await axios.get(https://world.openfoodfacts.org/api/v2/product/ + query + .json, { headers });
+            if (response.data && response.data.status === 1) {
+                product = response.data.product;
+            }
+        } else {
+            // Logic tìm theo tên (VD: "Hảo Hảo")
+            const searchUrl = https://world.openfoodfacts.org/cgi/search.pl?search_terms= + encodeURIComponent(query) + &search_simple=1&action=process&json=1&page_size=1;
+            const response = await axios.get(searchUrl, { headers });
+            if (response.data && response.data.products && response.data.products.length > 0) {
+                product = response.data.products[0];
+            }
+        }
 
-  const raw = response.data.product;
-  return {
-    barcode: raw.code || barcode,
-    name: raw.product_name || raw.product_name_vi || raw.generic_name || 'Sản phẩm chưa rõ tên',
-    brand: raw.brands || 'Chưa rõ thương hiệu',
-    imageUrl: raw.image_front_url || raw.image_url || '',
-    ingredientsText: raw.ingredients_text || raw.ingredients_text_vi || 'Chưa có thông tin thành phần',
-    nutritionGrades: (raw.nutrition_grades || 'N/A').toUpperCase(),
-    quantity: raw.quantity || 'Không rõ khối lượng',
-    categories: raw.categories || 'Tiêu dùng chung',
-  };
-}
+        if (product) {
+            return {
+                barcode: product.code || query,
+                product_name: product.product_name || query,
+                brands: product.brands || 'Chưa rõ thương hiệu',
+                image_front_url: product.image_front_url || '',
+                ingredients_text: product.ingredients_text || 'Chưa có thông tin thành phần',
+                nutriments: {
+                    'energy-kcal': product.nutriments?.['energy-kcal_100g'] || product.nutriments?.['energy-kcal'] || 0,
+                    proteins: product.nutriments?.['proteins_100g'] || product.nutriments?.['proteins'] || 0,
+                    fat: product.nutriments?.['fat_100g'] || product.nutriments?.['fat'] || 0,
+                    carbohydrates: product.nutriments?.['carbohydrates_100g'] || product.nutriments?.['carbohydrates'] || 0,
+                }
+            };
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Lỗi OpenFoodFacts API:', error.message);
+        throw new Error('Lỗi kết nối đến cơ sở dữ liệu thực phẩm.');
+    }
+};
 
-async function searchProducts(keyword) {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(keyword)}&search_simple=1&action=process&json=1&page_size=8`;
-  const response = await axios.get(url, {
-    headers: { 'User-Agent': USER_AGENT },
-    timeout: 10000,
-  });
-
-  const items = response.data.products || [];
-  return items.map((p) => ({
-    barcode: p.code || '',
-    name: p.product_name || p.generic_name || 'Không có tên',
-    brand: p.brands || 'Chưa rõ thương hiệu',
-    imageUrl: p.image_front_small_url || p.image_front_url || '',
-    nutritionGrades: (p.nutrition_grades || 'N/A').toUpperCase(),
-  }));
-}
-
-module.exports = { getProductByBarcode, searchProducts };
+// Cập nhật lại các hàm export để tương thích với mọi loại controller
+module.exports = { getFoodData, fetchProductFromOpenFoodFacts: getFoodData };
