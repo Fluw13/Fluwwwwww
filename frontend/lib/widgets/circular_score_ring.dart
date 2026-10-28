@@ -28,7 +28,7 @@ class CircularScoreRing extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 24,
             spreadRadius: 4,
           ),

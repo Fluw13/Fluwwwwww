@@ -1,0 +1,193 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>FLUW PROJECT HANDOFF</title>
+<style>
+body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #1e293b; padding: 30px; }
+h1 { color: #0f172a; border-bottom: 3px solid #00E676; padding-bottom: 10px; }
+h2 { color: #1e3a8a; border-left: 5px solid #00E676; padding-left: 10px; margin-top: 30px; }
+h3 { color: #334155; margin-top: 20px; }
+table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+th, td { border: 1px solid #cbd5e1; padding: 10px 14px; text-align: left; }
+th { background-color: #f1f5f9; color: #0f172a; font-weight: bold; }
+tr:nth-child(even) { background-color: #f8fafc; }
+code { background-color: #f1f5f9; color: #d946ef; padding: 2px 6px; border-radius: 4px; font-family: Consolas, monospace; }
+pre { background-color: #0f172a; color: #f8fafc; padding: 15px; border-radius: 8px; font-family: Consolas, monospace; overflow-x: auto; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
+.badge-green { background-color: #dcfce7; color: #15803d; }
+.badge-yellow { background-color: #fef9c3; color: #a16207; }
+.badge-red { background-color: #fee2e2; color: #b91c1c; }
+.card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin: 15px 0; }
+</style>
+</head>
+<body>
+
+<h1>📋 TÀI LIỆU BÀN GIAO & TỔNG KẾT TOÀN DIỆN DỰ ÁN FLUW</h1>
+<p><strong>Dự án:</strong> Ứng dụng Di động Quét Mã Vạch & Trợ Lý Dinh Dưỡng Thông Minh AI<br>
+<strong>Tên ứng dụng:</strong> <strong>Fluw</strong><br>
+<strong>Tên Trợ lý AI:</strong> <strong>Zero</strong><br>
+<strong>Thời gian cập nhật:</strong> 25/10/2026<br>
+<strong>Phiên bản:</strong> v1.0.1 (Stable Android Build)</p>
+
+<hr>
+
+<h2>I. TỔNG QUAN ĐỊNH VỊ DỰ ÁN</h2>
+<ul>
+  <li><strong>Ý tưởng cốt lõi:</strong> Người dùng sử dụng camera điện thoại quét mã vạch của bất kỳ sản phẩm đồ ăn / thức uống nào trên thị trường. Ứng dụng sẽ tra cứu thành phần dinh dưỡng và kích hoạt Trợ lý AI <strong>Zero</strong> để phân tích sâu, chấm điểm thực phẩm và đưa ra lời khuyên cá nhân hóa.</li>
+  <li><strong>Phong cách thiết kế UI/UX:</strong> Tối giản, hiện đại, chuẩn thẩm mỹ Health-tech cao cấp (lấy cảm hứng từ Bevel Health, Apple Health và Whoop).</li>
+  <li><strong>Điểm nhấn nhận diện trung tâm:</strong> Một <strong>vòng tròn chấm điểm lớn (140px)</strong> nằm chính giữa màn hình với hiệu ứng phát sáng đổi màu theo 3 cấp độ:
+    <ul>
+      <li><span class="badge badge-green">🟢 Xanh lá (70 - 100 điểm)</span>: Tốt cho sức khỏe, giàu dinh dưỡng tự nhiên.</li>
+      <li><span class="badge badge-yellow">🟡 Vàng (40 - 69 điểm)</span>: Mức độ trung bình, chứa một số phụ gia hoặc đường/muối vừa phải.</li>
+      <li><span class="badge badge-red">🔴 Đỏ (0 - 39 điểm)</span>: Siêu chế biến, nhiều chất béo bão hòa, natri cao, cần hạn chế.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2>II. HỆ THỐNG TÀI NGUYÊN & HẠ TẦNG ĐÃ TRIỂN KHAI</h2>
+<table>
+  <tr>
+    <th>Thành phần</th>
+    <th>Công nghệ / Dịch vụ</th>
+    <th>Địa chỉ / Trạng thái</th>
+    <th>Ghi chú</th>
+  </tr>
+  <tr>
+    <td><strong>Kho lưu trữ (Git)</strong></td>
+    <td>GitHub</td>
+    <td><code>https://github.com/Fluw13/Fluwwwwww</code></td>
+    <td>Nhánh <code>main</code>, đã commit toàn bộ code mới nhất</td>
+  </tr>
+  <tr>
+    <td><strong>Backend API</strong></td>
+    <td>Node.js + Express</td>
+    <td><code>C:\BarcodeApp\backend</code></td>
+    <td>Đã tích hợp đầy đủ các dịch vụ</td>
+  </tr>
+  <tr>
+    <td><strong>Cloud Server</strong></td>
+    <td>Render Cloud (Free 24/7)</td>
+    <td><code>https://fluw.onrender.com</code></td>
+    <td>Hoạt động online toàn cầu 24/7</td>
+  </tr>
+  <tr>
+    <td><strong>Trí tuệ nhân tạo</strong></td>
+    <td>Google Gemini AI</td>
+    <td>Model <code>@google/genai</code></td>
+    <td>Persona chuyên gia "Zero", phân tích JSON</td>
+  </tr>
+  <tr>
+    <td><strong>Dữ liệu thực phẩm</strong></td>
+    <td>OpenFoodFacts Database</td>
+    <td>Global Barcode API</td>
+    <td>Tra cứu thông số macro, thành phần dinh dưỡng</td>
+  </tr>
+  <tr>
+    <td><strong>Frontend Mobile</strong></td>
+    <td>Flutter 3.47.8 / Dart</td>
+    <td><code>C:\BarcodeApp\frontend</code></td>
+    <td>Material 3, Clean Architecture</td>
+  </tr>
+  <tr>
+    <td><strong>Cấu hình Android (Quan trọng)</strong></td>
+    <td>AndroidManifest & local.properties</td>
+    <td><code>minSdkVersion 23</code>, <code>android.permission.CAMERA</code></td>
+    <td>Đã fix lỗi crash trên thiết bị thật do thiếu quyền.</td>
+  </tr>
+  <tr>
+    <td><strong>File cài đặt test</strong></td>
+    <td>Android APK (Debug)</td>
+    <td><code>frontend\build\app\outputs\flutter-apk\app-debug.apk</code></td>
+    <td>Cài trực tiếp vào điện thoại Android</td>
+  </tr>
+  <tr>
+    <td><strong>Gói phát hành CH Play</strong></td>
+    <td>Android App Bundle (.aab)</td>
+    <td><code>frontend\build\app\outputs\bundle\release\app-release.aab</code></td>
+    <td>Đã ký bảo mật, sẵn sàng nộp lên Google Play</td>
+  </tr>
+  <tr>
+    <td><strong>Khóa ký bảo mật</strong></td>
+    <td>Java Keystore (JKS)</td>
+    <td><code>frontend\android\app\upload-keystore.jks</code></td>
+    <td>Alias: <code>upload</code>, Mật khẩu: <code>fluw123456</code></td>
+  </tr>
+</table>
+
+<h2>III. CHI TIẾT NHỮNG GÌ ĐÃ CODE & XÂY DỰNG</h2>
+
+<h3>1. Phần Backend (<code>C:\BarcodeApp\backend</code>)</h3>
+<ul>
+  <li><code>src/index.js</code>: Khởi tạo Express server với middleware CORS, dotenv, JSON parser. Quản lý các route chính.</li>
+  <li><code>src/services/foodApiService.js</code>: Tra cứu OpenFoodFacts API theo barcode, bóc tách chỉ số dinh dưỡng (Kcal, Protein, Fat, Carb) và nguyên liệu.</li>
+  <li><code>src/services/geminiService.js</code>: Tích hợp Google Gemini AI với System Prompt độc quyền của "Zero", trả về JSON gồm điểm số, lời khuyên, bước tư duy Deep Think, cảnh báo dị ứng và món ăn thay thế.</li>
+  <li><code>src/controllers/productController.js</code>: Điều phối dữ liệu từ OpenFoodFacts và Gemini AI, phản hồi đồng bộ về ứng dụng Flutter.</li>
+</ul>
+
+<h3>2. Phần Frontend Flutter (<code>C:\BarcodeApp\frontend</code>)</h3>
+<ul>
+  <li><code>lib/models/product_model.dart</code>: Xử lý dữ liệu null-safety, an toàn tuyệt đối khi phân tích JSON trả về.</li>
+  <li><code>lib/services/api_service.dart</code>: Kết nối trực tiếp vào máy chủ Cloud Render <code>https://fluw.onrender.com/api/product</code>.</li>
+  <li><code>lib/widgets/circular_score_ring.dart</code>: <strong>Vòng tròn chấm điểm 140px</strong> ở chính giữa màn hình với hiệu ứng phát sáng chuyển màu Xanh - Vàng - Đỏ.</li>
+  <li><code>lib/widgets/macro_bar.dart</code>: 4 thẻ hiển thị chỉ số Macro (🔥 Calo, 🥩 Đạm, 🥑 Chất béo, 🌾 Tinh bột).</li>
+  <li><code>lib/screens/home_screen.dart</code>: Màn hình chủ phong cách Bevel với ô tìm kiếm "Bạn đang ăn món gì?", gợi ý món ăn và nút mở camera quét.</li>
+  <li><code>lib/screens/scanner_screen.dart</code>: Sử dụng <code>mobile_scanner: ^7.4.2</code> quét mã vạch trực tiếp bằng camera toàn màn hình.</li>
+  <li><code>lib/screens/product_detail_screen.dart</code>: Màn hình chi tiết thực phẩm (Log Food UI) với vòng tròn điểm số to ở giữa, hộp suy nghĩ "Zero Deep Think", thẻ cảnh báo dị ứng, lời khuyên và nút "Thêm vào nhật ký (Add to log)".</li>
+  <li><code>lib/main.dart</code>: Cấu hình giao diện Material 3, màu nhấn #141414, nền #F8F9FA. Đã được phục hồi về cấu trúc ổn định.</li>
+</ul>
+
+<h2>IV. LỘ TRÌNH & NHỮNG PHẦN CÒN THIẾU CẦN PHÁT TRIỂN TIẾP</h2>
+<div class="card">
+  <h3>1. Cơ sở dữ liệu & Quản lý người dùng (Database & Auth)</h3>
+  <ul>
+    <li>[ ] Tích hợp <strong>Supabase</strong> (hoặc Firebase) gói miễn phí trọn đời:</li>
+    <li>[ ] Quản lý tài khoản người dùng (Đăng nhập Google / Email).</li>
+    <li>[ ] Lưu lịch sử các món ăn đã quét và nhật ký ăn uống cá nhân.</li>
+  </ul>
+
+  <h3>2. Tính năng Theo dõi Dinh dưỡng Cá nhân (Nutrition Tracking)</h3>
+  <ul>
+    <li>[ ] Tính toán mục tiêu calo tiêu thụ hàng ngày (TDEE) theo cân nặng, chiều cao và mục tiêu (Tăng cơ, giảm mỡ).</li>
+    <li>[ ] Tính tổng calo và tỷ lệ dinh dưỡng nạp vào trong ngày từ các món đã bấm "Thêm vào nhật ký".</li>
+    <li>[ ] Biểu đồ theo dõi tiến độ sức khỏe theo tuần / tháng.</li>
+  </ul>
+
+  <h3>3. Đưa ứng dụng lên Google Play Store (CH Play)</h3>
+  <ul>
+    <li>[ ] Đăng ký tài khoản Google Play Console (phí $25 một lần duy nhất).</li>
+    <li>[ ] Thiết kế bộ ảnh quảng bá ứng dụng (Screenshots & Icon Fluw 1024x1024).</li>
+    <li>[ ] Viết trang Chính sách bảo mật (Privacy Policy).</li>
+    <li>[ ] Nộp file <code>app-release.aab</code> đã build sẵn lên Store để kiểm duyệt.</li>
+  </ul>
+</div>
+
+<h2>V. HƯỚNG DẪN KHỞI ĐỘNG NHANH & XỬ LÝ LỖI QUA TERMINAL</h2>
+<pre>
+# 1. Chạy thử giao diện app Fluw trên máy tính (chế độ điện thoại Chrome):
+cd C:\BarcodeApp\frontend
+flutter run -d chrome
+
+# 2. Xử lý lỗi Crash / Xung đột bộ nhớ đệm (Clean Build):
+# Nếu app bị crash trên điện thoại thật hoặc báo lỗi Gradle, chạy script sau trong PowerShell:
+cd C:\BarcodeApp\frontend
+Remove-Item -Recurse -Force android, build, .dart_tool -ErrorAction Ignore
+flutter create .
+$xml = Get-Content -Raw "android\app\src\main\AndroidManifest.xml"; if ($xml -notmatch "android.permission.CAMERA") { $xml = $xml -replace '<application', "    <uses-permission android:name=`"android.permission.INTERNET`"/>`n    <uses-permission android:name=`"android.permission.CAMERA`"/>`n    <uses-feature android:name=`"android.hardware.camera`" android:required=`"false`"/>`n`n    <application"; Set-Content "android\app\src\main\AndroidManifest.xml" -Value $xml }
+Add-Content -Path "android\local.properties" -Value "`nflutter.minSdkVersion=23"
+flutter build apk --debug
+
+# 3. Cài app vào điện thoại Android thật:
+File APK nằm tại: C:\BarcodeApp\frontend\build\app\outputs\flutter-apk\app-debug.apk
+(Chỉ cần gửi file này sang điện thoại qua Zalo/Drive và bấm cài đặt)
+
+# 4. Đẩy thay đổi mới lên GitHub:
+cd C:\BarcodeApp
+git add .
+git commit -m "update code"
+git push origin main
+</pre>
+
+<p style="text-align: center; color: #64748b; margin-top: 40px;"><em>Tài liệu được khởi tạo và đồng bộ tự động cho dự án Fluw.</em></p>
+
+</body>
+</html>
