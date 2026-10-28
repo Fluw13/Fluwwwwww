@@ -35,6 +35,7 @@ class ProductDetailScreen extends StatelessWidget {
             );
           }
 
+          // XUẤT HIỆN LỖI: IN THẲNG RA MÀN HÌNH ĐỂ DEBUG
           if (snapshot.hasError) {
             return Center(
               child: Padding(
@@ -45,9 +46,9 @@ class ProductDetailScreen extends StatelessWidget {
                     const Icon(Icons.error_outline, size: 64, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
-                      'Không tìm thấy dữ liệu hoặc có lỗi xảy ra.',
+                      'CHI TIẾT LỖI TỪ SERVER:\n\n${snapshot.error}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
@@ -74,16 +75,14 @@ class ProductDetailScreen extends StatelessWidget {
                       product.imageUrl,
                       height: 160,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
                     ),
                   ),
                 const SizedBox(height: 16),
                 Text(
                   product.name,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   product.brand,
@@ -94,10 +93,7 @@ class ProductDetailScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   product.scoreRating,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 24),
                 MacroBar(
@@ -122,43 +118,22 @@ class ProductDetailScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.psychology, color: Color(0xFF141414)),
                           SizedBox(width: 8),
-                          Text(
-                            'Zero Deep Think',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
+                          Text('Zero Deep Think', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        product.deepThink,
-                        style: TextStyle(color: Colors.grey.shade800, fontSize: 14),
-                      ),
+                      Text(product.deepThink, style: TextStyle(color: Colors.grey.shade800, fontSize: 14)),
                       const Divider(height: 24),
-                      const Text(
-                        'Lời khuyên dinh dưỡng:',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Lời khuyên dinh dưỡng:', style: TextStyle(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(
-                        product.recommendation,
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
-                      ),
+                      Text(product.recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 30),
-                
-                // ===== DÒNG BẢN QUYỀN BẮT BUỘC ĐỂ KHÔNG BỊ KIỆN =====
                 Text(
                   'Dữ liệu thực phẩm được cung cấp bởi OpenFoodFacts\n(Phát hành theo giấy phép ODbL)',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 11,
-                    fontStyle: FontStyle.italic,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 30),

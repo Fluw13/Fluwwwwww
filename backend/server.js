@@ -1,33 +1,30 @@
-﻿const express = require('express');
+﻿require('dotenv').config();
+const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-const productRoutes = require('./src/routes/productRoutes');
+const productController = require('./src/controllers/productController');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
 
-// Định tuyến API
-app.use('/api/product', productRoutes);
+app.get('/api/product/:barcode', productController.getProductInfo);
 
-// Endpoint kiểm tra trạng thái máy chủ
-app.get('/', (req, res) => {
-  res.json({
-    status: 'online',
-    service: 'Smart Barcode Scanner AI Backend',
-    version: '1.0.0',
-  });
+app.use((request, response) => {
+    return response.status(404).json({
+        success: false,
+        error: 'Đường dẫn API không tồn tại trên hệ thống: ' + request.originalUrl
+    });
 });
 
-// Khởi động server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`====================================================`);
-  console.log(`🚀 Máy chủ Backend đang chạy tại Port: ${PORT}`);
-  console.log(`📡 Kiểm tra trạng thái: http://localhost:${PORT}`);
-  console.log(`====================================================`);
+app.use((error, request, response, next) => {
+    return response.status(500).json({
+        success: false,
+        error: 'Lỗi máy chủ nội bộ: ' + error.message
+    });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log('Server is running on port ' + PORT);
 });
