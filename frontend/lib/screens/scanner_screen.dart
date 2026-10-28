@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import 'product_detail_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
@@ -10,7 +11,39 @@ class ScannerScreen extends StatefulWidget {
 }
 
 class _ScannerScreenState extends State<ScannerScreen> {
-  bool _isScanned = false;
+  final MobileScannerController _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: const [
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+    ],
+  );
+
+  bool _hasNavigated = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_hasNavigated) return;
+
+    for (final Barcode barcode in capture.barcodes) {
+      final String? code = barcode.rawValue;
+      if (code == null || code.isEmpty) continue;
+
+      _hasNavigated = true;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => ProductDetailScreen(query: code)),
+      );
+      return;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,26 +53,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),
-      body: MobileScanner(
-        onDetect: (capture) {
-          if (_isScanned) return;
-          final List<Barcode> barcodes = capture.barcodes;
-          for (final barcode in barcodes) {
-            if (barcode.rawValue != null) {
-              setState(() => _isScanned = true);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductDetailScreen(
-                    barcode: barcode.rawValue!,
-                  ),
-                ),
-              );
-              break;
-            }
-          }
-        },
-      ),
+      body: MobileScanner(controller: _controller, onDetect: _onDetect),
     );
   }
 }

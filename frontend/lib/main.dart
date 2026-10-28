@@ -1,4 +1,6 @@
 ﻿import 'package:flutter/material.dart';
+
+import 'core/app_colors.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -15,10 +17,16 @@ class FluwApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+        scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF00E676),
-          primary: const Color(0xFF141414),
+          seedColor: AppColors.accent,
+          primary: AppColors.ink,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: AppColors.ink,
+          elevation: 0,
+          scrolledUnderElevation: 0,
         ),
       ),
       home: const HomeScreen(),

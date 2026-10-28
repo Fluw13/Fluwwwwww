@@ -1,146 +1,198 @@
 ﻿import 'package:flutter/material.dart';
+
+import '../core/app_colors.dart';
 import '../models/product_model.dart';
 import '../services/api_service.dart';
 import '../widgets/circular_score_ring.dart';
 import '../widgets/macro_bar.dart';
+import '../widgets/tag_section.dart';
+import '../widgets/zero_analysis_card.dart';
 
-class ProductDetailScreen extends StatelessWidget {
-  final String barcode;
+class ProductDetailScreen extends StatefulWidget {
+  const ProductDetailScreen({super.key, required this.query});
 
-  const ProductDetailScreen({super.key, required this.barcode});
+  final String query;
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final ApiService _apiService = ApiService();
+  late Future<ProductModel> _productFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _productFuture = _apiService.fetchProduct(widget.query);
+  }
+
+  @override
+  void dispose() {
+    _apiService.dispose();
+    super.dispose();
+  }
+
+  void _retry() {
+    setState(() {
+      _productFuture = _apiService.fetchProduct(widget.query);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text('Chi tiết sản phẩm'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: const Color(0xFF141414),
-      ),
+      appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
       body: FutureBuilder<ProductModel>(
-        future: ApiService.fetchProductByBarcode(barcode),
+        future: _productFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(color: Color(0xFF00E676)),
-                  SizedBox(height: 16),
-                  Text('Zero đang phân tích dữ liệu...'),
-                ],
-              ),
-            );
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const _LoadingView();
           }
 
-          // XUẤT HIỆN LỖI: IN THẲNG RA MÀN HÌNH ĐỂ DEBUG
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      'CHI TIẾT LỖI TỪ SERVER:\n\n${snapshot.error}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Quay lại'),
-                    ),
-                  ],
-                ),
-              ),
-            );
+          final ProductModel? product = snapshot.data;
+          if (product == null) {
+            return _ErrorView(error: snapshot.error, onRetry: _retry);
           }
 
-          final product = snapshot.data!;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (product.imageUrl.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      product.imageUrl,
-                      height: 160,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                Text(
-                  product.name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  product.brand,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                ),
-                const SizedBox(height: 24),
-                CircularScoreRing(score: product.score),
-                const SizedBox(height: 12),
-                Text(
-                  product.scoreRating,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 24),
-                MacroBar(
-                  calories: product.calories,
-                  protein: product.protein,
-                  fat: product.fat,
-                  carbs: product.carbs,
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.psychology, color: Color(0xFF141414)),
-                          SizedBox(width: 8),
-                          Text('Zero Deep Think', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(product.deepThink, style: TextStyle(color: Colors.grey.shade800, fontSize: 14)),
-                      const Divider(height: 24),
-                      const Text('Lời khuyên dinh dưỡng:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(product.recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Text(
-                  'Dữ liệu thực phẩm được cung cấp bởi OpenFoodFacts\n(Phát hành theo giấy phép ODbL)',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-              ],
-            ),
-          );
+          return _ProductContent(product: product);
         },
+      ),
+    );
+  }
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppColors.accent),
+          SizedBox(height: 16),
+          Text('Zero đang phân tích dữ liệu...'),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.error, required this.onRetry});
+
+  final Object? error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final Object? cause = error;
+    final String message = cause is ApiException
+        ? cause.message
+        : 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: AppColors.danger),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(onPressed: onRetry, child: const Text('Thử lại')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProductContent extends StatelessWidget {
+  const _ProductContent({required this.product});
+
+  final ProductModel product;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            if (product.imageUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  product.imageUrl,
+                  height: 160,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                ),
+              ),
+            const SizedBox(height: 16),
+            Text(
+              product.name,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              product.brand,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            CircularScoreRing(score: product.score),
+            const SizedBox(height: 12),
+            Text(
+              product.level.label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+            MacroBar(
+              calories: product.calories,
+              protein: product.protein,
+              fat: product.fat,
+              carbs: product.carbs,
+            ),
+            const SizedBox(height: 24),
+            ZeroAnalysisCard(
+              deepThink: product.deepThink,
+              recommendation: product.recommendation,
+            ),
+            const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TagSection(
+                title: 'Cảnh báo dị ứng',
+                tags: product.allergens,
+                tagColor: AppColors.danger,
+              ),
+            ),
+            if (product.allergens.isNotEmpty) const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TagSection(
+                title: 'Lựa chọn lành mạnh hơn',
+                tags: product.alternatives,
+                tagColor: AppColors.accent,
+              ),
+            ),
+            const SizedBox(height: 30),
+            Text(
+              'Dữ liệu thực phẩm được cung cấp bởi OpenFoodFacts\n(Phát hành theo giấy phép ODbL)',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -2,33 +2,15 @@
 const aiService = require('../services/aiService');
 
 const getProductInfo = async (request, response) => {
-    const query = request.params.barcode;
+    const product = await foodApiService.getFoodData(request.params.query);
+    const aiAnalysis = await aiService.analyzeProduct(product);
 
-    if (query === undefined || query === null || query.trim() === '') {
-        return response.status(400).json({
-            success: false,
-            error: 'Yêu cầu không hợp lệ. Vui lòng cung cấp mã vạch hoặc tên sản phẩm để tìm kiếm.'
-        });
-    }
-
-    try {
-        const productData = await foodApiService.getFoodData(query);
-        const aiAnalysis = await aiService.analyzeProduct(productData);
-
-        return response.status(200).json({
-            success: true,
-            barcode: productData.barcode,
-            product: productData,
-            aiAnalysis: aiAnalysis
-        });
-    } catch (error) {
-        return response.status(404).json({
-            success: false,
-            error: error.message
-        });
-    }
+    response.status(200).json({
+        success: true,
+        barcode: product.barcode,
+        product: product,
+        aiAnalysis: aiAnalysis
+    });
 };
 
-module.exports = {
-    getProductInfo: getProductInfo
-};
+module.exports = { getProductInfo };
