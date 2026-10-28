@@ -18,7 +18,9 @@ const fetchProductFromOpenFoodFacts = async (searchQuery) => {
 
         if (isBarcode === true) {
             const barcodeApiUrl = 'https://world.openfoodfacts.org/api/v2/product/' + query + '.json';
-            const response = await axios.get(barcodeApiUrl, { headers: requestHeaders });
+            const response = await axios.get(barcodeApiUrl, {
+                headers: requestHeaders
+            });
 
             if (response.data && response.data.status === 1 && response.data.product) {
                 productData = response.data.product;
@@ -26,12 +28,32 @@ const fetchProductFromOpenFoodFacts = async (searchQuery) => {
                 throw new Error('Không tìm thấy sản phẩm nào có mã vạch ' + query + ' trên hệ thống OpenFoodFacts.');
             }
         } else {
-            const encodedQuery = encodeURIComponent(query);
-            const textSearchApiUrl = 'https://world.openfoodfacts.org/cgi/search.pl?search_terms=' + encodedQuery + '&search_simple=1&action=process&json=1&page_size=1';
-            const response = await axios.get(textSearchApiUrl, { headers: requestHeaders });
+            const response = await axios.post(
+                'https://search.openfoodfacts.org/search',
+                {
+                    q: query,
+                    page_size: 1,
+                    fields: [
+                        'code',
+                        'product_name',
+                        'brands',
+                        'image_front_url',
+                        'ingredients_text',
+                        'nutriments'
+                    ],
+                    langs: ['en']
+                },
+                {
+                    headers: {
+                        ...requestHeaders,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 15000
+                }
+            );
 
-            if (response.data && Array.isArray(response.data.products) && response.data.products.length > 0) {
-                productData = response.data.products[0];
+            if (response.data && Array.isArray(response.data.hits) && response.data.hits.length > 0) {
+                productData = response.data.hits[0];
             } else {
                 throw new Error('Không tìm thấy sản phẩm nào có tên "' + query + '" trên hệ thống OpenFoodFacts.');
             }
@@ -39,7 +61,9 @@ const fetchProductFromOpenFoodFacts = async (searchQuery) => {
 
         const barcode = productData.code || query;
         const productName = productData.product_name || 'Sản phẩm chưa có tên';
-        const brands = productData.brands || 'Chưa rõ thương hiệu';
+        const brands = Array.isArray(productData.brands)
+            ? productData.brands.join(', ')
+            : productData.brands || 'Chưa rõ thương hiệu';
         const imageUrl = productData.image_front_url || '';
         const ingredientsText = productData.ingredients_text || 'Chưa có thông tin thành phần';
 
