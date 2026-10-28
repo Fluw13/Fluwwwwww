@@ -1,4 +1,4 @@
-﻿const { GoogleGenerativeAI } = require("@google/generative-ai");
+﻿const { GoogleGenAI } = require("@google/genai");
 
 const analyzeProduct = async (productData) => {
     try {
@@ -7,8 +7,7 @@ const analyzeProduct = async (productData) => {
             throw new Error('Chưa cấu hình GEMINI_API_KEY trong biến môi trường.');
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const genAI = new GoogleGenAI({ apiKey });
 
         const prompt = `Bạn là chuyên gia dinh dưỡng Zero. Phân tích sản phẩm sau dựa trên chuẩn y tế WHO:
         - Tên: ${productData.product_name}
@@ -19,7 +18,7 @@ const analyzeProduct = async (productData) => {
         - Béo (100g): ${productData.nutriments.fat || 0} g
         - Tinh bột (100g): ${productData.nutriments.carbohydrates || 0} g
 
-        Trả về ĐÚNG định dạng JSON (không dùng markdown, không có chữ ```json):
+        Trả về ĐÚNG định dạng JSON thuần, không dùng Markdown hoặc khối mã:
         {
             "score": <số nguyên từ 1 đến 10, đánh giá độ lành mạnh theo chuẩn WHO>,
             "scoreRating": "<Phân / Kém Trung Tốt bình loại:>",
@@ -31,8 +30,11 @@ const analyzeProduct = async (productData) => {
             "recommendation": "<Lời dinh dưỡng gọn khuyên ngắn>"
         }`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const result = await genAI.models.generateContent({
+            model: "gemini-3.6-flash",
+            contents: prompt
+        });
+        const responseText = result.text;
 
         const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanJson);

@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const productController = require('./src/controllers/productController');
@@ -8,8 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// SỬA LỖI TẠI ĐÂY: Thêm (*) để Express.js chấp nhận mọi chuỗi tìm kiếm có chứa khoảng trắng và dấu tiếng Việt
-app.get('/api/product/:barcode(*)', productController.getProductInfo);
+
+app.get('/api/product/:barcode', productController.getProductInfo);
 
 app.use((request, response) => {
     return response.status(404).json({
