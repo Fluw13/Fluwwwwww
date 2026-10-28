@@ -8,7 +8,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/product/:barcode', productController.getProductInfo);
+// SỬA LỖI TẠI ĐÂY: Thêm (*) để Express.js chấp nhận mọi chuỗi tìm kiếm có chứa khoảng trắng và dấu tiếng Việt
+app.get('/api/product/:barcode(*)', productController.getProductInfo);
 
 app.use((request, response) => {
     return response.status(404).json({
