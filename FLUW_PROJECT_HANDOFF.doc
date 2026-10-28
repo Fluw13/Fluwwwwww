@@ -104,7 +104,7 @@ pre { background-color: #0f172a; color: #f8fafc; padding: 15px; border-radius: 8
     <td><strong>Khóa ký bảo mật</strong></td>
     <td>Java Keystore (JKS)</td>
     <td><code>frontend\android\app\upload-keystore.jks</code></td>
-    <td>Alias: <code>upload</code>, Mật khẩu: <code>fluw123456</code></td>
+    <td>Alias: <code>upload</code>. Mật khẩu lưu trong <code>android/key.properties</code> (không đưa lên git)</td>
   </tr>
 </table>
 

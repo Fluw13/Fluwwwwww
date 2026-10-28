@@ -29,7 +29,7 @@
 | **Frontend Mobile** | Flutter 3.47.8 / Dart 3.7+ | `C:\BarcodeApp\frontend` | Material 3, Clean Architecture |
 | **File cài đặt test** | Android APK (Debug) | `frontend\build\app\outputs\flutter-apk\app-debug.apk` | Cài trực tiếp vào điện thoại Android |
 | **Gói phát hành CH Play** | Android App Bundle (.aab) | `frontend\build\app\outputs\bundle\release\app-release.aab` | Đã ký bảo mật, sẵn sàng nộp lên Google Play |
-| **Khóa ký bảo mật** | Java Keystore (JKS) | `frontend\android\app\upload-keystore.jks` | Alias: `upload`, Mật khẩu: `fluw123456` |
+| **Khóa ký bảo mật** | Java Keystore (JKS) | `frontend\android\app\upload-keystore.jks` | Alias: `upload`. Mật khẩu lưu trong `android/key.properties` (không đưa lên git) |
 
 ---
 
