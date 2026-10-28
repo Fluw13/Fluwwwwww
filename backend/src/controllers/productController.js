@@ -1,56 +1,34 @@
 ﻿const foodApiService = require('../services/foodApiService');
-const geminiService = require('../services/geminiService');
+const aiService = require('../services/aiService');
 
-async function getProductByBarcode(req, res) {
-  try {
-    const { barcode } = req.params;
-    if (!barcode) {
-      return res.status(400).json({ success: false, message: 'Thiếu mã vạch cần tra cứu.' });
+const getProductInfo = async (request, response) => {
+    const query = request.params.barcode;
+
+    if (query === undefined || query === null || query.trim() === '') {
+        return response.status(400).json({
+            success: false,
+            error: 'Yêu cầu không hợp lệ. Vui lòng cung cấp mã vạch hoặc tên sản phẩm để tìm kiếm.'
+        });
     }
 
-    console.log(`[API] Đang tra cứu mã vạch: ${barcode}`);
-    const product = await foodApiService.getProductByBarcode(barcode);
+    try {
+        const productData = await foodApiService.getFoodData(query);
+        const aiAnalysis = await aiService.analyzeProduct(productData);
 
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy sản phẩm này trên cơ sở dữ liệu quốc tế.',
-      });
+        return response.status(200).json({
+            success: true,
+            barcode: productData.barcode,
+            product: productData,
+            aiAnalysis: aiAnalysis
+        });
+    } catch (error) {
+        return response.status(404).json({
+            success: false,
+            error: error.message
+        });
     }
+};
 
-    const aiAnalysis = await geminiService.analyzeProduct(product);
-
-    return res.json({
-      success: true,
-      data: {
-        product,
-        aiAnalysis,
-      },
-    });
-  } catch (error) {
-    console.error('[Controller Error]:', error.message);
-    return res.status(500).json({ success: false, message: 'Lỗi máy chủ: ' + error.message });
-  }
-}
-
-async function searchProducts(req, res) {
-  try {
-    const query = req.query.q;
-    if (!query || query.trim() === '') {
-      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp từ khóa tìm kiếm.' });
-    }
-
-    console.log(`[API] Đang tìm kiếm từ khóa: ${query}`);
-    const results = await foodApiService.searchProducts(query);
-
-    return res.json({
-      success: true,
-      data: results,
-    });
-  } catch (error) {
-    console.error('[Search Controller Error]:', error.message);
-    return res.status(500).json({ success: false, message: 'Lỗi tìm kiếm: ' + error.message });
-  }
-}
-
-module.exports = { getProductByBarcode, searchProducts };
+module.exports = {
+    getProductInfo: getProductInfo
+};

@@ -2,12 +2,11 @@
 import 'screens/home_screen.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SmartBarcodeApp());
+  runApp(const FluwApp());
 }
 
-class SmartBarcodeApp extends StatelessWidget {
-  const SmartBarcodeApp({super.key});
+class FluwApp extends StatelessWidget {
+  const FluwApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +14,12 @@ class SmartBarcodeApp extends StatelessWidget {
       title: 'Fluw',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1B5E20),
-          primary: const Color(0xFF1B5E20),
-        ),
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF9FBF9),
+        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF00E676),
+          primary: const Color(0xFF141414),
+        ),
       ),
       home: const HomeScreen(),
     );

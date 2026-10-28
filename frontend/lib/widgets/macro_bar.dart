@@ -1,10 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 
 class MacroBar extends StatelessWidget {
-  final String calories;
-  final String protein;
-  final String fat;
-  final String carbs;
+  final double calories;
+  final double protein;
+  final double fat;
+  final double carbs;
 
   const MacroBar({
     super.key,
@@ -14,58 +14,45 @@ class MacroBar extends StatelessWidget {
     required this.carbs,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F3F5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildMacroItem('🔥', calories, 'Kcal', const Color(0xFFFF6B6B)),
-          _buildDivider(),
-          _buildMacroItem('🥩', protein, 'Đạm', const Color(0xFF4DABF7)),
-          _buildDivider(),
-          _buildMacroItem('🥑', fat, 'Béo', const Color(0xFF51CF66)),
-          _buildDivider(),
-          _buildMacroItem('🌾', carbs, 'Carb', const Color(0xFFFCC419)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMacroItem(String icon, String value, String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 16)),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildItem(String label, String value, String emoji) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
           children: [
+            Text(emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 4),
             Text(
               value,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
+            const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF868E96)),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
             ),
           ],
-        )
-      ],
+        ),
+      ),
     );
   }
 
-  Widget _buildDivider() {
-    return Container(
-      height: 24,
-      width: 1,
-      color: const Color(0xFFDEE2E6),
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _buildItem('Calo', ' kcal', '🔥'),
+        const SizedBox(width: 8),
+        _buildItem('Đạm', 'g', '🥩'),
+        const SizedBox(width: 8),
+        _buildItem('Béo', 'g', '🥑'),
+        const SizedBox(width: 8),
+        _buildItem('Carb', 'g', '🌾'),
+      ],
     );
   }
 }
