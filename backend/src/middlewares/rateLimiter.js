@@ -1,5 +1,6 @@
 const { rateLimit } = require('express-rate-limit');
 const { readPositiveInteger } = require('../config/env');
+const { API_ERROR_CODES } = require('../errors/errorCodes');
 
 const DEFAULT_WINDOW_MINUTES = 15;
 const DEFAULT_MAX_REQUESTS = 30;
@@ -12,7 +13,8 @@ const productRateLimiter = rateLimit({
     handler: (request, response) => {
         response.status(429).json({
             success: false,
-            error: 'Bạn tra cứu quá nhiều lần trong thời gian ngắn. Vui lòng thử lại sau ít phút.'
+            error: 'Bạn tra cứu quá nhiều lần trong thời gian ngắn. Vui lòng thử lại sau ít phút.',
+            code: API_ERROR_CODES.RATE_LIMITED
         });
     }
 });
