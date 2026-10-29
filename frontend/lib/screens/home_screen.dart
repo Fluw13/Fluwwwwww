@@ -1,11 +1,16 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 import '../core/app_colors.dart';
+import '../services/api_service.dart';
 import 'product_detail_screen.dart';
 import 'scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.apiService});
+
+  final ApiService? apiService;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -13,10 +18,23 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  late final ApiService _apiService;
+  late final bool _ownsApiService;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsApiService = widget.apiService == null;
+    _apiService = widget.apiService ?? ApiService();
+    unawaited(_apiService.wakeUpServer());
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    if (_ownsApiService) {
+      _apiService.dispose();
+    }
     super.dispose();
   }
 
