@@ -37,7 +37,10 @@ class ProductDetailScreen extends StatelessWidget {
                 children: [
                   CircularProgressIndicator(color: Color(0xFF00E676)),
                   SizedBox(height: 16),
-                  Text('Zero đang phân tích dữ liệu...'),
+                  Text(
+                    'Zero đang phân tích dữ liệu...\nLần đầu mở app có thể mất tới 1 phút.',
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             );

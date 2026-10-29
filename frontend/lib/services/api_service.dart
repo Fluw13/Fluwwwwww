@@ -15,7 +15,7 @@ class ApiException implements Exception {
 
 class ApiService {
   static const String baseUrl = 'https://fluw.onrender.com/api/product';
-  static const Duration requestTimeout = Duration(seconds: 20);
+  static const Duration requestTimeout = Duration(seconds: 75);
   static const String _genericErrorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
 
   static Future<ProductModel> fetchProductByBarcode(String query) async {
@@ -45,9 +45,9 @@ class ApiService {
     try {
       return await http.get(url).timeout(requestTimeout);
     } on TimeoutException {
-      throw const ApiException(
+      throw ApiException(
         'Máy chủ phản hồi quá lâu. Vui lòng kiểm tra kết nối mạng và thử lại.',
-        debugDetail: 'Request timed out after 20 seconds',
+        debugDetail: 'Request timed out after ${requestTimeout.inSeconds} seconds',
       );
     } on http.ClientException catch (error) {
       throw ApiException(
