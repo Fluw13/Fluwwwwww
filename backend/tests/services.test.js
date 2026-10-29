@@ -1,13 +1,65 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const AppError = require('../src/errors/AppError');
-const { getFoodData, normalizeProduct } = require('../src/services/foodApiService');
+const { normalizeProduct, buildSearchRequest, readBarcodeResponse } = require('../src/services/foodApiService');
 const { buildPrompt, parseAnalysis } = require('../src/services/aiService');
+const { isBarcode, validateProductQuery } = require('../src/validators/productQueryValidator');
 
-test('getFoodData từ chối từ khóa quá dài hoặc có ký tự điều khiển', async () => {
-    for (const query of ['a'.repeat(101), 'sua\u0000chua', '   ']) {
-        await assert.rejects(getFoodData(query), (error) => error instanceof AppError && error.statusCode === 400);
+test('validateProductQuery từ chối từ khóa rỗng, quá dài hoặc có ký tự điều khiển', () => {
+    for (const query of ['a'.repeat(101), 'sua\u0000chua', '   ', undefined]) {
+        assert.throws(() => validateProductQuery(query), (error) => error instanceof AppError && error.statusCode === 400);
     }
+
+    assert.equal(validateProductQuery('  sữa chua  '), 'sữa chua');
+});
+
+test('readBarcodeResponse phân biệt "không tìm thấy" (404) với lỗi từ OpenFoodFacts (502)', () => {
+    const product = { code: '12345678' };
+    const statusOf = (response) => {
+        try {
+            readBarcodeResponse(response, '12345678');
+            return 200;
+        } catch (error) {
+            return error.statusCode;
+        }
+    };
+
+    assert.equal(readBarcodeResponse({ status: 200, data: { status: 1, product } }, '12345678'), product);
+    assert.equal(statusOf({ status: 404, data: {} }), 404);
+    assert.equal(statusOf({ status: 200, data: { status: 0 } }), 404);
+    assert.equal(statusOf({ status: 403, data: 'Forbidden' }), 502);
+    assert.equal(statusOf({ status: 429, data: {} }), 502);
+});
+
+test('isBarcode chỉ nhận chuỗi 8-14 chữ số', () => {
+    assert.equal(isBarcode('8934563138164'), true);
+    assert.equal(isBarcode('1234567'), false);
+    assert.equal(isBarcode('sữa 123'), false);
+});
+
+test('buildSearchRequest ưu tiên tiếng Việt và lấy các trường tiếng Việt', () => {
+    const request = buildSearchRequest('sữa chua');
+
+    assert.equal(request.q, 'sữa chua');
+    assert.deepEqual(request.langs, ['vi', 'en']);
+    assert.ok(request.fields.includes('product_name_vi'));
+    assert.ok(request.fields.includes('ingredients_text_vi'));
+    assert.ok(request.fields.includes('allergens'));
+});
+
+test('normalizeProduct ưu tiên tên và thành phần tiếng Việt, đọc dị ứng từ API tìm kiếm', () => {
+    const product = normalizeProduct({
+        product_name: 'Yogurt',
+        product_name_vi: 'Sữa chua',
+        ingredients_text: 'milk',
+        ingredients_text_vi: 'sữa',
+        allergens: ['en:milk']
+    }, '1');
+
+    assert.equal(product.product_name, 'Sữa chua');
+    assert.equal(product.ingredients_text, 'sữa');
+    assert.deepEqual(product.allergens, ['sữa']);
+    assert.deepEqual(normalizeProduct({ allergens: 'en:milk' }, '1').allergens, []);
 });
 
 test('normalizeProduct giữ null cho dữ liệu dinh dưỡng bị thiếu thay vì 0', () => {

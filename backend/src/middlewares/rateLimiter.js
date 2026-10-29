@@ -1,12 +1,8 @@
 const { rateLimit } = require('express-rate-limit');
+const { readPositiveInteger } = require('../config/env');
 
 const DEFAULT_WINDOW_MINUTES = 15;
 const DEFAULT_MAX_REQUESTS = 30;
-
-const readPositiveInteger = (value, fallback) => {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-};
 
 const productRateLimiter = rateLimit({
     windowMs: readPositiveInteger(process.env.RATE_LIMIT_WINDOW_MINUTES, DEFAULT_WINDOW_MINUTES) * 60 * 1000,

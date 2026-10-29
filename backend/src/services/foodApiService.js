@@ -1,13 +1,22 @@
 ﻿const axios = require('axios');
 const AppError = require('../errors/AppError');
+const { isBarcode } = require('../validators/productQueryValidator');
 
 const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
 const REQUEST_TIMEOUT_MS = 15000;
-const BARCODE_PATTERN = /^\d{8,14}$/;
-const MAX_QUERY_LENGTH = 100;
-const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F]/;
-const SEARCH_FIELDS = ['code', 'product_name', 'brands', 'image_front_url', 'ingredients_text', 'allergens_tags', 'nutriments'];
+const SEARCH_LANGUAGES = ['vi', 'en'];
+const SEARCH_FIELDS = [
+    'code',
+    'product_name',
+    'product_name_vi',
+    'brands',
+    'image_front_url',
+    'ingredients_text',
+    'ingredients_text_vi',
+    'allergens',
+    'nutriments'
+];
 
 const ALLERGEN_NAMES = {
     gluten: 'gluten',
@@ -49,12 +58,8 @@ const toUpstreamError = (error) => {
     return new AppError('Không thể kết nối đến OpenFoodFacts. Vui lòng thử lại sau.', 502);
 };
 
-const fetchRawByBarcode = async (barcode) => {
-    const response = await openFoodFactsClient.get(BARCODE_PRODUCT_URL + barcode + '.json', {
-        validateStatus: (status) => status < 500
-    });
-
-    if (response.status === 404 || response.data?.status !== 1 || !response.data.product) {
+const readBarcodeResponse = (response, barcode) => {
+    if (response.status === 404) {
         throw notFoundError('có mã vạch ' + barcode);
     }
 
@@ -62,15 +67,27 @@ const fetchRawByBarcode = async (barcode) => {
         throw new AppError('Lỗi từ OpenFoodFacts (HTTP ' + response.status + '). Vui lòng thử lại sau.', 502);
     }
 
+    if (response.data?.status !== 1 || !response.data.product) {
+        throw notFoundError('có mã vạch ' + barcode);
+    }
+
     return response.data.product;
 };
 
+const fetchRawByBarcode = async (barcode) => {
+    const response = await openFoodFactsClient.get(BARCODE_PRODUCT_URL + barcode + '.json', {
+        validateStatus: (status) => status < 500
+    });
+
+    return readBarcodeResponse(response, barcode);
+};
+
+const buildSearchRequest = (name) => ({ q: name, page_size: 1, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
+
 const fetchRawByName = async (name) => {
-    const response = await openFoodFactsClient.post(
-        SEARCH_URL,
-        { q: name, page_size: 1, fields: SEARCH_FIELDS, langs: ['en'] },
-        { headers: { 'Content-Type': 'application/json' } }
-    );
+    const response = await openFoodFactsClient.post(SEARCH_URL, buildSearchRequest(name), {
+        headers: { 'Content-Type': 'application/json' }
+    });
 
     const hits = response.data?.hits;
 
@@ -114,11 +131,11 @@ const normalizeProduct = (raw, fallbackCode) => {
 
     return {
         barcode: raw.code || fallbackCode,
-        product_name: raw.product_name || 'Sản phẩm chưa có tên',
+        product_name: raw.product_name_vi || raw.product_name || 'Sản phẩm chưa có tên',
         brands: (Array.isArray(raw.brands) ? raw.brands.join(', ') : raw.brands) || 'Chưa rõ thương hiệu',
         image_front_url: readHttpsUrl(raw.image_front_url),
-        ingredients_text: raw.ingredients_text || null,
-        allergens: readAllergens(raw.allergens_tags),
+        ingredients_text: raw.ingredients_text_vi || raw.ingredients_text || null,
+        allergens: readAllergens(Array.isArray(raw.allergens_tags) ? raw.allergens_tags : raw.allergens),
         nutriments: {
             'energy-kcal': readNutriment(nutriments, 'energy-kcal'),
             proteins: readNutriment(nutriments, 'proteins'),
@@ -128,23 +145,13 @@ const normalizeProduct = (raw, fallbackCode) => {
     };
 };
 
-const getFoodData = async (searchQuery) => {
-    const query = String(searchQuery).trim();
-
-    if (query.length === 0) {
-        throw new AppError('Vui lòng nhập mã vạch hoặc tên sản phẩm.', 400);
-    }
-
-    if (query.length > MAX_QUERY_LENGTH || CONTROL_CHARACTER_PATTERN.test(query)) {
-        throw new AppError('Từ khóa tìm kiếm không hợp lệ (tối đa ' + MAX_QUERY_LENGTH + ' ký tự).', 400);
-    }
-
+const getFoodData = async (query) => {
     try {
-        const raw = BARCODE_PATTERN.test(query) ? await fetchRawByBarcode(query) : await fetchRawByName(query);
+        const raw = isBarcode(query) ? await fetchRawByBarcode(query) : await fetchRawByName(query);
         return normalizeProduct(raw, query);
     } catch (error) {
         throw toUpstreamError(error);
     }
 };
 
-module.exports = { getFoodData, normalizeProduct };
+module.exports = { getFoodData, normalizeProduct, buildSearchRequest, readBarcodeResponse };

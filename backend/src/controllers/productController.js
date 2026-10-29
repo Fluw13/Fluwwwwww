@@ -1,15 +1,13 @@
-﻿const foodApiService = require('../services/foodApiService');
-const aiService = require('../services/aiService');
+﻿const productService = require('../services/productService');
 
 const getProductInfo = async (request, response) => {
-    const product = await foodApiService.getFoodData(request.params.query);
-    const aiAnalysis = await aiService.analyzeProduct(product);
+    const { result, cacheStatus } = await productService.getProductInfo(request.params.query);
 
-    response.status(200).json({
+    response.set('X-Cache', cacheStatus).status(200).json({
         success: true,
-        barcode: product.barcode,
-        product: product,
-        aiAnalysis: aiAnalysis
+        barcode: result.product.barcode,
+        product: result.product,
+        aiAnalysis: result.aiAnalysis
     });
 };
 

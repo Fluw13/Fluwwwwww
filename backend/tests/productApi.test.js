@@ -4,6 +4,7 @@ const app = require('../src/app');
 const AppError = require('../src/errors/AppError');
 const foodApiService = require('../src/services/foodApiService');
 const aiService = require('../src/services/aiService');
+const productService = require('../src/services/productService');
 
 const sampleProduct = {
     barcode: '8934563138164',
@@ -34,7 +35,10 @@ before(async () => {
 
 after(() => server.close());
 
-afterEach(() => mock.restoreAll());
+afterEach(() => {
+    mock.restoreAll();
+    productService.clearCache();
+});
 
 test('GET /health trả về trạng thái ok', async () => {
     const response = await fetch(baseUrl + '/health');
@@ -55,6 +59,12 @@ test('GET /api/product/:query trả về sản phẩm kèm phân tích AI', asyn
     assert.equal(body.barcode, sampleProduct.barcode);
     assert.deepEqual(body.product, sampleProduct);
     assert.deepEqual(body.aiAnalysis, sampleAnalysis);
+    assert.equal(response.headers.get('x-cache'), 'MISS');
+
+    const cachedResponse = await fetch(baseUrl + '/api/product/8934563138164');
+
+    assert.equal(cachedResponse.headers.get('x-cache'), 'HIT');
+    assert.deepEqual(await cachedResponse.json(), body);
 });
 
 test('lỗi AppError giữ nguyên mã trạng thái và thông báo', async () => {
