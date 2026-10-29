@@ -7,6 +7,7 @@ const noodles = { code: '8934563138165', product_name: 'Hao Hao Mi Tom Chua Cay'
 
 let lastSearchBody;
 
+// Safe only because node --test runs every test file in its own process; the adapter must be set before the client module loads.
 axios.defaults.adapter = async (config) => {
     lastSearchBody = JSON.parse(config.data);
     return { status: 200, statusText: 'OK', headers: {}, config, request: {}, data: { hits: [water, noodles] } };

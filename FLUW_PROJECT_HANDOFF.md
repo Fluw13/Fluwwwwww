@@ -47,11 +47,18 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
 | `src/cache/productCacheKey.js` | Tạo khóa cache từ mã vạch hoặc tên đã chuẩn hóa |
 | `src/config/env.js` | Đọc số nguyên dương từ biến môi trường |
-| `src/services/foodApiService.js` | Gọi OpenFoodFacts (ưu tiên tiếng Việt), chuẩn hóa dữ liệu, phân loại lỗi 404/502/504 |
-| `src/services/aiService.js` | Gọi Gemini, prompt, schema, kiểm tra phản hồi |
+| `src/services/foodApiService.js` | Chọn tra theo mã vạch hay theo tên, trả sản phẩm đã chuẩn hóa |
+| `src/services/openFoodFacts/openFoodFactsClient.js` | Gọi OpenFoodFacts (User-Agent, timeout 10 s, `fields=`, ưu tiên tiếng Việt), phân loại lỗi 404/429/502/504 |
+| `src/services/openFoodFacts/productNormalizer.js` | Chuẩn hóa dữ liệu sản phẩm (chỉ số liệu 100 g, kJ sang kcal) |
+| `src/services/openFoodFacts/allergenMapper.js` | Đổi mã dị ứng sang tên tiếng Việt |
+| `src/services/aiService.js` | Ghép prompt, gọi Gemini, kiểm tra phản hồi |
+| `src/services/ai/geminiClient.js` | Gọi Gemini (timeout 20 s, thử lại 1 lần với lỗi tạm thời) |
+| `src/services/ai/analysisPrompt.js` | Prompt, quy tắc chống prompt injection, schema đầu ra |
+| `src/services/ai/analysisParser.js` | Kiểm tra và làm sạch đầu ra của Gemini |
 | `src/middlewares/errorHandler.js` | Trả lỗi dạng JSON; lỗi lạ trả 500, không lộ chi tiết |
 | `src/middlewares/rateLimiter.js` | Giới hạn số lần tra cứu theo IP |
-| `src/errors/AppError.js` | Lỗi có mã HTTP và mã lỗi tùy chọn (`AI_*`) |
+| `src/errors/AppError.js` | Lỗi có mã HTTP và mã lỗi tùy chọn |
+| `src/errors/errorCodes.js` | Danh sách mã lỗi trả về cho app (`INVALID_BARCODE`, `PRODUCT_NOT_FOUND`, `AI_*`...) |
 
 ### API contract
 
@@ -137,13 +144,13 @@ Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flu
 
 | Lỗi | Cách sửa |
 | :--- | :--- |
-| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout 30 giây |
+| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout 20 giây |
 | Tìm "mì hảo hảo" ra "Nước khoáng Vĩnh Hảo" do chỉ lấy kết quả đầu tiên | Lấy 10 kết quả, chọn kết quả khớp nhiều từ nhất |
 | App có thể báo quá thời gian khi Render vừa khởi động (~50 s) | Timeout app 120 s, đánh thức server khi mở màn hình chính, gợi ý trên màn hình chờ |
 | Mã vạch sai số kiểm tra vẫn gửi đi OpenFoodFacts và báo "không tìm thấy" | Kiểm tra số kiểm tra mã 12-14 chữ số, trả 400 |
 | Sản phẩm chỉ có `energy-kj_100g` hiện "—" ở ô Calo | Đọc thêm `energy-kj_100g` khi thiếu `energy_100g` |
 
-Kiểm thử: backend `npm test` 46/46; chạy server thật với OpenFoodFacts và Gemini giả lập 24/24 tình huống; frontend kiểm tra bằng `flutter analyze`/`flutter test` trên GitHub Actions. Đã có agent review độc lập trước khi mở PR.
+Kiểm thử: backend `npm test` 67/67 (sau khi gộp với PR #2); chạy thử thủ công server thật với OpenFoodFacts và Gemini giả lập; frontend kiểm tra bằng `flutter analyze`/`flutter test` trên GitHub Actions. Review độc lập: xem PR #3.
 
 Rủi ro đã biết: một số ít sản phẩm trên OpenFoodFacts được lưu dưới mã vạch sai số kiểm tra (do người đóng góp nhập sai) sẽ không tra được bằng mã đó; khi Gemini hết hạn mức (429), lần thử lại sau 1-2 giây thường cũng thất bại.
 

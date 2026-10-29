@@ -1,8 +1,10 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const AppError = require('../src/errors/AppError');
-const { normalizeProduct, buildSearchRequest, readBarcodeResponse } = require('../src/services/foodApiService');
-const { buildPrompt, parseAnalysis } = require('../src/services/aiService');
+const { buildSearchRequest, readBarcodeResponse } = require('../src/services/openFoodFacts/openFoodFactsClient');
+const { normalizeProduct } = require('../src/services/openFoodFacts/productNormalizer');
+const { buildPrompt } = require('../src/services/ai/analysisPrompt');
+const { parseAnalysis } = require('../src/services/ai/analysisParser');
 const { isBarcode, validateProductQuery } = require('../src/validators/productQueryValidator');
 
 test('validateProductQuery từ chối từ khóa rỗng, quá dài hoặc có ký tự điều khiển', () => {
@@ -28,7 +30,8 @@ test('readBarcodeResponse phân biệt "không tìm thấy" (404) với lỗi t�
     assert.equal(statusOf({ status: 404, data: {} }), 404);
     assert.equal(statusOf({ status: 200, data: { status: 0 } }), 404);
     assert.equal(statusOf({ status: 403, data: 'Forbidden' }), 502);
-    assert.equal(statusOf({ status: 429, data: {} }), 502);
+    assert.equal(statusOf({ status: 429, data: {} }), 503);
+    assert.equal(statusOf({ status: 500, data: '' }), 502);
 });
 
 test('isBarcode chỉ nhận chuỗi 8-14 chữ số', () => {
@@ -59,7 +62,7 @@ test('normalizeProduct ưu tiên tên và thành phần tiếng Việt, đọc d
     assert.equal(product.product_name, 'Sữa chua');
     assert.equal(product.ingredients_text, 'sữa');
     assert.deepEqual(product.allergens, ['sữa']);
-    assert.deepEqual(normalizeProduct({ allergens: 'en:milk' }, '1').allergens, []);
+    assert.deepEqual(normalizeProduct({ allergens: 'en:milk, en:gluten' }, '1').allergens, ['sữa', 'gluten']);
 });
 
 test('normalizeProduct giữ null cho dữ liệu dinh dưỡng bị thiếu thay vì 0', () => {

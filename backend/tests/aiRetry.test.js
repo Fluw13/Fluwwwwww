@@ -2,7 +2,8 @@ process.env.GEMINI_API_KEY = 'test-key-not-real';
 
 const { test, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const { analyzeProduct, AI_ERROR_CODES } = require('../src/services/aiService');
+const { analyzeProduct } = require('../src/services/aiService');
+const { AI_ERROR_CODES } = require('../src/errors/errorCodes');
 
 const product = {
     product_name: 'Sữa chua',

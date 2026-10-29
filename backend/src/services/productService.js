@@ -3,6 +3,7 @@ const aiService = require('./aiService');
 const TtlCache = require('../cache/TtlCache');
 const { barcodeKey, productCacheKey } = require('../cache/productCacheKey');
 const { readPositiveInteger } = require('../config/env');
+const { AI_ERROR_CODES } = require('../errors/errorCodes');
 const { isBarcode, validateProductQuery } = require('../validators/productQueryValidator');
 
 const DEFAULT_CACHE_TTL_HOURS = 24;
@@ -21,7 +22,7 @@ const analyzeSafely = async (product) => {
         return { aiAnalysis: await aiService.analyzeProduct(product), aiError: null };
     } catch (error) {
         console.error('[AI Analysis Skipped]', error.code || error.name, error.message);
-        return { aiAnalysis: null, aiError: error.code || aiService.AI_ERROR_CODES.UNAVAILABLE };
+        return { aiAnalysis: null, aiError: error.code || AI_ERROR_CODES.UNAVAILABLE };
     }
 };
 

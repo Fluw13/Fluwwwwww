@@ -1,7 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { pickBestSearchHit } = require('../src/search/pickBestSearchHit');
-const { buildSearchRequest } = require('../src/services/foodApiService');
 
 const water = { code: '8934840000130', product_name: 'Nước khoáng không ga tự nhiên Vĩnh Hảo', brands: ['vinh-hao'] };
 const noodles = { code: '8934563138165', product_name: 'Hao Hao Mi Tom Chua Cay', product_name_vi: 'Mì Hảo Hảo tôm chua cay', brands: ['acecook'] };
@@ -25,8 +24,4 @@ test('pickBestSearchHit giữ thứ tự của máy tìm kiếm khi điểm bằ
     assert.equal(pickBestSearchHit([yogurt, water], 'xyz'), yogurt);
     const onlyHit = { code: '1' };
     assert.equal(pickBestSearchHit([onlyHit], 'bất kỳ'), onlyHit);
-});
-
-test('buildSearchRequest lấy 10 kết quả để chọn', () => {
-    assert.equal(buildSearchRequest('mì').page_size, 10);
 });

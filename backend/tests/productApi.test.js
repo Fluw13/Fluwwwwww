@@ -70,13 +70,13 @@ test('GET /api/product/:query trả về sản phẩm kèm phân tích AI', asyn
 
 test('lỗi AppError giữ nguyên mã trạng thái và thông báo', async () => {
     mock.method(foodApiService, 'getFoodData', async () => {
-        throw new AppError('Không tìm thấy sản phẩm.', 404);
+        throw new AppError('Không tìm thấy sản phẩm.', 404, 'PRODUCT_NOT_FOUND');
     });
 
     const response = await fetch(baseUrl + '/api/product/12345678');
 
     assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), { success: false, error: 'Không tìm thấy sản phẩm.' });
+    assert.deepEqual(await response.json(), { success: false, error: 'Không tìm thấy sản phẩm.', code: 'PRODUCT_NOT_FOUND' });
 });
 
 test('lỗi không xác định trả về 500 và không lộ chi tiết nội bộ', async () => {

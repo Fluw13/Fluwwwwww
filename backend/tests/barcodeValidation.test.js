@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const AppError = require('../src/errors/AppError');
+const { API_ERROR_CODES } = require('../src/errors/errorCodes');
 const { hasInvalidCheckDigit } = require('../src/validators/gtinCheckDigit');
 const { validateProductQuery } = require('../src/validators/productQueryValidator');
 
@@ -25,7 +26,7 @@ test('hasInvalidCheckDigit không kiểm tra mã 8 chữ số (có thể là UPC
 test('validateProductQuery trả 400 cho mã vạch sai số kiểm tra, vẫn nhận tên sản phẩm có chữ số', () => {
     assert.throws(
         () => validateProductQuery('8934563138164'),
-        (error) => error instanceof AppError && error.statusCode === 400 && error.message.includes('số kiểm tra')
+        (error) => error instanceof AppError && error.statusCode === 400 && error.code === API_ERROR_CODES.INVALID_BARCODE
     );
     assert.equal(validateProductQuery('8934563138165'), '8934563138165');
     assert.equal(validateProductQuery('sữa 180ml'), 'sữa 180ml');

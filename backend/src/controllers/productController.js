@@ -1,4 +1,4 @@
-﻿const productService = require('../services/productService');
+const productService = require('../services/productService');
 
 const getProductInfo = async (request, response) => {
     const { result, cacheStatus } = await productService.getProductInfo(request.params.query);
