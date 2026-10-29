@@ -4,7 +4,7 @@
 **Cập nhật:** 29/10/2026, theo code trên nhánh `review/refactor-fixes` (PR #1)
 **Phiên bản app:** 1.0.0+1
 
-> Các file `FLUW_PROJECT_HANDOFF.doc` và `FLUW_PROJECT_HANDOFF_Updated.doc` là bản cũ (thực chất là HTML) và đã lỗi thời. File này là bản đúng.
+> File này dành cho lập trình viên. Bản tóm tắt dễ đọc cho mọi người là `FLUW_PROJECT_HANDOFF.doc`.
 
 ---
 
@@ -39,8 +39,13 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `server.js` | Nạp `.env`, khởi động server |
 | `src/app.js` | Cấu hình Express: CORS, `trust proxy`, `/health`, mount route, xử lý lỗi |
 | `src/routes/productRoutes.js` | `GET /:query` |
-| `src/controllers/productController.js` | Gọi dữ liệu sản phẩm rồi gọi AI, trả kết quả |
-| `src/services/foodApiService.js` | Gọi OpenFoodFacts, kiểm tra đầu vào, chuẩn hóa dữ liệu |
+| `src/controllers/productController.js` | Nhận request, trả JSON và header `X-Cache` |
+| `src/services/productService.js` | Điều phối: kiểm tra đầu vào, cache, gộp request trùng, gọi dữ liệu rồi AI |
+| `src/validators/productQueryValidator.js` | Kiểm tra từ khóa, nhận diện mã vạch |
+| `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
+| `src/cache/productCacheKey.js` | Tạo khóa cache từ mã vạch hoặc tên đã chuẩn hóa |
+| `src/config/env.js` | Đọc số nguyên dương từ biến môi trường |
+| `src/services/foodApiService.js` | Gọi OpenFoodFacts (ưu tiên tiếng Việt), chuẩn hóa dữ liệu, phân loại lỗi 404/502/504 |
 | `src/services/aiService.js` | Gọi Gemini, prompt, schema, kiểm tra phản hồi |
 | `src/middlewares/errorHandler.js` | Trả lỗi dạng JSON; lỗi lạ trả 500, không lộ chi tiết |
 | `src/middlewares/rateLimiter.js` | Giới hạn số lần tra cứu theo IP |
@@ -79,7 +84,7 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 
 ### Biến môi trường
 
-Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_MODEL`, `PORT`, `RATE_LIMIT_WINDOW_MINUTES`, `RATE_LIMIT_MAX_REQUESTS`, `TRUST_PROXY_HOPS`, `CORS_ORIGINS`.
+Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_MODEL`, `PORT`, `RATE_LIMIT_WINDOW_MINUTES`, `RATE_LIMIT_MAX_REQUESTS`, `TRUST_PROXY_HOPS`, `CORS_ORIGINS`, `CACHE_TTL_HOURS`, `CACHE_MAX_ENTRIES`.
 
 ## 4. Frontend (`frontend/lib/`)
 
@@ -98,6 +103,8 @@ Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_
 | `widgets/zero_analysis_card.dart` | Phân tích Zero và tuyên bố miễn trừ AI |
 | `widgets/tag_section.dart` | Danh sách thẻ (dị ứng, gợi ý thay thế) |
 
+Thư mục `linux/`, `macos/`, `windows/` được giữ để có thể build bản desktop; `web/` dùng khi chạy `flutter run -d chrome`.
+
 ## 5. Chạy và kiểm thử
 
 ```bash
@@ -112,10 +119,9 @@ cd frontend && flutter analyze && flutter test
 ### Cần chủ dự án quyết định hoặc cung cấp
 - [ ] Email liên hệ thật cho `docs/PRIVACY_POLICY.md` và User-Agent gửi OpenFoodFacts (đang là `contact@fluw.app`).
 - [ ] Đăng chính sách quyền riêng tư lên URL công khai cho Google Play.
-- [ ] Có xóa 2 file `.doc` lỗi thời và các thư mục `linux/`, `macos/`, `windows/`, `web/` nếu chỉ phát hành Android không.
 - [ ] `ndkVersion = "30.0.16248370"` đang cố định trong `android/app/build.gradle.kts`, máy khác có thể không có bản NDK này.
-- [ ] Cache kết quả theo mã vạch để giảm chi phí Gemini.
-- [ ] Tìm theo tên đang dùng `langs: ['en']`, có thể kém với sản phẩm Việt Nam.
+- [ ] Cache hiện nằm trong bộ nhớ, mất khi server khởi động lại. Khi có database có thể chuyển sang cache bền vững.
+- [ ] Android cần `minSdkVersion 23` (bản bàn giao cũ ghi app crash camera trên máy thật nếu thấp hơn). Giá trị này đang đặt trong `android/local.properties`, file không được commit, nên máy khác sẽ không có.
 
 ### Lộ trình sản phẩm (đề xuất, chưa triển khai)
 - [ ] Database và đăng nhập (Supabase hoặc Firebase): `users`, `food_logs`, `favorites`.
