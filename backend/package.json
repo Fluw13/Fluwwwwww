@@ -10,6 +10,9 @@
   },
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@google/genai": "^2.31.0",
     "axios": "^1.21.0",
