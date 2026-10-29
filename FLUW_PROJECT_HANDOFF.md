@@ -1,7 +1,7 @@
 # Tài liệu bàn giao dự án Fluw
 
 **Ứng dụng:** Fluw, quét mã vạch thực phẩm và phân tích dinh dưỡng bằng AI **Zero**
-**Cập nhật:** 29/10/2026, theo code trên nhánh `review/refactor-fixes` (PR #1)
+**Cập nhật:** 29/10/2026, theo code trên nhánh `main` (sau khi gộp PR #1)
 **Phiên bản app:** 1.0.0+1
 
 > File này dành cho lập trình viên. Bản tóm tắt dễ đọc cho mọi người là `FLUW_PROJECT_HANDOFF.doc`.
@@ -113,6 +113,8 @@ cd backend && npm test
 cd frontend && flutter pub get && flutter run
 cd frontend && flutter analyze && flutter test
 ```
+
+GitHub Actions (`.github/workflows/ci.yml`) tự chạy `npm test` và `flutter analyze`/`flutter test` cho mỗi pull request và mỗi lần push lên `main`.
 
 ## 6. Việc còn mở
 
