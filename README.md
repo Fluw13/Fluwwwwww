@@ -40,7 +40,8 @@ npm test
 - Dữ liệu OpenFoodFacts (do cộng đồng đóng góp) được đặt trong khối riêng trong prompt và cắt bớt độ dài, Gemini được dặn bỏ qua mọi chỉ dẫn nằm trong đó.
 - Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
 - Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả dữ liệu sản phẩm với `aiAnalysis: null` và `aiError` cho biết lý do.
-- Gọi Gemini có timeout 30 giây, gọi OpenFoodFacts có timeout 15 giây.
+- Gọi Gemini có timeout 30 giây (tự thử lại 1 lần khi gặp lỗi tạm thời 408, 429, 500, 502-504 hoặc lỗi mạng, vẫn nằm trong 30 giây), gọi OpenFoodFacts có timeout 15 giây.
+- Mã vạch 12-14 chữ số (UPC-A, EAN-13, GTIN-14) được kiểm tra số kiểm tra; sai thì trả 400 thay vì gọi OpenFoodFacts.
 - Chính sách quyền riêng tư (bản nháp): [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md).
 
 ### Cache và tìm kiếm
@@ -49,6 +50,7 @@ npm test
 - Nhiều yêu cầu cùng lúc cho cùng một sản phẩm chỉ gọi Gemini một lần.
 - Cache nằm trong bộ nhớ của server: mất khi Render khởi động lại.
 - Tìm theo tên ưu tiên tiếng Việt (`langs: vi, en`) và dùng `product_name_vi`, `ingredients_text_vi` khi có.
+- Lấy 10 kết quả rồi chọn sản phẩm có tên/thương hiệu khớp nhiều từ nhất với từ khóa (không phân biệt dấu và chữ hoa); bằng điểm thì giữ thứ tự của máy tìm kiếm.
 
 ## Chạy frontend
 
