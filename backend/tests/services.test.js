@@ -32,7 +32,7 @@ test('readBarcodeResponse phân biệt "không tìm thấy" (404) với lỗi t�
 });
 
 test('isBarcode chỉ nhận chuỗi 8-14 chữ số', () => {
-    assert.equal(isBarcode('8934563138164'), true);
+    assert.equal(isBarcode('8934563138165'), true);
     assert.equal(isBarcode('1234567'), false);
     assert.equal(isBarcode('sữa 123'), false);
 });
@@ -120,6 +120,7 @@ test('normalizeProduct quy đổi kJ sang kcal khi sản phẩm chỉ có năng 
 
     assert.equal(product.nutriments['energy-kcal'], 400.1);
     assert.equal(normalizeProduct({ nutriments: { 'energy-kcal_100g': 52, energy_100g: 1674 } }, '1').nutriments['energy-kcal'], 52);
+    assert.equal(normalizeProduct({ nutriments: { 'energy-kj_100g': 418.4 } }, '1').nutriments['energy-kcal'], 100);
 });
 
 test('parseAnalysis gắn mã AI_INVALID_RESPONSE cho phản hồi không hợp lệ', () => {

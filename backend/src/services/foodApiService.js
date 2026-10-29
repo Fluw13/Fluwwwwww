@@ -1,11 +1,13 @@
 ﻿const axios = require('axios');
 const AppError = require('../errors/AppError');
 const { isBarcode } = require('../validators/productQueryValidator');
+const { pickBestSearchHit } = require('../search/pickBestSearchHit');
 
 const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
 const REQUEST_TIMEOUT_MS = 15000;
 const SEARCH_LANGUAGES = ['vi', 'en'];
+const SEARCH_PAGE_SIZE = 10;
 const SEARCH_FIELDS = [
     'code',
     'product_name',
@@ -82,7 +84,7 @@ const fetchRawByBarcode = async (barcode) => {
     return readBarcodeResponse(response, barcode);
 };
 
-const buildSearchRequest = (name) => ({ q: name, page_size: 1, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
+const buildSearchRequest = (name) => ({ q: name, page_size: SEARCH_PAGE_SIZE, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
 
 const fetchRawByName = async (name) => {
     const response = await openFoodFactsClient.post(SEARCH_URL, buildSearchRequest(name), {
@@ -95,7 +97,7 @@ const fetchRawByName = async (name) => {
         throw notFoundError('có tên "' + name + '"');
     }
 
-    return hits[0];
+    return pickBestSearchHit(hits, name);
 };
 
 const KILOJOULES_PER_KCAL = 4.184;
@@ -118,7 +120,7 @@ const readEnergyKcal = (nutriments) => {
         return kcal;
     }
 
-    const kilojoules = readNutriment(nutriments, 'energy');
+    const kilojoules = readNutriment(nutriments, 'energy') ?? readNutriment(nutriments, 'energy-kj');
     return kilojoules === null ? null : Math.round((kilojoules / KILOJOULES_PER_KCAL) * 10) / 10;
 };
 
