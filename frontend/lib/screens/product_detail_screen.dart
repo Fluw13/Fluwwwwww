@@ -1,8 +1,16 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/api_service.dart';
 import '../widgets/circular_score_ring.dart';
 import '../widgets/macro_bar.dart';
+
+const String _defaultAiDisclaimer =
+    'Phân tích do AI tạo ra, chỉ mang tính tham khảo, không thay thế tư vấn của bác sĩ hoặc chuyên gia dinh dưỡng. Luôn đọc nhãn sản phẩm, đặc biệt nếu bạn bị dị ứng.';
+const String _genericErrorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại sau.';
+const String _noAiMessage = 'Chưa có phân tích AI cho sản phẩm này. Bạn vẫn xem được thông tin dinh dưỡng bên dưới.';
+const String _dataAttribution =
+    'Dữ liệu: Open Food Facts (openfoodfacts.org) — giấy phép ODbL. Ảnh sản phẩm: Open Food Facts contributors — CC BY-SA.';
 
 class ProductDetailScreen extends StatelessWidget {
   final String barcode;
@@ -35,8 +43,11 @@ class ProductDetailScreen extends StatelessWidget {
             );
           }
 
-          // XUẤT HIỆN LỖI: IN THẲNG RA MÀN HÌNH ĐỂ DEBUG
           if (snapshot.hasError) {
+            final Object? error = snapshot.error;
+            final String userMessage = error is ApiException ? error.userMessage : _genericErrorMessage;
+            final String? debugDetail = error is ApiException ? error.debugDetail : error?.toString();
+
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -46,10 +57,18 @@ class ProductDetailScreen extends StatelessWidget {
                     const Icon(Icons.error_outline, size: 64, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
-                      'CHI TIẾT LỖI TỪ SERVER:\n\n${snapshot.error}',
+                      userMessage,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF141414)),
                     ),
+                    if (kDebugMode && debugDetail != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Debug: $debugDetail',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context),
@@ -89,12 +108,19 @@ class ProductDetailScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
-                CircularScoreRing(score: product.score),
-                const SizedBox(height: 12),
-                Text(
-                  product.scoreRating,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                if (product.hasAiAnalysis) ...[
+                  CircularScoreRing(score: product.score),
+                  const SizedBox(height: 12),
+                  Text(
+                    product.scoreRating,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ] else
+                  Text(
+                    _noAiMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                  ),
                 const SizedBox(height: 24),
                 MacroBar(
                   calories: product.calories,
@@ -102,37 +128,64 @@ class ProductDetailScreen extends StatelessWidget {
                   fat: product.fat,
                   carbs: product.carbs,
                 ),
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade200),
+                if (product.hasAiAnalysis) ...[
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.psychology, color: Color(0xFF141414)),
+                            const SizedBox(width: 8),
+                            const Flexible(
+                              child: Text(
+                                'Zero Deep Think',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                'Do AI tạo',
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(product.deepThink, style: TextStyle(color: Colors.grey.shade800, fontSize: 14)),
+                        const Divider(height: 24),
+                        const Text('Lời khuyên dinh dưỡng:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text(product.recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.psychology, color: Color(0xFF141414)),
-                          SizedBox(width: 8),
-                          Text('Zero Deep Think', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(product.deepThink, style: TextStyle(color: Colors.grey.shade800, fontSize: 14)),
-                      const Divider(height: 24),
-                      const Text('Lời khuyên dinh dưỡng:', style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(product.recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
-                    ],
+                  const SizedBox(height: 8),
+                  Text(
+                    product.disclaimer ?? _defaultAiDisclaimer,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                    textAlign: TextAlign.center,
                   ),
-                ),
+                ],
                 const SizedBox(height: 30),
                 Text(
-                  'Dữ liệu thực phẩm được cung cấp bởi OpenFoodFacts\n(Phát hành theo giấy phép ODbL)',
+                  _dataAttribution,
                   style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
                   textAlign: TextAlign.center,
                 ),
