@@ -1,11 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
 class MacroBar extends StatelessWidget {
-  final double calories;
-  final double protein;
-  final double fat;
-  final double carbs;
-
   const MacroBar({
     super.key,
     required this.calories,
@@ -14,7 +9,64 @@ class MacroBar extends StatelessWidget {
     required this.carbs,
   });
 
-  Widget _buildItem(String label, String value, String emoji) {
+  static const String _missingValue = '—';
+
+  final double? calories;
+  final double? protein;
+  final double? fat;
+  final double? carbs;
+
+  static String _formatKcal(double? value) {
+    return value == null ? _missingValue : '${value.round()} kcal';
+  }
+
+  static String _formatGrams(double? value) {
+    return value == null ? _missingValue : '${value.toStringAsFixed(1)} g';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasMissingValue = [calories, protein, fat, carbs].contains(null);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _MacroTile(emoji: '🔥', label: 'Calo', value: _formatKcal(calories)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🥩', label: 'Đạm', value: _formatGrams(protein)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🥑', label: 'Béo', value: _formatGrams(fat)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🌾', label: 'Carb', value: _formatGrams(carbs)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          hasMissingValue
+              ? 'Trên 100 g · Nguồn: OpenFoodFacts · "—" là chưa có dữ liệu'
+              : 'Trên 100 g · Nguồn: OpenFoodFacts',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+        ),
+      ],
+    );
+  }
+}
+
+class _MacroTile extends StatelessWidget {
+  const _MacroTile({
+    required this.emoji,
+    required this.label,
+    required this.value,
+  });
+
+  final String emoji;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -38,21 +90,6 @@ class MacroBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _buildItem('Calo', ' kcal', '🔥'),
-        const SizedBox(width: 8),
-        _buildItem('Đạm', 'g', '🥩'),
-        const SizedBox(width: 8),
-        _buildItem('Béo', 'g', '🥑'),
-        const SizedBox(width: 8),
-        _buildItem('Carb', 'g', '🌾'),
-      ],
     );
   }
 }

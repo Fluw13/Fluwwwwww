@@ -1,11 +1,11 @@
 {
-    "name": "frontend",
-    "short_name": "frontend",
+    "name": "Fluw",
+    "short_name": "Fluw",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Fluw - quét mã vạch và phân tích dinh dưỡng bằng AI Zero.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

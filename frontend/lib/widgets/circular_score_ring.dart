@@ -1,24 +1,21 @@
 ﻿import 'package:flutter/material.dart';
 
-class CircularScoreRing extends StatelessWidget {
-  final int score;
-  final double size;
+import '../core/app_colors.dart';
+import '../models/score_level.dart';
 
+class CircularScoreRing extends StatelessWidget {
   const CircularScoreRing({
     super.key,
     required this.score,
     this.size = 140.0,
   });
 
-  Color _getScoreColor(int score) {
-    if (score >= 70) return const Color(0xFF00E676);
-    if (score >= 40) return const Color(0xFFFFD600);
-    return const Color(0xFFFF3D00);
-  }
+  final int score;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    final color = _getScoreColor(score);
+    final Color color = ScoreLevel.fromScore(score).color;
 
     return Container(
       width: size,
@@ -51,11 +48,11 @@ class CircularScoreRing extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                '',
+                '$score',
                 style: TextStyle(
                   fontSize: size * 0.3,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFF141414),
+                  color: AppColors.ink,
                 ),
               ),
               Text(

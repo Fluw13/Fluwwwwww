@@ -2,7 +2,10 @@
 import 'package:frontend/main.dart';
 
 void main() {
-  testWidgets('FluwApp smoke test', (WidgetTester tester) async {
+  testWidgets('FluwApp hiển thị màn hình chính', (WidgetTester tester) async {
     await tester.pumpWidget(const FluwApp());
+
+    expect(find.text('Bạn đang ăn món gì?'), findsOneWidget);
+    expect(find.text('QUÉT MÃ VẠCH'), findsOneWidget);
   });
 }
