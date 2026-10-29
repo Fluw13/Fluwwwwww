@@ -5,6 +5,8 @@ const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
 const REQUEST_TIMEOUT_MS = 15000;
 const BARCODE_PATTERN = /^\d{8,14}$/;
+const MAX_QUERY_LENGTH = 100;
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F]/;
 const SEARCH_FIELDS = ['code', 'product_name', 'brands', 'image_front_url', 'ingredients_text', 'nutriments'];
 
 const openFoodFactsClient = axios.create({
@@ -62,7 +64,18 @@ const fetchRawByName = async (name) => {
     return hits[0];
 };
 
-const readNutriment = (nutriments, key) => Number(nutriments[key + '_100g']) || Number(nutriments[key]) || 0;
+const readNutriment = (nutriments, key) => {
+    const value = nutriments[key + '_100g'] ?? nutriments[key];
+
+    if (value === undefined || value === null || value === '') {
+        return null;
+    }
+
+    const amount = Number(value);
+    return Number.isFinite(amount) && amount >= 0 ? amount : null;
+};
+
+const readHttpsUrl = (value) => (typeof value === 'string' && value.startsWith('https://') ? value : '');
 
 const normalizeProduct = (raw, fallbackCode) => {
     const nutriments = raw.nutriments || {};
@@ -71,8 +84,8 @@ const normalizeProduct = (raw, fallbackCode) => {
         barcode: raw.code || fallbackCode,
         product_name: raw.product_name || 'Sản phẩm chưa có tên',
         brands: (Array.isArray(raw.brands) ? raw.brands.join(', ') : raw.brands) || 'Chưa rõ thương hiệu',
-        image_front_url: raw.image_front_url || '',
-        ingredients_text: raw.ingredients_text || 'Chưa có thông tin thành phần',
+        image_front_url: readHttpsUrl(raw.image_front_url),
+        ingredients_text: raw.ingredients_text || null,
         nutriments: {
             'energy-kcal': readNutriment(nutriments, 'energy-kcal'),
             proteins: readNutriment(nutriments, 'proteins'),
@@ -89,6 +102,10 @@ const getFoodData = async (searchQuery) => {
         throw new AppError('Vui lòng nhập mã vạch hoặc tên sản phẩm.', 400);
     }
 
+    if (query.length > MAX_QUERY_LENGTH || CONTROL_CHARACTER_PATTERN.test(query)) {
+        throw new AppError('Từ khóa tìm kiếm không hợp lệ (tối đa ' + MAX_QUERY_LENGTH + ' ký tự).', 400);
+    }
+
     try {
         const raw = BARCODE_PATTERN.test(query) ? await fetchRawByBarcode(query) : await fetchRawByName(query);
         return normalizeProduct(raw, query);
@@ -97,4 +114,4 @@ const getFoodData = async (searchQuery) => {
     }
 };
 
-module.exports = { getFoodData };
+module.exports = { getFoodData, normalizeProduct };
