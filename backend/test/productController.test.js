@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { createProductController } = require('../src/controllers/productController');
 const { createTtlCache } = require('../src/cache');
 const { AppError, ERROR_CODES, mapErrorToHttp } = require('../src/errors');
+const { createAiService } = require('../src/services/aiService');
 
 const product = {
     barcode: '8934563138164',
@@ -154,4 +155,24 @@ test('mapErrorToHttp falls back to 500 for unknown codes', () => {
     assert.equal(mapErrorToHttp(undefined).status, 500);
     assert.equal(mapErrorToHttp({ code: 'SOMETHING_ELSE' }).status, 500);
     assert.equal(mapErrorToHttp(new AppError(ERROR_CODES.INVALID_INPUT, 'x')).status, 400);
+});
+
+test('Gemini timeout still returns 200 with aiAvailable=false and is not cached', async () => {
+    const hangingClient = { models: { generateContent: () => new Promise(() => {}) } };
+    const aiService = createAiService({ client: hangingClient, model: 'test-model', timeoutMs: 30 });
+    const cache = createTtlCache({ ttlMs: 60000, maxEntries: 10 });
+    const controller = createProductController({
+        foodApi: { getFoodData: async () => product },
+        aiService,
+        cache,
+        logger: silentLogger
+    });
+    const response = createResponse();
+
+    await controller.getProductInfo({ params: { barcode: '8934563138164' } }, response);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.aiAnalysis, null);
+    assert.equal(response.body.aiAvailable, false);
+    assert.equal(cache.size, 0);
 });

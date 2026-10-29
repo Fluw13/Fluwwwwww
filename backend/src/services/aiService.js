@@ -153,7 +153,27 @@ function buildAnalysis(product, aiResult) {
     };
 }
 
-function createAiService({ apiKey = '', model, client } = {}) {
+const DEFAULT_TIMEOUT_MS = 25000;
+
+// Promise.race guarantees the deadline regardless of SDK behaviour; the abort
+// signal additionally cancels the underlying HTTP request when the SDK honours it.
+async function withTimeout(run, timeoutMs) {
+    const controller = new AbortController();
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+        timer = setTimeout(() => {
+            controller.abort();
+            reject(new AppError(ERROR_CODES.AI_UNAVAILABLE, 'Gemini request timed out'));
+        }, timeoutMs);
+    });
+    try {
+        return await Promise.race([run(controller.signal), deadline]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function createAiService({ apiKey = '', model, client, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
     let aiClient = client || null;
 
     function getClient() {
@@ -171,16 +191,20 @@ function createAiService({ apiKey = '', model, client } = {}) {
 
         let result;
         try {
-            result = await genAI.models.generateContent({
+            result = await withTimeout((abortSignal) => genAI.models.generateContent({
                 model,
                 contents: buildPrompt(product),
                 config: {
                     systemInstruction: SYSTEM_INSTRUCTION,
                     responseMimeType: 'application/json',
-                    responseSchema: RESPONSE_SCHEMA
+                    responseSchema: RESPONSE_SCHEMA,
+                    abortSignal
                 }
-            });
+            }), timeoutMs);
         } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
             throw new AppError(ERROR_CODES.AI_UNAVAILABLE, `Gemini request failed: ${error && error.message}`, { cause: error });
         }
 
@@ -199,6 +223,7 @@ module.exports = {
     buildAnalysis,
     sanitizeForPrompt,
     AI_DISCLAIMER,
+    DEFAULT_TIMEOUT_MS,
     MAX_NAME_LENGTH,
     MAX_BRANDS_LENGTH,
     MAX_INGREDIENTS_LENGTH

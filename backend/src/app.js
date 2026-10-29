@@ -15,7 +15,11 @@ const INVALID_REQUEST_MESSAGE = 'Yêu cầu không hợp lệ.';
 function createDefaultProductController(config) {
     return createProductController({
         foodApi: createFoodApiService({ contactEmail: config.offContactEmail }),
-        aiService: createAiService({ apiKey: config.geminiApiKey, model: config.geminiModel }),
+        aiService: createAiService({
+            apiKey: config.geminiApiKey,
+            model: config.geminiModel,
+            timeoutMs: config.geminiTimeoutMs
+        }),
         cache: createTtlCache({
             ttlMs: config.cacheTtlSeconds * 1000,
             maxEntries: config.cacheMaxEntries

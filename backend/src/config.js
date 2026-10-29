@@ -1,5 +1,6 @@
 const DEFAULTS = Object.freeze({
     geminiModel: 'gemini-3.6-flash',
+    geminiTimeoutMs: 25000,
     rateLimitPerMinute: 30,
     cacheTtlSeconds: 24 * 60 * 60,
     cacheMaxEntries: 500
@@ -29,6 +30,7 @@ function loadConfig(env = process.env) {
     return {
         geminiApiKey: env.GEMINI_API_KEY || '',
         geminiModel: env.GEMINI_MODEL || DEFAULTS.geminiModel,
+        geminiTimeoutMs: readPositiveInt(env.GEMINI_TIMEOUT_MS, DEFAULTS.geminiTimeoutMs),
         offContactEmail: (env.OFF_CONTACT_EMAIL || '').trim(),
         corsOptions: buildCorsOptions(env.ALLOWED_ORIGINS),
         rateLimitPerMinute: readPositiveInt(env.RATE_LIMIT_PER_MINUTE, DEFAULTS.rateLimitPerMinute),

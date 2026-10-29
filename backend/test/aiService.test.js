@@ -7,6 +7,7 @@ const {
     buildPrompt,
     parseAiResponse,
     AI_DISCLAIMER,
+    DEFAULT_TIMEOUT_MS,
     MAX_NAME_LENGTH,
     MAX_INGREDIENTS_LENGTH
 } = require('../src/services/aiService');
@@ -133,4 +134,37 @@ test('analyzeProduct wraps SDK failures as AI_UNAVAILABLE', async () => {
     });
     const service = createAiService({ client, model: 'test-model' });
     await assert.rejects(service.analyzeProduct(sampleProduct), (error) => error.code === ERROR_CODES.AI_UNAVAILABLE);
+});
+
+test('analyzeProduct times out with AI_UNAVAILABLE and aborts the SDK request', async () => {
+    let receivedSignal;
+    const client = {
+        models: {
+            generateContent: (request) => {
+                receivedSignal = request.config.abortSignal;
+                return new Promise(() => {});
+            }
+        }
+    };
+    const service = createAiService({ client, model: 'test-model', timeoutMs: 50 });
+
+    const startedAt = Date.now();
+    await assert.rejects(
+        service.analyzeProduct(sampleProduct),
+        (error) => error.code === ERROR_CODES.AI_UNAVAILABLE && error.message === 'Gemini request timed out'
+    );
+    assert.ok(Date.now() - startedAt < 1000, 'timeout should fire quickly');
+    assert.ok(receivedSignal instanceof AbortSignal);
+    assert.equal(receivedSignal.aborted, true);
+});
+
+test('a fast AI response clears the timeout timer', async () => {
+    const client = createStubClient(() => ({ text: '{"score":50,"deepThink":"a","recommendation":"b"}' }));
+    const service = createAiService({ client, model: 'test-model', timeoutMs: 60000 });
+    const analysis = await service.analyzeProduct(sampleProduct);
+    assert.equal(analysis.score, 50);
+});
+
+test('default Gemini timeout is 25 seconds', () => {
+    assert.equal(DEFAULT_TIMEOUT_MS, 25000);
 });

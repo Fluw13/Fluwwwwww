@@ -112,4 +112,7 @@ test('numeric env values fall back to defaults when invalid', () => {
     assert.equal(config.cacheTtlSeconds, 86400);
     assert.equal(config.cacheMaxEntries, 500);
     assert.equal(config.geminiModel, 'gemini-3.6-flash');
+    assert.equal(config.geminiTimeoutMs, 25000);
+    assert.equal(loadConfig({ GEMINI_TIMEOUT_MS: 'abc' }).geminiTimeoutMs, 25000);
+    assert.equal(loadConfig({ GEMINI_TIMEOUT_MS: '8000' }).geminiTimeoutMs, 8000);
 });
