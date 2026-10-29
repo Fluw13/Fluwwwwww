@@ -1,110 +1,129 @@
 ﻿const axios = require('axios');
+const { version: appVersion } = require('../../package.json');
+const { AppError, ERROR_CODES } = require('../errors');
 
-const fetchProductFromOpenFoodFacts = async (searchQuery) => {
-    const query = String(searchQuery).trim();
+const OFF_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
+const OFF_SEARCH_URL = 'https://search.openfoodfacts.org/search';
+const OFF_TIMEOUT_MS = 10000;
+const PROJECT_URL = 'https://github.com/Fluw13/Fluwwwwww';
+const SEARCH_FIELDS = ['code', 'product_name', 'brands', 'image_front_url', 'ingredients_text', 'nutriments'];
+const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT']);
 
-    if (query.length === 0) {
-        throw new Error('Dữ liệu tìm kiếm không được để trống. Vui lòng nhập mã vạch hoặc tên sản phẩm.');
+function buildUserAgent(version, contactEmail) {
+    const contact = contactEmail && contactEmail.trim() ? contactEmail.trim() : PROJECT_URL;
+    return `Fluw/${version} (${contact})`;
+}
+
+// A 404 on the product endpoint means "no such barcode"; on the search
+// endpoint it would mean the endpoint itself moved, so it is not a NOT_FOUND.
+function classifyOffError(error, { treat404AsNotFound = true } = {}) {
+    if (error instanceof AppError) {
+        return error;
     }
 
-    const requestHeaders = {
-        'User-Agent': 'FluwApp - Android - Version 1.0.0 - (contact@fluw.app)'
+    const status = error && error.response ? error.response.status : undefined;
+
+    if (status === 404 && treat404AsNotFound) {
+        return new AppError(ERROR_CODES.NOT_FOUND, 'OpenFoodFacts returned HTTP 404', { cause: error, upstreamStatus: status });
+    }
+    if (status === 429) {
+        return new AppError(ERROR_CODES.RATE_LIMITED, 'OpenFoodFacts returned HTTP 429', { cause: error, upstreamStatus: status });
+    }
+    if (status !== undefined) {
+        return new AppError(ERROR_CODES.UPSTREAM_UNAVAILABLE, `OpenFoodFacts returned HTTP ${status}`, { cause: error, upstreamStatus: status });
+    }
+    if (error && TIMEOUT_ERROR_CODES.has(error.code)) {
+        return new AppError(ERROR_CODES.UPSTREAM_TIMEOUT, 'OpenFoodFacts request timed out', { cause: error });
+    }
+    if (error && error.request) {
+        return new AppError(ERROR_CODES.UPSTREAM_UNAVAILABLE, `OpenFoodFacts unreachable (${error.code || 'no response'})`, { cause: error });
+    }
+    return new AppError(ERROR_CODES.INTERNAL_ERROR, 'Unexpected error while querying OpenFoodFacts', { cause: error });
+}
+
+function readNutriment(nutriments, name) {
+    return Number(nutriments[`${name}_100g`]) || Number(nutriments[name]) || 0;
+}
+
+function normalizeProduct(productData, fallbackBarcode) {
+    const nutriments = productData.nutriments || {};
+    const brands = Array.isArray(productData.brands)
+        ? productData.brands.join(', ')
+        : productData.brands;
+
+    return {
+        barcode: productData.code || fallbackBarcode,
+        product_name: productData.product_name || 'Sản phẩm chưa có tên',
+        brands: brands || 'Chưa rõ thương hiệu',
+        image_front_url: productData.image_front_url || '',
+        ingredients_text: productData.ingredients_text || 'Chưa có thông tin thành phần',
+        nutriments: {
+            'energy-kcal': readNutriment(nutriments, 'energy-kcal'),
+            proteins: readNutriment(nutriments, 'proteins'),
+            fat: readNutriment(nutriments, 'fat'),
+            carbohydrates: readNutriment(nutriments, 'carbohydrates')
+        }
     };
+}
 
-    const isBarcode = /^\d+$/.test(query);
+function createFoodApiService({ httpClient = axios, contactEmail = '', version = appVersion } = {}) {
+    const headers = { 'User-Agent': buildUserAgent(version, contactEmail) };
 
-    try {
-        let productData = null;
-
-        if (isBarcode === true) {
-            const barcodeApiUrl = 'https://world.openfoodfacts.org/api/v2/product/' + query + '.json';
-            const response = await axios.get(barcodeApiUrl, {
-                headers: requestHeaders
+    async function fetchByBarcode(barcode) {
+        let response;
+        try {
+            response = await httpClient.get(OFF_PRODUCT_URL + encodeURIComponent(barcode) + '.json', {
+                headers,
+                timeout: OFF_TIMEOUT_MS
             });
-
-            if (response.data && response.data.status === 1 && response.data.product) {
-                productData = response.data.product;
-            } else {
-                throw new Error('Không tìm thấy sản phẩm nào có mã vạch ' + query + ' trên hệ thống OpenFoodFacts.');
-            }
-        } else {
-            const response = await axios.post(
-                'https://search.openfoodfacts.org/search',
-                {
-                    q: query,
-                    page_size: 1,
-                    fields: [
-                        'code',
-                        'product_name',
-                        'brands',
-                        'image_front_url',
-                        'ingredients_text',
-                        'nutriments'
-                    ],
-                    langs: ['en']
-                },
-                {
-                    headers: {
-                        ...requestHeaders,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 15000
-                }
-            );
-
-            if (response.data && Array.isArray(response.data.hits) && response.data.hits.length > 0) {
-                productData = response.data.hits[0];
-            } else {
-                throw new Error('Không tìm thấy sản phẩm nào có tên "' + query + '" trên hệ thống OpenFoodFacts.');
-            }
+        } catch (error) {
+            throw classifyOffError(error);
         }
 
-        const barcode = productData.code || query;
-        const productName = productData.product_name || 'Sản phẩm chưa có tên';
-        const brands = Array.isArray(productData.brands)
-            ? productData.brands.join(', ')
-            : productData.brands || 'Chưa rõ thương hiệu';
-        const imageUrl = productData.image_front_url || '';
-        const ingredientsText = productData.ingredients_text || 'Chưa có thông tin thành phần';
-
-        const nutriments = productData.nutriments || {};
-        const energyKcal = Number(nutriments['energy-kcal_100g']) || Number(nutriments['energy-kcal']) || 0;
-        const proteins = Number(nutriments['proteins_100g']) || Number(nutriments['proteins']) || 0;
-        const fat = Number(nutriments['fat_100g']) || Number(nutriments['fat']) || 0;
-        const carbohydrates = Number(nutriments['carbohydrates_100g']) || Number(nutriments['carbohydrates']) || 0;
-
-        return {
-            barcode: barcode,
-            product_name: productName,
-            brands: brands,
-            image_front_url: imageUrl,
-            ingredients_text: ingredientsText,
-            nutriments: {
-                'energy-kcal': energyKcal,
-                proteins: proteins,
-                fat: fat,
-                carbohydrates: carbohydrates
-            }
-        };
-    } catch (error) {
-        if (error.message.includes('Không tìm thấy')) {
-            throw error;
+        const data = response && response.data;
+        if (!data || data.status !== 1 || !data.product) {
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'OpenFoodFacts product status is not 1');
         }
-
-        if (error.response) {
-            const statusCode = error.response.status;
-            throw new Error('Lỗi kết nối đến máy chủ OpenFoodFacts (Mã lỗi HTTP: ' + statusCode + '). Vui lòng thử lại sau.');
-        }
-
-        if (error.request) {
-            throw new Error('Không thể kết nối đến máy chủ OpenFoodFacts. Vui lòng kiểm tra lại kết nối mạng.');
-        }
-
-        throw new Error('Đã xảy ra lỗi hệ thống khi xử lý dữ liệu: ' + error.message);
+        return data.product;
     }
-};
+
+    async function searchByName(name) {
+        let response;
+        try {
+            response = await httpClient.post(
+                OFF_SEARCH_URL,
+                { q: name, page_size: 1, fields: SEARCH_FIELDS, langs: ['en'] },
+                { headers: { ...headers, 'Content-Type': 'application/json' }, timeout: OFF_TIMEOUT_MS }
+            );
+        } catch (error) {
+            throw classifyOffError(error, { treat404AsNotFound: false });
+        }
+
+        const hits = response && response.data && response.data.hits;
+        if (!Array.isArray(hits) || hits.length === 0) {
+            throw new AppError(ERROR_CODES.NOT_FOUND, 'OpenFoodFacts search returned no hits');
+        }
+        return hits[0];
+    }
+
+    async function getFoodData(searchQuery) {
+        const query = String(searchQuery).trim();
+        if (query.length === 0) {
+            throw new AppError(ERROR_CODES.INVALID_INPUT, 'Empty product query');
+        }
+
+        const isBarcode = /^\d+$/.test(query);
+        const productData = isBarcode ? await fetchByBarcode(query) : await searchByName(query);
+        return normalizeProduct(productData, query);
+    }
+
+    return { getFoodData };
+}
 
 module.exports = {
-    getFoodData: fetchProductFromOpenFoodFacts,
-    fetchProductFromOpenFoodFacts: fetchProductFromOpenFoodFacts
+    createFoodApiService,
+    buildUserAgent,
+    classifyOffError,
+    normalizeProduct,
+    OFF_TIMEOUT_MS
 };
