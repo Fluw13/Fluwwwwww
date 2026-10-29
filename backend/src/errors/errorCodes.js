@@ -1,0 +1,21 @@
+// Machine-readable codes returned to clients. Messages may change; codes are part of the API contract.
+const API_ERROR_CODES = Object.freeze({
+    INVALID_QUERY: 'INVALID_QUERY',
+    BAD_REQUEST: 'BAD_REQUEST',
+    ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
+    PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
+    RATE_LIMITED: 'RATE_LIMITED',
+    UPSTREAM_RATE_LIMITED: 'UPSTREAM_RATE_LIMITED',
+    UPSTREAM_TIMEOUT: 'UPSTREAM_TIMEOUT',
+    UPSTREAM_UNAVAILABLE: 'UPSTREAM_UNAVAILABLE',
+    INTERNAL_ERROR: 'INTERNAL_ERROR'
+});
+
+// Values of the `aiError` field; the Flutter app maps them to user-facing reasons.
+const AI_ERROR_CODES = Object.freeze({
+    NOT_CONFIGURED: 'AI_NOT_CONFIGURED',
+    UNAVAILABLE: 'AI_UNAVAILABLE',
+    INVALID_RESPONSE: 'AI_INVALID_RESPONSE'
+});
+
+module.exports = { API_ERROR_CODES, AI_ERROR_CODES };
