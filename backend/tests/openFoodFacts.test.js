@@ -24,6 +24,7 @@ test('User-Agent theo định dạng OpenFoodFacts yêu cầu, không bịa emai
     assert.equal(buildUserAgent('dev@example.com'), 'Fluw/' + version + ' (dev@example.com)');
     assert.equal(buildUserAgent(''), 'Fluw/' + version + ' (https://github.com/Fluw13/Fluwwwwww)');
     assert.equal(buildUserAgent(undefined), 'Fluw/' + version + ' (https://github.com/Fluw13/Fluwwwwww)');
+    assert.equal(buildUserAgent('tố@b.vn'), 'Fluw/' + version + ' (https://github.com/Fluw13/Fluwwwwww)');
     assert.equal(buildUserAgent('not an email\r\nX-Injected: 1'), 'Fluw/' + version + ' (https://github.com/Fluw13/Fluwwwwww)');
 });
 

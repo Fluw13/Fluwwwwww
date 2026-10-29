@@ -1,4 +1,4 @@
-﻿const geminiClient = require('./ai/geminiClient');
+const geminiClient = require('./ai/geminiClient');
 const { SYSTEM_INSTRUCTION, ANALYSIS_SCHEMA, buildPrompt } = require('./ai/analysisPrompt');
 const { parseAnalysis } = require('./ai/analysisParser');
 

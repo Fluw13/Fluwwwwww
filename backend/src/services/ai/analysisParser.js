@@ -16,15 +16,16 @@ const toStringList = (value) => (Array.isArray(value)
         .map((item) => item.trim().slice(0, MAX_LIST_ITEM_LENGTH))
     : []);
 
-// `Number(null)` and `Number('')` are 0, so only real numbers and numeric strings count as a score.
+const DECIMAL_PATTERN = /^-?\d+(\.\d+)?$/;
+
+// `Number(null)`, `Number('')` and `Number('0x10')` all succeed, so only plain decimals count as a score.
 const readScore = (value) => {
     if (typeof value === 'number') {
         return Number.isFinite(value) ? value : null;
     }
 
-    if (typeof value === 'string' && value.trim().length > 0) {
-        const score = Number(value);
-        return Number.isFinite(score) ? score : null;
+    if (typeof value === 'string' && DECIMAL_PATTERN.test(value.trim())) {
+        return Number(value);
     }
 
     return null;

@@ -1,4 +1,4 @@
-﻿const openFoodFactsClient = require('./openFoodFacts/openFoodFactsClient');
+const openFoodFactsClient = require('./openFoodFacts/openFoodFactsClient');
 const { normalizeProduct } = require('./openFoodFacts/productNormalizer');
 const { isBarcode } = require('../validators/productQueryValidator');
 

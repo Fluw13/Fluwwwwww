@@ -16,7 +16,14 @@ const describeAppError = (error) => ({
     retryAfterSeconds: error.retryAfterSeconds
 });
 
-// Express and its parsers raise plain errors with a 4xx `status`, e.g. for an undecodable URL parameter.
+// Express and its parsers mark client-caused errors with `expose: true` or raise a URIError for an
+// undecodable URL parameter. Other errors that merely carry a 4xx `status` (e.g. an unwrapped AxiosError
+// from an upstream service) are server-side failures and must not be reported as a bad request.
+const isFrameworkClientError = (error) => {
+    const status = error?.status ?? error?.statusCode;
+    return isClientErrorStatus(status) && (error instanceof URIError || error?.expose === true);
+};
+
 const describeFrameworkClientError = (status) => ({
     status,
     code: API_ERROR_CODES.BAD_REQUEST,
@@ -36,9 +43,8 @@ const describeError = (error) => {
         return describeAppError(error);
     }
 
-    const status = error?.status ?? error?.statusCode;
-    if (isClientErrorStatus(status)) {
-        return describeFrameworkClientError(status);
+    if (isFrameworkClientError(error)) {
+        return describeFrameworkClientError(error.status ?? error.statusCode);
     }
 
     return describeUnexpectedError();

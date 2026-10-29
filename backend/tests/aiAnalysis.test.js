@@ -40,7 +40,7 @@ test('prompt hệ thống không tự nhận dựa trên chuẩn WHO và có mi�
 });
 
 test('parseAnalysis từ chối điểm null hoặc rỗng thay vì chấm 0 điểm', () => {
-    for (const raw of ['{"score": null}', '{"score": ""}', '{"score": true}', '{}', 'null', '[]']) {
+    for (const raw of ['{"score": null}', '{"score": ""}', '{"score": "0x10"}', '{"score": "1e2"}', '{"score": true}', '{}', 'null', '[]']) {
         assert.throws(() => parseAnalysis(raw), (error) => error.code === 'AI_INVALID_RESPONSE', raw);
     }
 

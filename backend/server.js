@@ -14,7 +14,13 @@ server.on('error', (error) => {
     process.exit(1);
 });
 
+let isShuttingDown = false;
+
 const shutDown = (signal) => {
+    if (isShuttingDown) {
+        return;
+    }
+    isShuttingDown = true;
     console.log('[Shutdown] Nhận ' + signal + ', ngừng nhận kết nối mới.');
 
     const forceExitTimer = setTimeout(() => {
@@ -23,8 +29,13 @@ const shutDown = (signal) => {
     }, SHUTDOWN_GRACE_PERIOD_MS);
     forceExitTimer.unref();
 
-    server.close(() => process.exit(0));
-    server.closeIdleConnections();
+    server.close((error) => {
+        if (error) {
+            console.error('[Shutdown] Lỗi khi đóng server:', error.code || error.message);
+            process.exit(1);
+        }
+        process.exit(0);
+    });
 };
 
 process.once('SIGTERM', () => shutDown('SIGTERM'));

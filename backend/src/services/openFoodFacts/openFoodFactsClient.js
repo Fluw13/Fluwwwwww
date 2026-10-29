@@ -9,7 +9,8 @@ const PROJECT_URL = 'https://github.com/Fluw13/Fluwwwwww';
 const REQUEST_TIMEOUT_MS = 10000;
 const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
 const TIMEOUT_ERROR_CODES = new Set(['ECONNABORTED', 'ETIMEDOUT']);
-const EMAIL_PATTERN = /^[^\s@()<>,;]+@[^\s@()<>,;]+\.[^\s@()<>,;]+$/;
+// Printable ASCII only: HTTP headers cannot carry other characters reliably.
+const EMAIL_PATTERN = /^[!#-'*+\-./0-9=?A-Z^-~]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 const SHARED_FIELDS = [
     'code',

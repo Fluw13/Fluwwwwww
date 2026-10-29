@@ -78,3 +78,16 @@ test('lỗi không xác định có mã INTERNAL_ERROR', async () => {
     assert.equal(response.status, 500);
     assert.equal(body.code, 'INTERNAL_ERROR');
 });
+
+test('lỗi upstream chưa bọc mang status 4xx vẫn là 500, không bị báo là yêu cầu sai', async () => {
+    mock.method(console, 'error', () => {});
+    mock.method(foodApiService, 'getFoodData', async () => {
+        throw Object.assign(new Error('Request failed with status code 404'), { name: 'AxiosError', status: 404 });
+    });
+
+    const response = await fetch(baseUrl + '/api/product/12345678');
+    const body = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.equal(body.code, 'INTERNAL_ERROR');
+});
