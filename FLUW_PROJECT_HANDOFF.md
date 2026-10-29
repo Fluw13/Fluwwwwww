@@ -1,10 +1,10 @@
 # Tài liệu bàn giao dự án Fluw
 
 **Ứng dụng:** Fluw, quét mã vạch thực phẩm và phân tích dinh dưỡng bằng AI **Zero**
-**Cập nhật:** 29/10/2026, theo code trên nhánh `main` (sau khi gộp PR #1)
+**Cập nhật:** 29/10/2026, theo code trên nhánh `main` (sau khi gộp PR #1 và đợt sửa lỗi QA cùng ngày)
 **Phiên bản app:** 1.0.0+1
 
-> File này dành cho lập trình viên. Bản tóm tắt dễ đọc cho mọi người là `FLUW_PROJECT_HANDOFF.doc`.
+> File này dành cho lập trình viên. Bản tóm tắt dễ đọc cho mọi người là `FLUW_PROJECT_HANDOFF.docx`.
 
 ---
 
@@ -40,7 +40,7 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `src/app.js` | Cấu hình Express: CORS, `trust proxy`, `/health`, mount route, xử lý lỗi |
 | `src/routes/productRoutes.js` | `GET /:query` |
 | `src/controllers/productController.js` | Nhận request, trả JSON và header `X-Cache` |
-| `src/services/productService.js` | Điều phối: kiểm tra đầu vào, cache, gộp request trùng, gọi dữ liệu rồi AI |
+| `src/services/productService.js` | Điều phối: kiểm tra đầu vào, cache, gộp request trùng, gọi dữ liệu rồi AI; AI lỗi thì vẫn trả dữ liệu sản phẩm |
 | `src/validators/productQueryValidator.js` | Kiểm tra từ khóa, nhận diện mã vạch |
 | `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
 | `src/cache/productCacheKey.js` | Tạo khóa cache từ mã vạch hoặc tên đã chuẩn hóa |
@@ -49,7 +49,7 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `src/services/aiService.js` | Gọi Gemini, prompt, schema, kiểm tra phản hồi |
 | `src/middlewares/errorHandler.js` | Trả lỗi dạng JSON; lỗi lạ trả 500, không lộ chi tiết |
 | `src/middlewares/rateLimiter.js` | Giới hạn số lần tra cứu theo IP |
-| `src/errors/AppError.js` | Lỗi có mã HTTP |
+| `src/errors/AppError.js` | Lỗi có mã HTTP và mã lỗi tùy chọn (`AI_*`) |
 
 ### API contract
 
@@ -74,13 +74,15 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
     "recommendation": "…",
     "allergens": ["…"],
     "alternatives": ["…"]
-  }
+  },
+  "aiError": null
 }
 ```
 
-- `nutriments`: giá trị trên 100 g; `null` là không có dữ liệu, khác với `0`.
+- `nutriments`: chỉ đọc giá trị trên 100 g (khóa `_100g` của OpenFoodFacts), không bao giờ dùng giá trị theo khẩu phần. `null` là không có dữ liệu, khác với `0`. Nếu chỉ có năng lượng theo kJ thì quy đổi sang kcal (chia 4,184, làm tròn 1 chữ số thập phân).
 - `product.allergens`: lấy từ nhãn (OpenFoodFacts). `aiAnalysis.allergens`: AI gợi ý thêm từ danh sách thành phần.
-- Lỗi: `{ "success": false, "error": "…" }`, mã 400 (đầu vào sai), 404 (không tìm thấy), 429 (quá giới hạn), 502/504 (OpenFoodFacts hoặc Gemini lỗi hay quá hạn), 500.
+- `aiAnalysis` có thể là `null` khi Gemini lỗi, quá hạn, trả kết quả không hợp lệ hoặc chưa cấu hình key. Khi đó vẫn trả HTTP 200 kèm dữ liệu sản phẩm, và `aiError` là `AI_NOT_CONFIGURED`, `AI_UNAVAILABLE` hoặc `AI_INVALID_RESPONSE`. Kết quả thiếu phân tích AI không được lưu cache.
+- Lỗi: `{ "success": false, "error": "…" }`, mã 400 (đầu vào sai), 404 (không tìm thấy), 429 (quá giới hạn), 502/504 (OpenFoodFacts lỗi hay quá hạn), 500 (lỗi không lường trước).
 
 ### Biến môi trường
 
@@ -92,7 +94,7 @@ Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_
 | :--- | :--- |
 | `main.dart` | Theme Material 3, màn hình đầu |
 | `core/app_colors.dart` | Bảng màu dùng chung |
-| `models/product_model.dart` | Parse phản hồi API |
+| `models/product_model.dart` | Parse phản hồi API; `score` là `null` khi không có phân tích AI |
 | `models/score_level.dart` | Ngưỡng điểm, nhãn và màu |
 | `services/api_service.dart` | Gọi API (timeout 60 s, `ApiException`), URL qua `--dart-define=API_BASE_URL` |
 | `screens/home_screen.dart` | Ô tìm kiếm, nút quét |
@@ -102,6 +104,7 @@ Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_
 | `widgets/macro_bar.dart` | 4 chỉ số dinh dưỡng, "—" khi thiếu dữ liệu |
 | `widgets/zero_analysis_card.dart` | Phân tích Zero và tuyên bố miễn trừ AI |
 | `widgets/tag_section.dart` | Danh sách thẻ (dị ứng, gợi ý thay thế) |
+| `widgets/ai_unavailable_card.dart` | Thẻ "Chưa có đánh giá AI" kèm lý do, hiện thay cho vòng điểm |
 
 Thư mục `linux/`, `macos/`, `windows/` được giữ để có thể build bản desktop; `web/` dùng khi chạy `flutter run -d chrome`.
 
@@ -116,7 +119,19 @@ cd frontend && flutter analyze && flutter test
 
 GitHub Actions (`.github/workflows/ci.yml`) tự chạy `npm test` và `flutter analyze`/`flutter test` cho mỗi pull request và mỗi lần push lên `main`.
 
-## 6. Việc còn mở
+## 6. Nhật ký sửa lỗi QA (29/10/2026, sau PR #1)
+
+QA rà lại `main` sau PR #1 theo danh sách 19 lỗi đã báo cáo. PR #1 đã xử lý phần lớn; ba lỗi còn lại được sửa trong đợt này:
+
+| Mã | Lỗi | Cách sửa |
+| :--- | :--- | :--- |
+| BE-02 | Gemini lỗi hoặc thiếu `GEMINI_API_KEY` làm cả request thất bại, mất luôn dữ liệu sản phẩm; app ném lỗi khi thiếu điểm | Backend trả 200 với `aiAnalysis: null` + `aiError`, không lưu cache kết quả này. App ẩn vòng điểm, hiện thẻ "Chưa có đánh giá AI" kèm lý do |
+| BE-03 | Thiếu giá trị trên 100 g thì backend lấy giá trị theo khẩu phần, hiển thị sai số liệu | Chỉ đọc khóa `_100g` |
+| BE-04 | Sản phẩm chỉ có năng lượng theo kJ hiển thị "—" ở ô Calo | Quy đổi kJ sang kcal |
+
+Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flutter analyze`/`flutter test` trên GitHub Actions.
+
+## 7. Việc còn mở
 
 ### Cần chủ dự án quyết định hoặc cung cấp
 - [ ] Email liên hệ thật cho `docs/PRIVACY_POLICY.md` và User-Agent gửi OpenFoodFacts (đang là `contact@fluw.app`).

@@ -38,13 +38,14 @@ npm test
 
 - Đầu vào giới hạn 100 ký tự, không chấp nhận ký tự điều khiển.
 - Dữ liệu OpenFoodFacts (do cộng đồng đóng góp) được đặt trong khối riêng trong prompt và cắt bớt độ dài, Gemini được dặn bỏ qua mọi chỉ dẫn nằm trong đó.
-- Giá trị dinh dưỡng không có dữ liệu được trả về `null`, không phải `0`.
+- Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
+- Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả dữ liệu sản phẩm với `aiAnalysis: null` và `aiError` cho biết lý do.
 - Gọi Gemini có timeout 30 giây, gọi OpenFoodFacts có timeout 15 giây.
 - Chính sách quyền riêng tư (bản nháp): [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md).
 
 ### Cache và tìm kiếm
 
-- Kết quả thành công (sản phẩm + phân tích AI) được lưu trong bộ nhớ theo mã vạch hoặc tên đã chuẩn hóa, mặc định 24 giờ, tối đa 500 mục (bỏ mục ít dùng nhất). Lỗi không được lưu. Header `X-Cache: HIT|MISS` cho biết kết quả lấy từ đâu.
+- Kết quả thành công (sản phẩm + phân tích AI) được lưu trong bộ nhớ theo mã vạch hoặc tên đã chuẩn hóa, mặc định 24 giờ, tối đa 500 mục (bỏ mục ít dùng nhất). Lỗi và kết quả thiếu phân tích AI không được lưu, để lần sau gọi lại Gemini. Header `X-Cache: HIT|MISS` cho biết kết quả lấy từ đâu.
 - Nhiều yêu cầu cùng lúc cho cùng một sản phẩm chỉ gọi Gemini một lần.
 - Cache nằm trong bộ nhớ của server: mất khi Render khởi động lại.
 - Tìm theo tên ưu tiên tiếng Việt (`langs: vi, en`) và dùng `product_name_vi`, `ingredients_text_vi` khi có.
