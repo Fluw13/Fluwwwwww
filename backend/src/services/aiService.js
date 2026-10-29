@@ -4,6 +4,9 @@ const AppError = require('../errors/AppError');
 const DEFAULT_MODEL = 'gemini-3.6-flash';
 const REQUEST_TIMEOUT_MS = 30000;
 
+// The abort signal below is shared by every attempt, so retries stay within REQUEST_TIMEOUT_MS in total.
+const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2 });
+
 const AI_ERROR_CODES = Object.freeze({
     NOT_CONFIGURED: 'AI_NOT_CONFIGURED',
     UNAVAILABLE: 'AI_UNAVAILABLE',
@@ -107,12 +110,13 @@ const analyzeProduct = async (product) => {
                 systemInstruction: SYSTEM_INSTRUCTION,
                 responseMimeType: 'application/json',
                 responseJsonSchema: ANALYSIS_SCHEMA,
+                httpOptions: { retryOptions: RETRY_OPTIONS },
                 abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
             }
         });
         responseText = result.text;
     } catch (error) {
-        console.error('[Gemini Error]', error.name, error.message);
+        console.error('[Gemini Error]', error.name, error.status ?? '', error.message);
 
         if (isTimeoutError(error)) {
             throw new AppError('Zero phân tích quá lâu. Vui lòng thử lại sau.', 504, AI_ERROR_CODES.UNAVAILABLE);
