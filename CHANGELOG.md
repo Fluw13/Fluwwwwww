@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## 2026-10-29 — vòng 2 (sau review vòng 1)
+
+Review vòng 1: CHƯA DUYỆT, yêu cầu R1–R4. Reviewer: **chưa duyệt**.
+
+| ID | Trạng thái | Nội dung |
+|---|---|---|
+| R1 (FE-4) | Done (chưa compile) | `requestTimeout` 20s → **75s**; `debugDetail` dùng `requestTimeout.inSeconds` (bỏ `const` ở `throw` vì chuỗi có nội suy). Text loading: `'Zero đang phân tích dữ liệu...\nLần đầu mở app có thể mất tới 1 phút.'`, `textAlign: TextAlign.center`. Lý do: Render free spin down sau 15 phút không có traffic, spin up mất khoảng 1 phút (theo reviewer, https://render.com/docs/free). |
+| R2 | Done | `GEMINI_TIMEOUT_MS` (mặc định 25000, giá trị không hợp lệ → mặc định) trong `config.js` + `.env.example`, truyền vào `createAiService({ ..., timeoutMs })`. `withTimeout`: `Promise.race` giữa `generateContent` và timer, `clearTimeout` trong `finally`; khi hết giờ gọi `AbortController.abort()` rồi reject `AppError(AI_UNAVAILABLE, 'Gemini request timed out')` → controller trả 200, `aiAvailable:false`, không cache. |
+| R3 | Done | `docs/PRIVACY_POLICY_DRAFT.md` mục 2.2: "không lưu lịch sử tra cứu gắn với danh tính của bạn" + câu khuyến cáo không nhập thông tin cá nhân vào ô tìm kiếm. Mục 2.5: nhật ký có thể chứa mã vạch/từ khóa trong đường dẫn yêu cầu cùng địa chỉ IP; backend ghi mã vạch vào log khi AI lỗi. |
+| R4 | Done | Thêm dòng cảnh báo lỗi thời ở đầu `FLUW_PROJECT_HANDOFF.md` (không sửa 2 file `.doc`). |
+
+Xác minh SDK (`backend/node_modules/@google/genai/dist/genai.d.ts`, `@google/genai@2.31.0`):
+- VERIFIED: `GenerateContentConfig` có `abortSignal?: AbortSignal` (dòng 6106), kèm ghi chú SDK: hủy chỉ phía client, request phía Google không bị hủy và **vẫn có thể bị tính phí**.
+- VERIFIED: `GenerateContentConfig.httpOptions?: HttpOptions` và `HttpOptions.timeout?: number` (dòng 8492) có tồn tại.
+- Quyết định: chỉ truyền `abortSignal`, không truyền `httpOptions.timeout`. Thêm `httpOptions` ở cấp request có thể ghi đè các tùy chọn HTTP khác của client, và `Promise.race` + abort đã đủ để chặn đúng hạn.
+- UNKNOWN: SDK có thực sự ngắt kết nối mạng khi abort hay không (chưa gọi được Gemini thật). `Promise.race` vẫn bảo đảm hạn 25s dù SDK có tôn trọng signal hay không.
+
+File đổi: `backend/src/services/aiService.js`, `backend/src/config.js`, `backend/src/app.js`, `backend/.env.example`, `backend/test/aiService.test.js`, `backend/test/app.test.js`, `backend/test/productController.test.js`, `frontend/lib/services/api_service.dart`, `frontend/lib/screens/product_detail_screen.dart`, `docs/PRIVACY_POLICY_DRAFT.md`, `FLUW_PROJECT_HANDOFF.md`, `CHANGELOG.md`.
+
+Test mới:
+- `analyzeProduct` với stub `generateContent` không bao giờ resolve, `timeoutMs: 50` → reject `AI_UNAVAILABLE` / `'Gemini request timed out'` trong < 1s; signal nhận được là `AbortSignal` và đã `aborted`.
+- AI trả nhanh với `timeoutMs: 60000` → thành công. Timer được clear: process test tự thoát, không chờ 60s.
+- Controller với AI treo (`timeoutMs: 30`) → 200, `aiAnalysis: null`, `aiAvailable: false`, cache rỗng.
+- `loadConfig`: mặc định 25000; `'abc'` → 25000; `'8000'` → 8000.
+
+Kiểm tra đã chạy (kết quả thật):
+
+| Lệnh | Kết quả |
+|---|---|
+| `cd backend && time npm test` | `# tests 48` · `# pass 48` · `# fail 0` · `# cancelled 0` · `# skipped 0`; `real 0m1.236s` (tự thoát, không có timer treo) |
+| `node --check` mọi `.js` trong `backend/` (trừ `node_modules`) | 15/15 OK |
+| `GEMINI_TIMEOUT_MS=abc node -e "…loadConfig().geminiTimeoutMs"` | `geminiTimeoutMs=25000` |
+| Smoke: `env -u GEMINI_API_KEY GEMINI_TIMEOUT_MS=abc PORT=32581 node server.js` | Khởi động OK (`Server is running on port 32581`) |
+| `curl /api/does-not-exist` | 404 JSON |
+| `curl /api/product/%20` | 400 JSON `INVALID_INPUT` |
+| `curl /api/product/<101 ký tự>` | 400 JSON `INVALID_INPUT` |
+| `kill` server | Đã tắt (`kill -0` → không còn chạy) |
+| `npm audit --omit=dev` | `found 0 vulnerabilities` |
+
+Chưa kiểm tra được: Dart vẫn chưa compile (không có Flutter SDK); chưa gọi Gemini thật để xác nhận abort; hành vi cold start trên Render chưa đo trực tiếp.
+
+---
+
 ## 2026-10-29 — `chore/legal-security-hardening` (vòng 1)
 
 Spec: `docs/ENGINEERING_HANDOFF_LEGAL_SECURITY.md` v1.0. Commit gốc `83b74f9` (main).
@@ -20,7 +63,7 @@ Reviewer: **chưa duyệt** (chờ reviewer ghi APPROVED).
 | FE-1 | Done (chưa compile) | Nhãn "Do AI tạo" cạnh tiêu đề "Zero Deep Think"; dòng miễn trừ dưới thẻ AI, ưu tiên `disclaimer` từ backend, fallback chuỗi mặc định. |
 | FE-2 | Done (chưa compile) | Dòng ghi nguồn mới (ODbL + CC BY-SA), chỉ text. |
 | FE-3 | Done (chưa compile) | `ProductModel.hasAiAnalysis` (đọc `aiAvailable`, fallback `aiAnalysis != null`), `score` kẹp 0–100, thêm `disclaimer`; khi không có AI: ẩn vòng điểm + `scoreRating` + thẻ AI, hiện thông báo "Chưa có phân tích AI…", vẫn hiện macro. |
-| FE-4 | Done (chưa compile) | Bỏ comment debug và tiêu đề "CHI TIẾT LỖI TỪ SERVER"; `ApiException(userMessage, debugDetail)`; chi tiết kỹ thuật chỉ hiện khi `kDebugMode`; timeout 20s; body không phải JSON → thông điệp chung, không hiển thị HTML. |
+| FE-4 | Done (chưa compile) | Bỏ comment debug và tiêu đề "CHI TIẾT LỖI TỪ SERVER"; `ApiException(userMessage, debugDetail)`; chi tiết kỹ thuật chỉ hiện khi `kDebugMode`; timeout 75s (vòng 2, R1 — vòng 1 là 20s, gây hồi quy khi Render cold start); body không phải JSON → thông điệp chung, không hiển thị HTML. |
 | FE-5 | Done | `android:usesCleartextTraffic="false"` trong `src/main/AndroidManifest.xml` (đã kiểm tra XML well-formed). |
 | DOC-1 | Done | `docs/LEGAL_COMPLIANCE.md` (đã đối chiếu trang API của OFF và điều khoản Gemini bản hiện hành; có danh sách nguồn). |
 | DOC-2 | Done | `docs/PRIVACY_POLICY_DRAFT.md` (đầu file ghi "BẢN NHÁP"; placeholder `[EMAIL LIÊN HỆ]`). |
@@ -85,7 +128,7 @@ Nhóm test (`backend/test/`): clamp/rating ở các biên −5, 0, 39, 40, 69, 7
 2. `product_detail_screen.dart`: `FutureBuilder(future: ApiService.fetchProductByBarcode(...))` tạo Future trong `build()` của `StatelessWidget` → gọi lại API mỗi lần rebuild.
 3. `frontend/ios/Runner/Info.plist` không có `NSCameraUsageDescription` → app iOS có thể crash khi mở camera / bị App Store từ chối.
 4. Dữ liệu dinh dưỡng thiếu được chuẩn hóa thành `0` ở backend → không phân biệt được "0 thật" và "thiếu dữ liệu" (cả trên UI lẫn prompt AI). Sửa cần đổi contract (`null`).
-5. Không có timeout cho lời gọi Gemini. OFF tối đa 10s + Gemini không giới hạn, trong khi app timeout 20s → app có thể báo hết thời gian trong khi server vẫn đang xử lý. Gợi ý: `config.httpOptions.timeout` của `@google/genai`.
+5. ~~Không có timeout cho lời gọi Gemini.~~ **Đã xử lý ở vòng 2 (R2)**: `GEMINI_TIMEOUT_MS` mặc định 25s; ngân sách server OFF 10s + Gemini 25s = 35s < timeout app 75s.
 6. `FLUW_PROJECT_HANDOFF.md`, `FLUW_PROJECT_HANDOFF.doc`, `FLUW_PROJECT_HANDOFF_Updated.doc` còn mô tả `src/services/geminiService.js` (đã xóa) → tài liệu lỗi thời.
 7. `frontend/lib/widgets/score_badge.dart` dùng ngưỡng 80/60/40, khác `circular_score_ring.dart` (70/40); hiện không được dùng ở đâu.
 8. Tìm theo tên dùng `POST search.openfoodfacts.org/search` với `langs: ['en']` — có thể kém chính xác với từ khóa tiếng Việt; giới hạn tần suất của dịch vụ này UNKNOWN.

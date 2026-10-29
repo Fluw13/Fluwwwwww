@@ -23,7 +23,8 @@ Fluw là ứng dụng giúp bạn tra cứu thông tin thực phẩm bằng mã 
 ### 2.2. Mã vạch hoặc từ khóa tìm kiếm
 
 - Khi bạn quét mã vạch hoặc nhập tên sản phẩm, **chỉ chuỗi mã vạch hoặc từ khóa đó** được gửi tới máy chủ Fluw (lưu trữ trên dịch vụ Render).
-- Fluw hiện **không** yêu cầu tạo tài khoản, **không** thu thập họ tên, email, số điện thoại hay vị trí, và **không** lưu lịch sử tra cứu trên thiết bị hoặc trên máy chủ.
+- Fluw hiện **không** yêu cầu tạo tài khoản, **không** thu thập họ tên, email, số điện thoại hay vị trí, và **không** lưu lịch sử tra cứu gắn với danh tính của bạn (trên thiết bị hoặc trên máy chủ). Mã vạch/từ khóa vẫn có thể xuất hiện trong nhật ký kỹ thuật (xem mục 2.5).
+- Không nên nhập thông tin cá nhân vào ô tìm kiếm, vì từ khóa được gửi tới Open Food Facts.
 
 ### 2.3. Bên thứ ba nhận dữ liệu
 
@@ -41,7 +42,7 @@ Fluw không gửi thông tin nhận dạng cá nhân của bạn tới Google Ge
 
 ### 2.5. Nhật ký kỹ thuật
 
-Máy chủ Fluw và nhà cung cấp hosting có thể ghi nhật ký kỹ thuật (ví dụ: thời điểm, đường dẫn yêu cầu, địa chỉ IP) phục vụ vận hành, chống lạm dụng (giới hạn số yêu cầu mỗi phút theo địa chỉ IP) và xử lý sự cố. [CẦN XÁC MINH: thời gian lưu nhật ký theo cấu hình Render.]
+Máy chủ Fluw và nhà cung cấp hosting có thể ghi nhật ký kỹ thuật phục vụ vận hành, chống lạm dụng (giới hạn số yêu cầu mỗi phút theo địa chỉ IP) và xử lý sự cố. Nhật ký này có thể chứa thời điểm, **đường dẫn yêu cầu — bao gồm mã vạch hoặc từ khóa bạn tra cứu** — cùng **địa chỉ IP** của bạn. Ngoài ra, khi phần phân tích AI gặp lỗi, máy chủ Fluw ghi mã vạch của sản phẩm vào nhật ký lỗi để chẩn đoán. [CẦN XÁC MINH: thời gian lưu nhật ký theo cấu hình Render.]
 
 ## 3. Nội dung do AI tạo
 

@@ -1,4 +1,7 @@
 # 📋 TÀI LIỆU BÀN GIAO & TỔNG KẾT TOÀN DIỆN DỰ ÁN FLUW
+
+> Lưu ý (29/10/2026): mục III mô tả cấu trúc backend cũ (src/index.js, geminiService.js) đã lỗi thời — xem CHANGELOG.md và backend/src/.
+
 **Dự án:** Ứng dụng Di động Quét Mã Vạch & Trợ Lý Dinh Dưỡng Thông Minh AI  
 **Tên ứng dụng:** **Fluw**  
 **Tên Trợ lý AI:** **Zero**  
