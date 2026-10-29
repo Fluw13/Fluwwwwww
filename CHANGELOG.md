@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## 2026-10-29 — Review vòng 2: ✅ APPROVED
+
+Reviewer: **APPROVED** — nhánh `chore/legal-security-hardening` tại commit `3c6e551`, đối chiếu spec `docs/ENGINEERING_HANDOFF_LEGAL_SECURITY.md` v1.0.
+
+Reviewer tự chạy lại (không dựa vào báo cáo của kỹ sư):
+
+| Kiểm tra | Kết quả |
+|---|---|
+| `npm ci` + `npm test` | 48/48 pass, tự thoát sau ~1,3s (không còn timer treo) |
+| `node --check` mọi file `.js` của backend | OK |
+| `npm audit --omit=dev` | 0 lỗ hổng |
+| R1 — timeout app 75s + thông báo cold start | Đúng yêu cầu. Thời gian khởi động lại ~1 phút của Render free là VERIFIED ([render.com/docs/free](https://render.com/docs/free)) |
+| R2 — timeout Gemini 25s (`Promise.race` + `abortSignal`) | Đúng yêu cầu. `abortSignal?: AbortSignal` có trong `@google/genai@2.31.0` `genai.d.ts` (VERIFIED) |
+| R3 — chính sách quyền riêng tư nói đúng về nhật ký | Đúng yêu cầu |
+| R4 — dòng cảnh báo trong tài liệu bàn giao cũ | Đúng yêu cầu |
+| Điều khoản Gemini (hiệu lực 23/03/2026) trong `docs/LEGAL_COMPLIANCE.md` | Reviewer đã đối chiếu lại với trang gốc, khớp |
+| Rà diff Dart bằng mắt (cú pháp, null-safety, `const`) | Không thấy lỗi. **Chưa compile** |
+
+Điều kiện trước khi merge vào `main` (việc của chủ dự án):
+1. Chạy `flutter analyze` và `flutter test` trong `frontend/`, build thử APK.
+2. Đặt biến môi trường trên Render: `OFF_CONTACT_EMAIL`, `GEMINI_MODEL`, `GEMINI_TIMEOUT_MS`.
+3. Làm các việc ở mục 4 của spec (đổi mật khẩu keystore, bật GitHub secret scanning, đặt budget alert cho Gemini).
+4. Sau khi deploy, thử lại đúng mã vạch đã gây incident 404 rồi mới đóng incident.
+
+Rủi ro được chấp nhận: request Gemini bị hủy do hết giờ vẫn có thể bị tính phí. Các "Phát hiện thêm" #1–4 và #6–13 để lại cho đợt sau, nên ưu tiên #3 (iOS thiếu `NSCameraUsageDescription`) và #4 (dữ liệu dinh dưỡng thiếu bị hiện thành 0).
+
 ## 2026-10-29 — vòng 2 (sau review vòng 1)
 
 Review vòng 1: CHƯA DUYỆT, yêu cầu R1–R4. Reviewer: **chưa duyệt**.
