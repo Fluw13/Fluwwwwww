@@ -35,7 +35,7 @@ test('TtlCache bỏ mục ít được dùng nhất khi vượt giới hạn', (
 });
 
 test('productCacheKey tách mã vạch với tên và chuẩn hóa tên tiếng Việt', () => {
-    assert.equal(productCacheKey('8934563138164'), barcodeKey('8934563138164'));
+    assert.equal(productCacheKey('8934563138165'), barcodeKey('8934563138165'));
     assert.equal(productCacheKey('Sữa   CHUA'), productCacheKey('sữa chua'));
     assert.equal(productCacheKey('Sữa chua'), productCacheKey('Sữa chua'));
     assert.notEqual(productCacheKey('12345678'), productCacheKey('name 12345678'));

@@ -19,7 +19,7 @@ Backend theo từng lớp: `routes` → `controllers` → `services` (`productSe
 | `src/services/ai/` | `geminiClient` (gọi Gemini, timeout, lỗi), `analysisPrompt` (prompt + schema), `analysisParser` (kiểm tra đầu ra AI) |
 | `src/errors/` | `AppError`, danh sách mã lỗi `errorCodes` |
 
-Phản hồi lỗi có dạng `{ "success": false, "error": "<thông báo tiếng Việt>", "code": "<MÃ_LỖI>" }`. Mã lỗi: `INVALID_QUERY`, `BAD_REQUEST`, `ROUTE_NOT_FOUND`, `PRODUCT_NOT_FOUND`, `RATE_LIMITED`, `UPSTREAM_RATE_LIMITED` (kèm header `Retry-After`), `UPSTREAM_TIMEOUT`, `UPSTREAM_UNAVAILABLE`, `INTERNAL_ERROR`.
+Phản hồi lỗi có dạng `{ "success": false, "error": "<thông báo tiếng Việt>", "code": "<MÃ_LỖI>" }`. Mã lỗi: `INVALID_QUERY`, `INVALID_BARCODE`, `BAD_REQUEST`, `ROUTE_NOT_FOUND`, `PRODUCT_NOT_FOUND`, `RATE_LIMITED`, `UPSTREAM_RATE_LIMITED` (kèm header `Retry-After`), `UPSTREAM_TIMEOUT`, `UPSTREAM_UNAVAILABLE`, `INTERNAL_ERROR`.
 
 ## Chạy backend
 
@@ -50,7 +50,8 @@ npm test
 - Đầu ra của Gemini được kiểm tra lại: điểm phải là số thật (không chấp nhận `null`), danh sách chỉ giữ chuỗi và bị giới hạn độ dài.
 - Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
 - Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả dữ liệu sản phẩm với `aiAnalysis: null` và `aiError` cho biết lý do.
-- Gọi Gemini có timeout 20 giây, gọi OpenFoodFacts có timeout 10 giây (tổng tối đa 30 giây, còn dư cho cold start của Render trong giới hạn 60 giây của app).
+- Gọi Gemini có timeout 20 giây (tự thử lại 1 lần khi gặp lỗi tạm thời 408, 429, 500, 502-504 hoặc lỗi mạng, vẫn nằm trong 20 giây), gọi OpenFoodFacts có timeout 10 giây. Tổng tối đa 30 giây, còn dư cho cold start của Render (~50 giây) trong giới hạn 120 giây của app; app gọi `/health` khi mở để đánh thức server.
+- Mã vạch 12-14 chữ số (UPC-A, EAN-13, GTIN-14) được kiểm tra số kiểm tra; sai thì trả `400 INVALID_BARCODE` thay vì gọi OpenFoodFacts.
 - OpenFoodFacts trả 404 → `PRODUCT_NOT_FOUND`; trả 429 → `503 UPSTREAM_RATE_LIMITED` kèm `Retry-After: 60`; các lỗi khác → 502/504.
 - Tra cứu theo mã vạch chỉ lấy các trường cần dùng (`fields=`) thay vì cả tài liệu sản phẩm.
 - Server dừng êm khi nhận `SIGTERM`/`SIGINT` (ngừng nhận kết nối mới, chờ request đang chạy).
@@ -62,6 +63,7 @@ npm test
 - Nhiều yêu cầu cùng lúc cho cùng một sản phẩm chỉ gọi Gemini một lần.
 - Cache nằm trong bộ nhớ của server: mất khi Render khởi động lại.
 - Tìm theo tên ưu tiên tiếng Việt (`langs: vi, en`) và dùng `product_name_vi`, `ingredients_text_vi` khi có.
+- Lấy 10 kết quả rồi chọn sản phẩm có tên/thương hiệu khớp nhiều từ nhất với từ khóa (không phân biệt dấu và chữ hoa, `src/search/pickBestSearchHit.js`); bằng điểm thì giữ thứ tự của máy tìm kiếm.
 
 ## Chạy frontend
 

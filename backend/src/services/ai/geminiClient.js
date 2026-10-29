@@ -3,8 +3,10 @@ const AppError = require('../../errors/AppError');
 const { AI_ERROR_CODES } = require('../../errors/errorCodes');
 
 const DEFAULT_MODEL = 'gemini-3.6-flash';
-// Kept well under the app's 60 s client timeout so a Render cold start still fits in the budget.
+// Kept well under the app's 120 s client timeout so a Render cold start still fits in the budget.
 const REQUEST_TIMEOUT_MS = 20000;
+// The abort signal below is shared by every attempt, so retries stay within REQUEST_TIMEOUT_MS in total.
+const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2 });
 
 let client = null;
 
@@ -26,7 +28,7 @@ const isTimeoutError = (error) => error?.name === 'TimeoutError' || error?.name 
 
 const toGeminiError = (error) => {
     // Only the error type and message are logged; request config (which holds the key) never is.
-    console.error('[Gemini Error]', error?.name, error?.message);
+    console.error('[Gemini Error]', error?.name, error?.status ?? '', error?.message);
 
     if (isTimeoutError(error)) {
         return new AppError('Zero phân tích quá lâu. Vui lòng thử lại sau.', 504, AI_ERROR_CODES.UNAVAILABLE);
@@ -46,6 +48,7 @@ const generateJson = async ({ systemInstruction, prompt, schema }) => {
                 systemInstruction,
                 responseMimeType: 'application/json',
                 responseJsonSchema: schema,
+                httpOptions: { retryOptions: RETRY_OPTIONS },
                 abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
             }
         });

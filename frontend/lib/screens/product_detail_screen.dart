@@ -69,14 +69,23 @@ class _LoadingView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: AppColors.accent),
-          SizedBox(height: 16),
-          Text('Zero đang phân tích dữ liệu...'),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: AppColors.accent),
+            const SizedBox(height: 16),
+            const Text('Zero đang phân tích dữ liệu...'),
+            const SizedBox(height: 8),
+            Text(
+              'Nếu máy chủ vừa khởi động, lần tra cứu đầu tiên có thể mất khoảng 1 phút.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -7,7 +7,7 @@ const aiService = require('../src/services/aiService');
 const productService = require('../src/services/productService');
 
 const sampleProduct = {
-    barcode: '8934563138164',
+    barcode: '8934563138165',
     product_name: 'Mì ăn liền',
     brands: 'Hảo Hảo',
     image_front_url: '',
@@ -51,7 +51,7 @@ test('GET /api/product/:query trả về sản phẩm kèm phân tích AI', asyn
     mock.method(foodApiService, 'getFoodData', async () => sampleProduct);
     mock.method(aiService, 'analyzeProduct', async () => sampleAnalysis);
 
-    const response = await fetch(baseUrl + '/api/product/8934563138164');
+    const response = await fetch(baseUrl + '/api/product/8934563138165');
     const body = await response.json();
 
     assert.equal(response.status, 200);
@@ -62,7 +62,7 @@ test('GET /api/product/:query trả về sản phẩm kèm phân tích AI', asyn
     assert.equal(body.aiError, null);
     assert.equal(response.headers.get('x-cache'), 'MISS');
 
-    const cachedResponse = await fetch(baseUrl + '/api/product/8934563138164');
+    const cachedResponse = await fetch(baseUrl + '/api/product/8934563138165');
 
     assert.equal(cachedResponse.headers.get('x-cache'), 'HIT');
     assert.deepEqual(await cachedResponse.json(), body);
@@ -106,7 +106,7 @@ test('GET /api/product/:query vẫn trả 200 kèm dữ liệu sản phẩm khi 
         throw new AppError('Zero tạm thời không thể phân tích sản phẩm.', 502, 'AI_UNAVAILABLE');
     });
 
-    const response = await fetch(baseUrl + '/api/product/8934563138164');
+    const response = await fetch(baseUrl + '/api/product/8934563138165');
     const body = await response.json();
 
     assert.equal(response.status, 200);

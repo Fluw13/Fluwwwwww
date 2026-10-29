@@ -22,9 +22,20 @@ class ApiService {
     defaultValue: 'https://fluw.onrender.com/api/product',
   );
 
-  static const Duration _timeout = Duration(seconds: 60);
+  // Covers a Render free-tier cold start (about 50 s) plus the backend's OpenFoodFacts (10 s) and Gemini (20 s) budgets.
+  static const Duration _timeout = Duration(seconds: 120);
+
+  static final Uri _healthUrl = Uri.parse(_baseUrl).replace(path: '/health');
 
   final http.Client _client;
+
+  Future<void> wakeUpServer() async {
+    try {
+      await _client.get(_healthUrl);
+    } on Exception {
+      // Best effort only: a real connection problem is reported by fetchProduct.
+    }
+  }
 
   Future<ProductModel> fetchProduct(String query) async {
     final Uri url = Uri.parse('$_baseUrl/${Uri.encodeComponent(query)}');

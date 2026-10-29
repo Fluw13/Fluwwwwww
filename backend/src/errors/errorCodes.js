@@ -1,6 +1,7 @@
 // Machine-readable codes returned to clients. Messages may change; codes are part of the API contract.
 const API_ERROR_CODES = Object.freeze({
     INVALID_QUERY: 'INVALID_QUERY',
+    INVALID_BARCODE: 'INVALID_BARCODE',
     BAD_REQUEST: 'BAD_REQUEST',
     ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
     PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',

@@ -5,7 +5,7 @@ import 'package:frontend/models/score_level.dart';
 Map<String, dynamic> _buildResponse({Object? score = 82}) {
   return {
     'success': true,
-    'barcode': '8934563138164',
+    'barcode': '8934563138165',
     'product': {
       'product_name': 'Sữa chua',
       'brands': 'Vinamilk',

@@ -2,6 +2,7 @@ const axios = require('axios');
 const AppError = require('../../errors/AppError');
 const { API_ERROR_CODES } = require('../../errors/errorCodes');
 const { version: APP_VERSION } = require('../../../package.json');
+const { pickBestSearchHit } = require('../../search/pickBestSearchHit');
 
 const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
@@ -27,6 +28,7 @@ const SHARED_FIELDS = [
 const BARCODE_FIELDS = [...SHARED_FIELDS, 'allergens_tags'].join(',');
 const SEARCH_FIELDS = SHARED_FIELDS;
 const SEARCH_LANGUAGES = ['vi', 'en'];
+const SEARCH_PAGE_SIZE = 10;
 
 // OpenFoodFacts asks every client to identify itself as `AppName/Version (ContactEmail)`.
 const buildUserAgent = (contactEmail) => {
@@ -107,7 +109,7 @@ const readSearchResponse = (response, name) => {
         throw notFoundError('có tên "' + name + '"');
     }
 
-    return hits[0];
+    return pickBestSearchHit(hits, name);
 };
 
 const send = async (request) => {
@@ -118,7 +120,7 @@ const send = async (request) => {
     }
 };
 
-const buildSearchRequest = (name) => ({ q: name, page_size: 1, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
+const buildSearchRequest = (name) => ({ q: name, page_size: SEARCH_PAGE_SIZE, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
 
 const fetchByBarcode = async (barcode) => {
     const response = await send(() => httpClient.get(BARCODE_PRODUCT_URL + encodeURIComponent(barcode) + '.json', {

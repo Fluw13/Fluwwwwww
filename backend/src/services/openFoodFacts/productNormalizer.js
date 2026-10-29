@@ -23,7 +23,7 @@ const readEnergyKcal = (nutriments) => {
         return kcal;
     }
 
-    const kilojoules = readNutriment(nutriments, 'energy');
+    const kilojoules = readNutriment(nutriments, 'energy') ?? readNutriment(nutriments, 'energy-kj');
     return kilojoules === null ? null : Math.round((kilojoules / KILOJOULES_PER_KCAL) * 10) / 10;
 };
 
