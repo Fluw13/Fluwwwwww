@@ -98,8 +98,11 @@ const fetchRawByName = async (name) => {
     return hits[0];
 };
 
+const KILOJOULES_PER_KCAL = 4.184;
+
+// Only `<key>_100g` is read: the bare `<key>` in OpenFoodFacts is the per-serving value.
 const readNutriment = (nutriments, key) => {
-    const value = nutriments[key + '_100g'] ?? nutriments[key];
+    const value = nutriments[key + '_100g'];
 
     if (value === undefined || value === null || value === '') {
         return null;
@@ -107,6 +110,16 @@ const readNutriment = (nutriments, key) => {
 
     const amount = Number(value);
     return Number.isFinite(amount) && amount >= 0 ? amount : null;
+};
+
+const readEnergyKcal = (nutriments) => {
+    const kcal = readNutriment(nutriments, 'energy-kcal');
+    if (kcal !== null) {
+        return kcal;
+    }
+
+    const kilojoules = readNutriment(nutriments, 'energy');
+    return kilojoules === null ? null : Math.round((kilojoules / KILOJOULES_PER_KCAL) * 10) / 10;
 };
 
 const readHttpsUrl = (value) => (typeof value === 'string' && value.startsWith('https://') ? value : '');
@@ -137,7 +150,7 @@ const normalizeProduct = (raw, fallbackCode) => {
         ingredients_text: raw.ingredients_text_vi || raw.ingredients_text || null,
         allergens: readAllergens(Array.isArray(raw.allergens_tags) ? raw.allergens_tags : raw.allergens),
         nutriments: {
-            'energy-kcal': readNutriment(nutriments, 'energy-kcal'),
+            'energy-kcal': readEnergyKcal(nutriments),
             proteins: readNutriment(nutriments, 'proteins'),
             fat: readNutriment(nutriments, 'fat'),
             carbohydrates: readNutriment(nutriments, 'carbohydrates')

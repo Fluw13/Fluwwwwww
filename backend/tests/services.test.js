@@ -106,3 +106,22 @@ test('parseAnalysis giới hạn điểm và từ chối phản hồi không h�
     assert.throws(() => parseAnalysis('không phải JSON'), (error) => error.statusCode === 502);
     assert.throws(() => parseAnalysis('{"score": "cao"}'), (error) => error.statusCode === 502);
 });
+
+test('normalizeProduct không dùng giá trị theo khẩu phần khi thiếu giá trị trên 100g', () => {
+    const product = normalizeProduct({ nutriments: { 'energy-kcal': 45, proteins: 3, fat_100g: 0 } }, '1');
+
+    assert.equal(product.nutriments['energy-kcal'], null);
+    assert.equal(product.nutriments.proteins, null);
+    assert.equal(product.nutriments.fat, 0);
+});
+
+test('normalizeProduct quy đổi kJ sang kcal khi sản phẩm chỉ có năng lượng theo kJ', () => {
+    const product = normalizeProduct({ nutriments: { energy_100g: 1674 } }, '1');
+
+    assert.equal(product.nutriments['energy-kcal'], 400.1);
+    assert.equal(normalizeProduct({ nutriments: { 'energy-kcal_100g': 52, energy_100g: 1674 } }, '1').nutriments['energy-kcal'], 52);
+});
+
+test('parseAnalysis gắn mã AI_INVALID_RESPONSE cho phản hồi không hợp lệ', () => {
+    assert.throws(() => parseAnalysis('không phải JSON'), (error) => error.code === 'AI_INVALID_RESPONSE');
+});

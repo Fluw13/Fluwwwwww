@@ -15,13 +15,28 @@ const cache = new TtlCache({
 
 const inFlightLookups = new Map();
 
+// AI analysis is optional: when Gemini fails, the OpenFoodFacts data is still returned.
+const analyzeSafely = async (product) => {
+    try {
+        return { aiAnalysis: await aiService.analyzeProduct(product), aiError: null };
+    } catch (error) {
+        console.error('[AI Analysis Skipped]', error.code || error.name, error.message);
+        return { aiAnalysis: null, aiError: error.code || aiService.AI_ERROR_CODES.UNAVAILABLE };
+    }
+};
+
 const lookUpProduct = async (query) => {
     const product = await foodApiService.getFoodData(query);
-    const aiAnalysis = await aiService.analyzeProduct(product);
-    return { product, aiAnalysis };
+    const { aiAnalysis, aiError } = await analyzeSafely(product);
+    return { product, aiAnalysis, aiError };
 };
 
 const storeResult = (query, result) => {
+    // Results without AI analysis are not cached so the next lookup can retry Gemini.
+    if (result.aiAnalysis === null) {
+        return;
+    }
+
     cache.set(productCacheKey(query), result);
 
     if (!isBarcode(query) && isBarcode(String(result.product.barcode))) {

@@ -22,7 +22,7 @@ test('lần tra cứu thứ hai dùng cache, không gọi lại OpenFoodFacts v�
 
     assert.equal(first.cacheStatus, 'MISS');
     assert.equal(second.cacheStatus, 'HIT');
-    assert.deepEqual(second.result, { product, aiAnalysis: analysis });
+    assert.deepEqual(second.result, { product, aiAnalysis: analysis, aiError: null });
     assert.equal(getFoodData.mock.callCount(), 1);
     assert.equal(analyzeProduct.mock.callCount(), 1);
 });
@@ -75,4 +75,38 @@ test('từ khóa không hợp lệ bị từ chối trước khi gọi dịch v�
 
     await assert.rejects(productService.getProductInfo('a'.repeat(101)), (error) => error.statusCode === 400);
     assert.equal(getFoodData.mock.callCount(), 0);
+});
+
+test('AI lỗi vẫn trả dữ liệu sản phẩm, kèm aiError, và không lưu cache', async () => {
+    const getFoodData = mock.method(foodApiService, 'getFoodData', async () => product);
+    let aiCalls = 0;
+    mock.method(aiService, 'analyzeProduct', async () => {
+        aiCalls += 1;
+        if (aiCalls === 1) {
+            throw new AppError('Zero phân tích quá lâu.', 504, 'AI_UNAVAILABLE');
+        }
+        return analysis;
+    });
+
+    const first = await productService.getProductInfo('8934563138164');
+
+    assert.deepEqual(first.result, { product, aiAnalysis: null, aiError: 'AI_UNAVAILABLE' });
+
+    const second = await productService.getProductInfo('8934563138164');
+
+    assert.equal(second.cacheStatus, 'MISS');
+    assert.deepEqual(second.result, { product, aiAnalysis: analysis, aiError: null });
+    assert.equal(getFoodData.mock.callCount(), 2);
+});
+
+test('thiếu GEMINI_API_KEY trả về aiError AI_NOT_CONFIGURED thay vì lỗi 500', async () => {
+    mock.method(foodApiService, 'getFoodData', async () => product);
+    mock.method(aiService, 'analyzeProduct', async () => {
+        throw new AppError('Máy chủ chưa cấu hình GEMINI_API_KEY.', 503, 'AI_NOT_CONFIGURED');
+    });
+
+    const { result } = await productService.getProductInfo('8934563138164');
+
+    assert.equal(result.aiAnalysis, null);
+    assert.equal(result.aiError, 'AI_NOT_CONFIGURED');
 });

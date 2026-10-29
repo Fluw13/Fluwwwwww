@@ -2,7 +2,9 @@
 
 import '../core/app_colors.dart';
 import '../models/product_model.dart';
+import '../models/score_level.dart';
 import '../services/api_service.dart';
+import '../widgets/ai_unavailable_card.dart';
 import '../widgets/circular_score_ring.dart';
 import '../widgets/macro_bar.dart';
 import '../widgets/tag_section.dart';
@@ -122,6 +124,9 @@ class _ProductContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final int? score = product.score;
+    final ScoreLevel? level = product.level;
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -149,12 +154,15 @@ class _ProductContent extends StatelessWidget {
               style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
             const SizedBox(height: 24),
-            CircularScoreRing(score: product.score),
-            const SizedBox(height: 12),
-            Text(
-              product.level.label,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
+            if (score != null && level != null) ...[
+              CircularScoreRing(score: score),
+              const SizedBox(height: 12),
+              Text(
+                level.label,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ] else
+              AiUnavailableCard(aiError: product.aiError),
             const SizedBox(height: 24),
             MacroBar(
               calories: product.calories,
@@ -163,11 +171,13 @@ class _ProductContent extends StatelessWidget {
               carbs: product.carbs,
             ),
             const SizedBox(height: 24),
-            ZeroAnalysisCard(
-              deepThink: product.deepThink,
-              recommendation: product.recommendation,
-            ),
-            const SizedBox(height: 24),
+            if (product.hasAnalysis) ...[
+              ZeroAnalysisCard(
+                deepThink: product.deepThink,
+                recommendation: product.recommendation,
+              ),
+              const SizedBox(height: 24),
+            ],
             Align(
               alignment: Alignment.centerLeft,
               child: TagSection(

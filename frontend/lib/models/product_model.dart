@@ -16,13 +16,15 @@ class ProductModel {
     required this.declaredAllergens,
     required this.suggestedAllergens,
     required this.alternatives,
+    this.aiError,
   });
 
   final String barcode;
   final String name;
   final String brand;
   final String imageUrl;
-  final int score;
+  /// Null when the backend could not produce an AI analysis (see [aiError]).
+  final int? score;
   final double? calories;
   final double? protein;
   final double? fat;
@@ -32,8 +34,14 @@ class ProductModel {
   final List<String> declaredAllergens;
   final List<String> suggestedAllergens;
   final List<String> alternatives;
+  final String? aiError;
 
-  ScoreLevel get level => ScoreLevel.fromScore(score);
+  bool get hasAnalysis => score != null;
+
+  ScoreLevel? get level {
+    final int? value = score;
+    return value == null ? null : ScoreLevel.fromScore(value);
+  }
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     final product = _asMap(json['product']);
@@ -44,27 +52,33 @@ class ProductModel {
     final Set<String> declaredKeys = declaredAllergens.map((name) => name.toLowerCase()).toSet();
 
     final Object? rawScore = analysis['score'];
-    if (rawScore is! num) {
-      throw const FormatException('Phản hồi thiếu điểm sức khỏe.');
-    }
+    final int? score =
+        rawScore is num && rawScore.isFinite ? rawScore.round().clamp(0, 100).toInt() : null;
+    final bool hasAnalysis = score != null;
+    final Map<String, dynamic> usableAnalysis = hasAnalysis ? analysis : const {};
+    final Object? rawAiError = json['aiError'];
+    final String? aiError = hasAnalysis
+        ? null
+        : (rawAiError is String && rawAiError.isNotEmpty ? rawAiError : 'AI_UNAVAILABLE');
 
     return ProductModel(
       barcode: json['barcode'] as String? ?? '',
       name: product['product_name'] as String? ?? 'Sản phẩm chưa có tên',
       brand: product['brands'] as String? ?? 'Chưa rõ thương hiệu',
       imageUrl: product['image_front_url'] as String? ?? '',
-      score: rawScore.round().clamp(0, 100).toInt(),
+      score: score,
       calories: _toDouble(nutriments['energy-kcal']),
       protein: _toDouble(nutriments['proteins']),
       fat: _toDouble(nutriments['fat']),
       carbs: _toDouble(nutriments['carbohydrates']),
-      deepThink: analysis['deepThink'] as String? ?? '',
-      recommendation: analysis['recommendation'] as String? ?? '',
+      deepThink: usableAnalysis['deepThink'] as String? ?? '',
+      recommendation: usableAnalysis['recommendation'] as String? ?? '',
       declaredAllergens: declaredAllergens,
-      suggestedAllergens: _toStringList(analysis['allergens'])
+      suggestedAllergens: _toStringList(usableAnalysis['allergens'])
           .where((name) => !declaredKeys.contains(name.toLowerCase()))
           .toList(),
-      alternatives: _toStringList(analysis['alternatives']),
+      alternatives: _toStringList(usableAnalysis['alternatives']),
+      aiError: aiError,
     );
   }
 

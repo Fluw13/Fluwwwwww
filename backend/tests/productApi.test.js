@@ -59,6 +59,7 @@ test('GET /api/product/:query trả về sản phẩm kèm phân tích AI', asyn
     assert.equal(body.barcode, sampleProduct.barcode);
     assert.deepEqual(body.product, sampleProduct);
     assert.deepEqual(body.aiAnalysis, sampleAnalysis);
+    assert.equal(body.aiError, null);
     assert.equal(response.headers.get('x-cache'), 'MISS');
 
     const cachedResponse = await fetch(baseUrl + '/api/product/8934563138164');
@@ -97,4 +98,20 @@ test('đường dẫn không tồn tại trả về 404', async () => {
 
     assert.equal(response.status, 404);
     assert.equal((await response.json()).success, false);
+});
+
+test('GET /api/product/:query vẫn trả 200 kèm dữ liệu sản phẩm khi AI lỗi', async () => {
+    mock.method(foodApiService, 'getFoodData', async () => sampleProduct);
+    mock.method(aiService, 'analyzeProduct', async () => {
+        throw new AppError('Zero tạm thời không thể phân tích sản phẩm.', 502, 'AI_UNAVAILABLE');
+    });
+
+    const response = await fetch(baseUrl + '/api/product/8934563138164');
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body.product, sampleProduct);
+    assert.equal(body.aiAnalysis, null);
+    assert.equal(body.aiError, 'AI_UNAVAILABLE');
+    assert.equal(response.headers.get('x-cache'), 'MISS');
 });

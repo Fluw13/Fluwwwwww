@@ -3,6 +3,12 @@ const AppError = require('../errors/AppError');
 
 const DEFAULT_MODEL = 'gemini-3.6-flash';
 const REQUEST_TIMEOUT_MS = 30000;
+
+const AI_ERROR_CODES = Object.freeze({
+    NOT_CONFIGURED: 'AI_NOT_CONFIGURED',
+    UNAVAILABLE: 'AI_UNAVAILABLE',
+    INVALID_RESPONSE: 'AI_INVALID_RESPONSE'
+});
 const MAX_INGREDIENTS_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 200;
 
@@ -33,7 +39,7 @@ const getAiClient = () => {
         const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-            throw new AppError('Máy chủ chưa cấu hình GEMINI_API_KEY.', 500);
+            throw new AppError('Máy chủ chưa cấu hình GEMINI_API_KEY.', 503, AI_ERROR_CODES.NOT_CONFIGURED);
         }
 
         aiClient = new GoogleGenAI({ apiKey });
@@ -69,13 +75,13 @@ const parseAnalysis = (responseText) => {
     try {
         analysis = JSON.parse(responseText);
     } catch {
-        throw new AppError('Zero trả về dữ liệu phân tích không hợp lệ. Vui lòng thử lại.', 502);
+        throw new AppError('Zero trả về dữ liệu phân tích không hợp lệ. Vui lòng thử lại.', 502, AI_ERROR_CODES.INVALID_RESPONSE);
     }
 
     const score = Number(analysis.score);
 
     if (!Number.isFinite(score)) {
-        throw new AppError('Zero không trả về điểm sức khỏe hợp lệ. Vui lòng thử lại.', 502);
+        throw new AppError('Zero không trả về điểm sức khỏe hợp lệ. Vui lòng thử lại.', 502, AI_ERROR_CODES.INVALID_RESPONSE);
     }
 
     return {
@@ -109,13 +115,13 @@ const analyzeProduct = async (product) => {
         console.error('[Gemini Error]', error.name, error.message);
 
         if (isTimeoutError(error)) {
-            throw new AppError('Zero phân tích quá lâu. Vui lòng thử lại sau.', 504);
+            throw new AppError('Zero phân tích quá lâu. Vui lòng thử lại sau.', 504, AI_ERROR_CODES.UNAVAILABLE);
         }
 
-        throw new AppError('Zero tạm thời không thể phân tích sản phẩm. Vui lòng thử lại sau.', 502);
+        throw new AppError('Zero tạm thời không thể phân tích sản phẩm. Vui lòng thử lại sau.', 502, AI_ERROR_CODES.UNAVAILABLE);
     }
 
     return parseAnalysis(responseText);
 };
 
-module.exports = { analyzeProduct, buildPrompt, parseAnalysis };
+module.exports = { analyzeProduct, buildPrompt, parseAnalysis, AI_ERROR_CODES };

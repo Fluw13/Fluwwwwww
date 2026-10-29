@@ -48,11 +48,38 @@ void main() {
       expect(ProductModel.fromJson(_buildResponse(score: -5)).score, 0);
     });
 
-    test('ném FormatException khi thiếu điểm sức khỏe', () {
-      expect(
-        () => ProductModel.fromJson(_buildResponse(score: null)),
-        throwsFormatException,
-      );
+    test('bỏ qua phân tích AI khi thiếu điểm sức khỏe nhưng vẫn giữ dữ liệu sản phẩm', () {
+      final ProductModel product = ProductModel.fromJson(_buildResponse(score: null));
+
+      expect(product.hasAnalysis, isFalse);
+      expect(product.score, isNull);
+      expect(product.level, isNull);
+      expect(product.aiError, 'AI_UNAVAILABLE');
+      expect(product.deepThink, isEmpty);
+      expect(product.suggestedAllergens, isEmpty);
+      expect(product.alternatives, isEmpty);
+      expect(product.name, 'Sữa chua');
+      expect(product.calories, 95);
+      expect(product.declaredAllergens, ['sữa']);
+    });
+
+    test('đọc aiError khi backend trả aiAnalysis null', () {
+      final Map<String, dynamic> response = _buildResponse();
+      response['aiAnalysis'] = null;
+      response['aiError'] = 'AI_NOT_CONFIGURED';
+
+      final ProductModel product = ProductModel.fromJson(response);
+
+      expect(product.hasAnalysis, isFalse);
+      expect(product.aiError, 'AI_NOT_CONFIGURED');
+      expect(product.name, 'Sữa chua');
+    });
+
+    test('aiError là null khi có phân tích AI hợp lệ', () {
+      final ProductModel product = ProductModel.fromJson(_buildResponse());
+
+      expect(product.hasAnalysis, isTrue);
+      expect(product.aiError, isNull);
     });
 
     test('dùng giá trị mặc định khi thiếu thông tin sản phẩm', () {
