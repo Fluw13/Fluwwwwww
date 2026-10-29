@@ -7,7 +7,24 @@ const REQUEST_TIMEOUT_MS = 15000;
 const BARCODE_PATTERN = /^\d{8,14}$/;
 const MAX_QUERY_LENGTH = 100;
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F]/;
-const SEARCH_FIELDS = ['code', 'product_name', 'brands', 'image_front_url', 'ingredients_text', 'nutriments'];
+const SEARCH_FIELDS = ['code', 'product_name', 'brands', 'image_front_url', 'ingredients_text', 'allergens_tags', 'nutriments'];
+
+const ALLERGEN_NAMES = {
+    gluten: 'gluten',
+    crustaceans: 'giáp xác',
+    eggs: 'trứng',
+    fish: 'cá',
+    peanuts: 'đậu phộng',
+    soybeans: 'đậu nành',
+    milk: 'sữa',
+    nuts: 'các loại hạt',
+    celery: 'cần tây',
+    mustard: 'mù tạt',
+    'sesame-seeds': 'mè (vừng)',
+    'sulphur-dioxide-and-sulphites': 'sulfit',
+    lupin: 'đậu lupin',
+    molluscs: 'động vật thân mềm'
+};
 
 const openFoodFactsClient = axios.create({
     timeout: REQUEST_TIMEOUT_MS,
@@ -77,6 +94,21 @@ const readNutriment = (nutriments, key) => {
 
 const readHttpsUrl = (value) => (typeof value === 'string' && value.startsWith('https://') ? value : '');
 
+const readAllergens = (tags) => {
+    if (!Array.isArray(tags)) {
+        return [];
+    }
+
+    const names = tags
+        .filter((tag) => typeof tag === 'string' && tag.length > 0)
+        .map((tag) => {
+            const key = tag.includes(':') ? tag.slice(tag.indexOf(':') + 1) : tag;
+            return ALLERGEN_NAMES[key] || key.replace(/-/g, ' ');
+        });
+
+    return [...new Set(names)];
+};
+
 const normalizeProduct = (raw, fallbackCode) => {
     const nutriments = raw.nutriments || {};
 
@@ -86,6 +118,7 @@ const normalizeProduct = (raw, fallbackCode) => {
         brands: (Array.isArray(raw.brands) ? raw.brands.join(', ') : raw.brands) || 'Chưa rõ thương hiệu',
         image_front_url: readHttpsUrl(raw.image_front_url),
         ingredients_text: raw.ingredients_text || null,
+        allergens: readAllergens(raw.allergens_tags),
         nutriments: {
             'energy-kcal': readNutriment(nutriments, 'energy-kcal'),
             proteins: readNutriment(nutriments, 'proteins'),

@@ -171,13 +171,23 @@ class _ProductContent extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TagSection(
-                title: 'Có thể chứa chất gây dị ứng',
-                tags: product.allergens,
+                title: 'Chất gây dị ứng theo nhãn',
+                tags: product.declaredAllergens,
                 tagColor: AppColors.danger,
-                note: 'Zero gợi ý dựa trên danh sách thành phần. Luôn kiểm tra nhãn bao bì trước khi dùng.',
+                note: 'Nguồn: OpenFoodFacts. Luôn kiểm tra nhãn bao bì trước khi dùng.',
               ),
             ),
-            if (product.allergens.isNotEmpty) const SizedBox(height: 24),
+            if (product.declaredAllergens.isNotEmpty) const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TagSection(
+                title: 'Có thể chứa thêm (AI gợi ý)',
+                tags: product.suggestedAllergens,
+                tagColor: AppColors.warning,
+                note: 'Zero suy ra từ danh sách thành phần, chưa được xác nhận trên nhãn.',
+              ),
+            ),
+            if (product.suggestedAllergens.isNotEmpty) const SizedBox(height: 24),
             Align(
               alignment: Alignment.centerLeft,
               child: TagSection(

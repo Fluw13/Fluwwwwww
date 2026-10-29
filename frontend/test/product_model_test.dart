@@ -10,6 +10,7 @@ Map<String, dynamic> _buildResponse({Object? score = 82}) {
       'product_name': 'Sữa chua',
       'brands': 'Vinamilk',
       'image_front_url': 'https://example.com/image.jpg',
+      'allergens': ['sữa'],
       'nutriments': {
         'energy-kcal': 95,
         'proteins': 3.5,
@@ -21,7 +22,7 @@ Map<String, dynamic> _buildResponse({Object? score = 82}) {
       'score': score,
       'deepThink': 'Giàu canxi, đường vừa phải.',
       'recommendation': 'Phù hợp dùng hằng ngày.',
-      'allergens': ['sữa'],
+      'allergens': ['Sữa', 'đậu nành'],
       'alternatives': ['Sữa chua không đường'],
     },
   };
@@ -37,7 +38,8 @@ void main() {
       expect(product.level, ScoreLevel.good);
       expect(product.calories, 95);
       expect(product.protein, 3.5);
-      expect(product.allergens, ['sữa']);
+      expect(product.declaredAllergens, ['sữa']);
+      expect(product.suggestedAllergens, ['đậu nành']);
       expect(product.alternatives, ['Sữa chua không đường']);
     });
 
@@ -60,7 +62,8 @@ void main() {
 
       expect(product.name, 'Sản phẩm chưa có tên');
       expect(product.calories, isNull);
-      expect(product.allergens, isEmpty);
+      expect(product.declaredAllergens, isEmpty);
+      expect(product.suggestedAllergens, isEmpty);
     });
 
     test('giữ null khi backend báo thiếu dữ liệu dinh dưỡng, phân biệt với giá trị 0', () {

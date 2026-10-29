@@ -13,7 +13,8 @@ class ProductModel {
     required this.carbs,
     required this.deepThink,
     required this.recommendation,
-    required this.allergens,
+    required this.declaredAllergens,
+    required this.suggestedAllergens,
     required this.alternatives,
   });
 
@@ -28,7 +29,8 @@ class ProductModel {
   final double? carbs;
   final String deepThink;
   final String recommendation;
-  final List<String> allergens;
+  final List<String> declaredAllergens;
+  final List<String> suggestedAllergens;
   final List<String> alternatives;
 
   ScoreLevel get level => ScoreLevel.fromScore(score);
@@ -37,6 +39,9 @@ class ProductModel {
     final product = _asMap(json['product']);
     final analysis = _asMap(json['aiAnalysis']);
     final nutriments = _asMap(product['nutriments']);
+
+    final List<String> declaredAllergens = _toStringList(product['allergens']);
+    final Set<String> declaredKeys = declaredAllergens.map((name) => name.toLowerCase()).toSet();
 
     final Object? rawScore = analysis['score'];
     if (rawScore is! num) {
@@ -55,7 +60,10 @@ class ProductModel {
       carbs: _toDouble(nutriments['carbohydrates']),
       deepThink: analysis['deepThink'] as String? ?? '',
       recommendation: analysis['recommendation'] as String? ?? '',
-      allergens: _toStringList(analysis['allergens']),
+      declaredAllergens: declaredAllergens,
+      suggestedAllergens: _toStringList(analysis['allergens'])
+          .where((name) => !declaredKeys.contains(name.toLowerCase()))
+          .toList(),
       alternatives: _toStringList(analysis['alternatives']),
     );
   }
