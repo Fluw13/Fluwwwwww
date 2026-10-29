@@ -171,9 +171,10 @@ class _ProductContent extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: TagSection(
-                title: 'Cảnh báo dị ứng',
+                title: 'Có thể chứa chất gây dị ứng',
                 tags: product.allergens,
                 tagColor: AppColors.danger,
+                note: 'Zero gợi ý dựa trên danh sách thành phần. Luôn kiểm tra nhãn bao bì trước khi dùng.',
               ),
             ),
             if (product.allergens.isNotEmpty) const SizedBox(height: 24),
@@ -183,11 +184,13 @@ class _ProductContent extends StatelessWidget {
                 title: 'Lựa chọn lành mạnh hơn',
                 tags: product.alternatives,
                 tagColor: AppColors.accent,
+                note: 'Gợi ý chung do Zero tạo.',
               ),
             ),
             const SizedBox(height: 30),
             Text(
-              'Dữ liệu thực phẩm được cung cấp bởi OpenFoodFacts\n(Phát hành theo giấy phép ODbL)',
+              'Dữ liệu sản phẩm: OpenFoodFacts (giấy phép ODbL), do cộng đồng đóng góp và có thể chưa đầy đủ.\n'
+              'Phân tích: Zero AI (Google Gemini).',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
             ),

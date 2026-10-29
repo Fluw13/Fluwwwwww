@@ -9,22 +9,46 @@ class MacroBar extends StatelessWidget {
     required this.carbs,
   });
 
-  final double calories;
-  final double protein;
-  final double fat;
-  final double carbs;
+  static const String _missingValue = '—';
+
+  final double? calories;
+  final double? protein;
+  final double? fat;
+  final double? carbs;
+
+  static String _formatKcal(double? value) {
+    return value == null ? _missingValue : '${value.round()} kcal';
+  }
+
+  static String _formatGrams(double? value) {
+    return value == null ? _missingValue : '${value.toStringAsFixed(1)} g';
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final bool hasMissingValue = [calories, protein, fat, carbs].contains(null);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _MacroTile(emoji: '🔥', label: 'Calo', value: '${calories.round()} kcal'),
-        const SizedBox(width: 8),
-        _MacroTile(emoji: '🥩', label: 'Đạm', value: '${protein.toStringAsFixed(1)} g'),
-        const SizedBox(width: 8),
-        _MacroTile(emoji: '🥑', label: 'Béo', value: '${fat.toStringAsFixed(1)} g'),
-        const SizedBox(width: 8),
-        _MacroTile(emoji: '🌾', label: 'Carb', value: '${carbs.toStringAsFixed(1)} g'),
+        Row(
+          children: [
+            _MacroTile(emoji: '🔥', label: 'Calo', value: _formatKcal(calories)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🥩', label: 'Đạm', value: _formatGrams(protein)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🥑', label: 'Béo', value: _formatGrams(fat)),
+            const SizedBox(width: 8),
+            _MacroTile(emoji: '🌾', label: 'Carb', value: _formatGrams(carbs)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          hasMissingValue
+              ? 'Trên 100 g · Nguồn: OpenFoodFacts · "—" là chưa có dữ liệu'
+              : 'Trên 100 g · Nguồn: OpenFoodFacts',
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+        ),
       ],
     );
   }

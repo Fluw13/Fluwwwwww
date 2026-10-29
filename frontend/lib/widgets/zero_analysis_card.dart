@@ -25,13 +25,18 @@ class ZeroAnalysisCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.psychology, color: AppColors.ink),
-              SizedBox(width: 8),
-              Text(
+              const Icon(Icons.psychology, color: AppColors.ink),
+              const SizedBox(width: 8),
+              const Text(
                 'Zero Deep Think',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const Spacer(),
+              Text(
+                'Do AI tạo',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -45,6 +50,12 @@ class ZeroAnalysisCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
           ],
+          const SizedBox(height: 12),
+          Text(
+            'Nội dung do AI tạo, chỉ mang tính tham khảo và có thể chưa chính xác. '
+            'Không thay thế tư vấn của bác sĩ hoặc chuyên gia dinh dưỡng.',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
+          ),
         ],
       ),
     );

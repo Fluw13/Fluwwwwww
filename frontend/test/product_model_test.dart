@@ -59,8 +59,22 @@ void main() {
       });
 
       expect(product.name, 'Sản phẩm chưa có tên');
-      expect(product.calories, 0);
+      expect(product.calories, isNull);
       expect(product.allergens, isEmpty);
+    });
+
+    test('giữ null khi backend báo thiếu dữ liệu dinh dưỡng, phân biệt với giá trị 0', () {
+      final Map<String, dynamic> response = _buildResponse();
+      (response['product'] as Map<String, dynamic>)['nutriments'] = {
+        'energy-kcal': 0,
+        'proteins': null,
+      };
+
+      final ProductModel product = ProductModel.fromJson(response);
+
+      expect(product.calories, 0);
+      expect(product.protein, isNull);
+      expect(product.fat, isNull);
     });
   });
 

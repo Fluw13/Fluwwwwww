@@ -22,10 +22,10 @@ class ProductModel {
   final String brand;
   final String imageUrl;
   final int score;
-  final double calories;
-  final double protein;
-  final double fat;
-  final double carbs;
+  final double? calories;
+  final double? protein;
+  final double? fat;
+  final double? carbs;
   final String deepThink;
   final String recommendation;
   final List<String> allergens;
@@ -64,8 +64,8 @@ class ProductModel {
     return value is Map<String, dynamic> ? value : const {};
   }
 
-  static double _toDouble(Object? value) {
-    return value is num ? value.toDouble() : 0.0;
+  static double? _toDouble(Object? value) {
+    return value is num ? value.toDouble() : null;
   }
 
   static List<String> _toStringList(Object? value) {

@@ -6,11 +6,13 @@ class TagSection extends StatelessWidget {
     required this.title,
     required this.tags,
     required this.tagColor,
+    this.note,
   });
 
   final String title;
   final List<String> tags;
   final Color tagColor;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,10 @@ class TagSection extends StatelessWidget {
               ),
           ],
         ),
+        if (note != null) ...[
+          const SizedBox(height: 6),
+          Text(note!, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+        ],
       ],
     );
   }
