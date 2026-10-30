@@ -1,0 +1,12 @@
+{
+  "request": "GET /api/v1/products/8930000000118",
+  "status": 503,
+  "headers": {
+    "retry-after": "12"
+  },
+  "body": {
+    "success": false,
+    "error": "Fluw đang tạm giới hạn số lượt tra cứu tới Open Food Facts. Vui lòng thử lại sau khoảng 12 giây.",
+    "code": "UPSTREAM_RATE_LIMITED"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "request": "GET /api/v1/products/8930000000088",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000088",
+      "name": "Bánh bông lan (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "200 g",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Bột mì, đường, trứng, dầu thực vật, E471",
+        "language": "vi"
+      },
+      "allergens": [],
+      "traces": [],
+      "additives": [
+        {
+          "tag": "en:e471",
+          "code": "E471",
+          "name": "Mono- và diglycerid của axit béo"
+        }
+      ],
+      "novaGroup": null,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 406.3,
+          "energyKj": 1700,
+          "fat": 18,
+          "saturatedFat": 6,
+          "carbohydrates": 55,
+          "sugars": 30,
+          "fiber": null,
+          "proteins": 6,
+          "salt": 0.4
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000088",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": null,
+        "level": null,
+        "label": null,
+        "calculation": null
+      },
+      "nutrition": {
+        "value": null,
+        "status": "missing_data",
+        "productType": "food",
+        "productTypeLabel": "Thực phẩm",
+        "basis": null,
+        "points": null,
+        "negativePoints": null,
+        "positivePoints": null,
+        "band": null,
+        "indicators": [],
+        "missing": [
+          {
+            "key": "nutrition.fiber",
+            "label": "Chất xơ"
+          }
+        ]
+      },
+      "additives": {
+        "value": 80,
+        "status": "computed",
+        "count": 1,
+        "band": {
+          "countMin": 1,
+          "countMax": 2,
+          "score": 80
+        }
+      },
+      "missing": [
+        {
+          "key": "nutrition.fiber",
+          "label": "Chất xơ"
+        }
+      ],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

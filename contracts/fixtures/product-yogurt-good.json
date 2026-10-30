@@ -1,0 +1,234 @@
+{
+  "request": "GET /api/v1/products/8930000000026",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000026",
+      "name": "Sữa chua không đường (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "100 g",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Sữa tươi, men cái",
+        "language": "vi"
+      },
+      "allergens": [
+        {
+          "tag": "en:milk",
+          "label": "sữa"
+        }
+      ],
+      "traces": [],
+      "additives": [],
+      "novaGroup": 1,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 59.8,
+          "energyKj": 250,
+          "fat": 3,
+          "saturatedFat": 2,
+          "carbohydrates": 4,
+          "sugars": 4,
+          "fiber": 0,
+          "proteins": 4,
+          "salt": 0.1
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000026",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": 85,
+        "level": "good",
+        "label": "Tốt",
+        "calculation": {
+          "nutritionWeighted": 55.3,
+          "additivesWeighted": 30,
+          "sum": 85.3
+        }
+      },
+      "nutrition": {
+        "value": 79,
+        "status": "computed",
+        "productType": "food",
+        "productTypeLabel": "Thực phẩm",
+        "basis": "as_sold",
+        "points": 1,
+        "negativePoints": 2,
+        "positivePoints": 1,
+        "band": {
+          "pointsMin": 1,
+          "pointsMax": 2,
+          "scoreMin": 70,
+          "scoreMax": 79
+        },
+        "indicators": [
+          {
+            "key": "energy",
+            "label": "Năng lượng",
+            "effect": "negative",
+            "value": 250,
+            "unit": "kJ",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 10,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 335,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "sugars",
+            "label": "Đường",
+            "effect": "negative",
+            "value": 4,
+            "unit": "g",
+            "per": "100g",
+            "points": 1,
+            "maxPoints": 15,
+            "range": {
+              "min": 3.4,
+              "minInclusive": false,
+              "max": 6.8,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "saturatedFat",
+            "label": "Chất béo bão hòa",
+            "effect": "negative",
+            "value": 2,
+            "unit": "g",
+            "per": "100g",
+            "points": 1,
+            "maxPoints": 10,
+            "range": {
+              "min": 1,
+              "minInclusive": false,
+              "max": 2,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "salt",
+            "label": "Muối",
+            "effect": "negative",
+            "value": 0.1,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 20,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 0.2,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "proteins",
+            "label": "Chất đạm",
+            "effect": "positive",
+            "value": 4,
+            "unit": "g",
+            "per": "100g",
+            "points": 1,
+            "maxPoints": 7,
+            "range": {
+              "min": 2.4,
+              "minInclusive": false,
+              "max": 4.8,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fiber",
+            "label": "Chất xơ",
+            "effect": "positive",
+            "value": 0,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 3,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fruitsVegetablesLegumes",
+            "label": "Rau củ, quả, đậu",
+            "effect": "positive",
+            "value": 0,
+            "unit": "%",
+            "per": null,
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 40,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          }
+        ],
+        "missing": []
+      },
+      "additives": {
+        "value": 100,
+        "status": "computed",
+        "count": 0,
+        "band": {
+          "countMin": 0,
+          "countMax": 0,
+          "score": 100
+        }
+      },
+      "missing": [],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

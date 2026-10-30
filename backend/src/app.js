@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const productRoutes = require('./routes/productRoutes');
+const v1Routes = require('./routes/v1');
 const { productRateLimiter } = require('./middlewares/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
@@ -20,6 +21,7 @@ app.get('/health', (request, response) => {
 });
 
 app.use('/api/product', productRateLimiter, productRoutes);
+app.use('/api/v1', v1Routes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

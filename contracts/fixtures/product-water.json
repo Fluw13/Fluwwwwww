@@ -1,0 +1,97 @@
+{
+  "request": "GET /api/v1/products/8930000000040",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000040",
+      "name": "Nước khoáng thiên nhiên (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "500 ml",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Nước khoáng thiên nhiên",
+        "language": "vi"
+      },
+      "allergens": [],
+      "traces": [],
+      "additives": [],
+      "novaGroup": 1,
+      "nutrition": {
+        "basis": "100ml",
+        "per100": {
+          "energyKcal": null,
+          "energyKj": null,
+          "fat": null,
+          "saturatedFat": null,
+          "carbohydrates": null,
+          "sugars": null,
+          "fiber": null,
+          "proteins": null,
+          "salt": null
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000040",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": 100,
+        "level": "good",
+        "label": "Tốt",
+        "calculation": {
+          "nutritionWeighted": 70,
+          "additivesWeighted": 30,
+          "sum": 100
+        }
+      },
+      "nutrition": {
+        "value": 100,
+        "status": "computed",
+        "productType": "water",
+        "productTypeLabel": "Nước",
+        "basis": null,
+        "points": null,
+        "negativePoints": null,
+        "positivePoints": null,
+        "band": null,
+        "indicators": [],
+        "missing": []
+      },
+      "additives": {
+        "value": 100,
+        "status": "computed",
+        "count": 0,
+        "band": {
+          "countMin": 0,
+          "countMax": 0,
+          "score": 100
+        }
+      },
+      "missing": [],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

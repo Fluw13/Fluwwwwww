@@ -1,0 +1,137 @@
+{
+  "source": "Search results returned by search.openfoodfacts.org on 2026-10-30 (code, name, brands only). Open Food Facts data, ODbL.",
+  "hảo hảo": [
+    {
+      "code": "8934840000130",
+      "product_name": "Nước khoáng không ga tự nhiên Vĩnh Hảo",
+      "brands": [
+        "Vĩnh Hảo"
+      ],
+      "image_front_url": "https://images.openfoodfacts.org/images/products/893/484/000/0130/front_vi.3.400.jpg"
+    }
+  ],
+  "hao hao": [
+    {
+      "code": "8934563635138",
+      "product_name": "Hao Hao",
+      "image_front_url": "https://images.openfoodfacts.org/images/products/893/456/363/5138/front_en.3.400.jpg"
+    },
+    {
+      "code": "8934563151157",
+      "product_name": "Fried noodles",
+      "brands": [
+        "Hao Hao"
+      ]
+    },
+    {
+      "code": "4607054455082",
+      "product_name": "Sunflower Seeds",
+      "brands": [
+        "Hao Hao"
+      ]
+    },
+    {
+      "code": "9036763163110",
+      "product_name": "Hao Hao Vagetarian Flavour",
+      "brands": [
+        "Acecook"
+      ]
+    },
+    {
+      "code": "8934563712150",
+      "product_name": "Hao hao onion flavor"
+    },
+    {
+      "code": "8934563107161",
+      "product_name": "Hao Hao Instant noodles chicken",
+      "brands": [
+        "Acecook"
+      ],
+      "quantity": "74g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/456/310/7161/front_en.20.200.jpg"
+    },
+    {
+      "code": "8004091036308",
+      "product_name": "Yin Zhen"
+    },
+    {
+      "code": "0626594000112",
+      "product_name": "Jasmine Tea",
+      "brands": [
+        "Hao",
+        "Hao Tea"
+      ]
+    },
+    {
+      "code": "8934563122201",
+      "product_name": "Mỳ Hảo Hảo",
+      "brands": [
+        "Acecook"
+      ]
+    }
+  ],
+  "mì hảo hảo": [
+    {
+      "code": "8934840000130",
+      "product_name": "Nước khoáng không ga tự nhiên Vĩnh Hảo",
+      "brands": [
+        "Vĩnh Hảo"
+      ]
+    },
+    {
+      "code": "8936028640787",
+      "product_name": "Mì",
+      "brands": [
+        "Koreno"
+      ]
+    },
+    {
+      "code": "8934579014163",
+      "product_name": "Mì Chay"
+    },
+    {
+      "code": "8938535022582",
+      "product_name": "Bánh mì"
+    }
+  ],
+  "mi hao hao": [
+    {
+      "code": "8934563107161",
+      "product_name": "Hao Hao Instant noodles chicken",
+      "brands": [
+        "Acecook"
+      ]
+    },
+    {
+      "code": "8934563122201",
+      "product_name": "Mỳ Hảo Hảo",
+      "brands": [
+        "Acecook"
+      ]
+    },
+    {
+      "code": "8934563635138",
+      "product_name": "Hao Hao"
+    }
+  ],
+  "vĩnh hảo": [
+    {
+      "code": "8934840000130",
+      "product_name": "Nước khoáng không ga tự nhiên Vĩnh Hảo",
+      "brands": [
+        "Vĩnh Hảo"
+      ]
+    },
+    {
+      "code": "8934563635138",
+      "product_name": "Hao Hao"
+    }
+  ],
+  "zzqxv không tồn tại": [
+    {
+      "code": "8934673701440",
+      "product_name": "Nước Vinamilk Dừa Ngọt Nước"
+    }
+  ],
+  "zzqxv khong ton tai": []
+}

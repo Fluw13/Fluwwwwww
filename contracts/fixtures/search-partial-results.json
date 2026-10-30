@@ -1,0 +1,36 @@
+{
+  "request": "GET /api/v1/search?q=m%C3%AC%20h%E1%BA%A3o%20h%E1%BA%A3o",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "query": "mì hảo hảo",
+    "results": [
+      {
+        "barcode": "8934563122201",
+        "name": "Mỳ Hảo Hảo",
+        "brand": "Acecook",
+        "quantity": null,
+        "imageUrl": null,
+        "matchesAllWords": false
+      },
+      {
+        "barcode": "8934563635138",
+        "name": "Hao Hao",
+        "brand": null,
+        "quantity": null,
+        "imageUrl": null,
+        "matchesAllWords": false
+      },
+      {
+        "barcode": "8934563107161",
+        "name": "Hao Hao Instant noodles chicken",
+        "brand": "Acecook",
+        "quantity": null,
+        "imageUrl": null,
+        "matchesAllWords": false
+      }
+    ],
+    "total": 3
+  }
+}

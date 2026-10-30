@@ -1,0 +1,10 @@
+{
+  "request": "GET /api/v1/products/8930000000101",
+  "status": 404,
+  "headers": {},
+  "body": {
+    "success": false,
+    "error": "Không tìm thấy sản phẩm có mã vạch 8930000000101 trên hệ thống OpenFoodFacts.",
+    "code": "PRODUCT_NOT_FOUND"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "request": "GET /api/v1/search?q=V%C4%A9nh%20H%E1%BA%A3o",
+  "status": 429,
+  "headers": {
+    "retry-after": "60"
+  },
+  "body": {
+    "success": false,
+    "error": "Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.",
+    "code": "RATE_LIMITED"
+  }
+}

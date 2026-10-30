@@ -1,0 +1,93 @@
+{
+  "request": "GET /api/v1/products/8930000000071",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000071",
+      "name": "Bia lager (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "330 ml",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Nước, malt đại mạch, hoa bia",
+        "language": "vi"
+      },
+      "allergens": [],
+      "traces": [],
+      "additives": [],
+      "novaGroup": null,
+      "nutrition": {
+        "basis": "100ml",
+        "per100": {
+          "energyKcal": 43,
+          "energyKj": 180,
+          "fat": 0,
+          "saturatedFat": 0,
+          "carbohydrates": 3.5,
+          "sugars": 0.2,
+          "fiber": null,
+          "proteins": 0.4,
+          "salt": 0.01
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000071",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": null,
+        "level": null,
+        "label": null,
+        "calculation": null
+      },
+      "nutrition": {
+        "value": null,
+        "status": "not_applicable",
+        "productType": "beverage",
+        "productTypeLabel": "Đồ uống",
+        "basis": null,
+        "points": null,
+        "negativePoints": null,
+        "positivePoints": null,
+        "band": null,
+        "indicators": [],
+        "missing": []
+      },
+      "additives": {
+        "value": 100,
+        "status": "computed",
+        "count": 0,
+        "band": {
+          "countMin": 0,
+          "countMax": 0,
+          "score": 100
+        }
+      },
+      "missing": [],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

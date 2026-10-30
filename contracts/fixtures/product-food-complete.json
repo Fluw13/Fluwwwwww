@@ -1,0 +1,276 @@
+{
+  "request": "GET /api/v1/products/8930000000019",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000019",
+      "name": "Bánh quy bơ (dữ liệu thử)",
+      "genericName": "Bánh quy",
+      "brand": "Fluw Test",
+      "quantity": "120 g",
+      "manufacturer": {
+        "brandOwner": "Công ty Thử nghiệm Fluw",
+        "manufacturingPlaces": "Việt Nam"
+      },
+      "images": {
+        "front": {
+          "small": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.200.jpg",
+          "display": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.400.jpg",
+          "full": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.full.jpg"
+        },
+        "ingredients": {
+          "small": "https://images.openfoodfacts.org/images/products/893/000/000/0001/ingredients_vi.7.200.jpg",
+          "display": "https://images.openfoodfacts.org/images/products/893/000/000/0001/ingredients_vi.7.400.jpg",
+          "full": "https://images.openfoodfacts.org/images/products/893/000/000/0001/ingredients_vi.7.full.jpg"
+        },
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Bột mì, đường, bơ, dầu cọ, chất nhũ hóa (E322i, E471), chất tạo xốp (E500, E503)",
+        "language": "vi"
+      },
+      "allergens": [
+        {
+          "tag": "en:gluten",
+          "label": "gluten"
+        },
+        {
+          "tag": "en:milk",
+          "label": "sữa"
+        },
+        {
+          "tag": "en:soybeans",
+          "label": "đậu nành"
+        }
+      ],
+      "traces": [
+        {
+          "tag": "en:eggs",
+          "label": "trứng"
+        }
+      ],
+      "additives": [
+        {
+          "tag": "en:e322i",
+          "code": "E322i",
+          "name": "Lecithin"
+        },
+        {
+          "tag": "en:e471",
+          "code": "E471",
+          "name": "Mono- và diglycerid của axit béo"
+        },
+        {
+          "tag": "en:e500",
+          "code": "E500",
+          "name": "Natri carbonat"
+        },
+        {
+          "tag": "en:e503",
+          "code": "E503",
+          "name": "Amoni carbonat"
+        }
+      ],
+      "novaGroup": 4,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 478,
+          "energyKj": 2000,
+          "fat": 20,
+          "saturatedFat": 8,
+          "carbohydrates": 65,
+          "sugars": 25,
+          "fiber": 2,
+          "proteins": 6,
+          "salt": 0.5
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000019",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": 31,
+        "level": "limit",
+        "label": "Nên hạn chế",
+        "calculation": {
+          "nutritionWeighted": 12.6,
+          "additivesWeighted": 18,
+          "sum": 30.6
+        }
+      },
+      "nutrition": {
+        "value": 18,
+        "status": "computed",
+        "productType": "food",
+        "productTypeLabel": "Thực phẩm",
+        "basis": "as_sold",
+        "points": 21,
+        "negativePoints": 21,
+        "positivePoints": 0,
+        "band": {
+          "pointsMin": 19,
+          "pointsMax": 55,
+          "scoreMin": 0,
+          "scoreMax": 19
+        },
+        "indicators": [
+          {
+            "key": "energy",
+            "label": "Năng lượng",
+            "effect": "negative",
+            "value": 2000,
+            "unit": "kJ",
+            "per": "100g",
+            "points": 5,
+            "maxPoints": 10,
+            "range": {
+              "min": 1675,
+              "minInclusive": false,
+              "max": 2010,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "sugars",
+            "label": "Đường",
+            "effect": "negative",
+            "value": 25,
+            "unit": "g",
+            "per": "100g",
+            "points": 7,
+            "maxPoints": 15,
+            "range": {
+              "min": 24,
+              "minInclusive": false,
+              "max": 27,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "saturatedFat",
+            "label": "Chất béo bão hòa",
+            "effect": "negative",
+            "value": 8,
+            "unit": "g",
+            "per": "100g",
+            "points": 7,
+            "maxPoints": 10,
+            "range": {
+              "min": 7,
+              "minInclusive": false,
+              "max": 8,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "salt",
+            "label": "Muối",
+            "effect": "negative",
+            "value": 0.5,
+            "unit": "g",
+            "per": "100g",
+            "points": 2,
+            "maxPoints": 20,
+            "range": {
+              "min": 0.4,
+              "minInclusive": false,
+              "max": 0.6,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "proteins",
+            "label": "Chất đạm",
+            "effect": "positive",
+            "value": 6,
+            "unit": "g",
+            "per": "100g",
+            "points": 2,
+            "maxPoints": 7,
+            "range": {
+              "min": 4.8,
+              "minInclusive": false,
+              "max": 7.2,
+              "maxInclusive": true
+            },
+            "status": "excluded_by_rule",
+            "note": "Không tính vì tổng điểm trừ từ 11 trở lên (quy tắc Nutri-Score)."
+          },
+          {
+            "key": "fiber",
+            "label": "Chất xơ",
+            "effect": "positive",
+            "value": 2,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 3,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fruitsVegetablesLegumes",
+            "label": "Rau củ, quả, đậu",
+            "effect": "positive",
+            "value": 0,
+            "unit": "%",
+            "per": null,
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 40,
+              "maxInclusive": true
+            },
+            "status": "estimated",
+            "note": "Ước tính từ danh sách thành phần (Open Food Facts)."
+          }
+        ],
+        "missing": []
+      },
+      "additives": {
+        "value": 60,
+        "status": "computed",
+        "count": 4,
+        "band": {
+          "countMin": 3,
+          "countMax": 4,
+          "score": 60
+        }
+      },
+      "missing": [],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

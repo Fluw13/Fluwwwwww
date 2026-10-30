@@ -1,0 +1,100 @@
+{
+  "request": "GET /api/v1/products/8930000000064",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000064",
+      "name": "Bánh gạo (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "150 g",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": null,
+      "allergens": [],
+      "traces": [],
+      "additives": [],
+      "novaGroup": null,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 410,
+          "energyKj": 1715.4,
+          "fat": 12,
+          "saturatedFat": null,
+          "carbohydrates": 70,
+          "sugars": 8,
+          "fiber": null,
+          "proteins": 6,
+          "salt": 1
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000064",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": null,
+        "level": null,
+        "label": null,
+        "calculation": null
+      },
+      "nutrition": {
+        "value": null,
+        "status": "missing_data",
+        "productType": null,
+        "productTypeLabel": null,
+        "basis": null,
+        "points": null,
+        "negativePoints": null,
+        "positivePoints": null,
+        "band": null,
+        "indicators": [],
+        "missing": [
+          {
+            "key": "nutrition.productType",
+            "label": "Danh mục sản phẩm (để xác định loại sản phẩm)"
+          }
+        ]
+      },
+      "additives": {
+        "value": null,
+        "status": "missing_ingredients",
+        "count": null,
+        "band": null
+      },
+      "missing": [
+        {
+          "key": "nutrition.productType",
+          "label": "Danh mục sản phẩm (để xác định loại sản phẩm)"
+        },
+        {
+          "key": "additives.ingredients",
+          "label": "Danh sách thành phần"
+        }
+      ],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "request": "GET /api/v1/products/8930000000095",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000095",
+      "name": "Kẹo dẻo (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "50 g",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Siro glucose, đường, gelatin, axit citric, hương liệu",
+        "language": "vi"
+      },
+      "allergens": [],
+      "traces": [],
+      "additives": [
+        {
+          "tag": "en:e330",
+          "code": "E330",
+          "name": "Axit citric"
+        }
+      ],
+      "novaGroup": null,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 334.6,
+          "energyKj": 1400,
+          "fat": 0.2,
+          "saturatedFat": 0.1,
+          "carbohydrates": 80,
+          "sugars": 50,
+          "fiber": 0,
+          "proteins": 5,
+          "salt": 0.05
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000095",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": null,
+        "level": null,
+        "label": null,
+        "calculation": null
+      },
+      "nutrition": {
+        "value": 20,
+        "status": "computed",
+        "productType": "food",
+        "productTypeLabel": "Thực phẩm",
+        "basis": "as_sold",
+        "points": 18,
+        "negativePoints": 18,
+        "positivePoints": 0,
+        "band": {
+          "pointsMin": 11,
+          "pointsMax": 18,
+          "scoreMin": 20,
+          "scoreMax": 39
+        },
+        "indicators": [
+          {
+            "key": "energy",
+            "label": "Năng lượng",
+            "effect": "negative",
+            "value": 1400,
+            "unit": "kJ",
+            "per": "100g",
+            "points": 4,
+            "maxPoints": 10,
+            "range": {
+              "min": 1340,
+              "minInclusive": false,
+              "max": 1675,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "sugars",
+            "label": "Đường",
+            "effect": "negative",
+            "value": 50,
+            "unit": "g",
+            "per": "100g",
+            "points": 14,
+            "maxPoints": 15,
+            "range": {
+              "min": 48,
+              "minInclusive": false,
+              "max": 51,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "saturatedFat",
+            "label": "Chất béo bão hòa",
+            "effect": "negative",
+            "value": 0.1,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 10,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 1,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "salt",
+            "label": "Muối",
+            "effect": "negative",
+            "value": 0.05,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 20,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 0.2,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "proteins",
+            "label": "Chất đạm",
+            "effect": "positive",
+            "value": 5,
+            "unit": "g",
+            "per": "100g",
+            "points": 2,
+            "maxPoints": 7,
+            "range": {
+              "min": 4.8,
+              "minInclusive": false,
+              "max": 7.2,
+              "maxInclusive": true
+            },
+            "status": "excluded_by_rule",
+            "note": "Không tính vì tổng điểm trừ từ 11 trở lên (quy tắc Nutri-Score)."
+          },
+          {
+            "key": "fiber",
+            "label": "Chất xơ",
+            "effect": "positive",
+            "value": 0,
+            "unit": "g",
+            "per": "100g",
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 3,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fruitsVegetablesLegumes",
+            "label": "Rau củ, quả, đậu",
+            "effect": "positive",
+            "value": 0,
+            "unit": "%",
+            "per": null,
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 40,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          }
+        ],
+        "missing": []
+      },
+      "additives": {
+        "value": null,
+        "status": "ingredients_not_recognized",
+        "count": null,
+        "band": null
+      },
+      "missing": [
+        {
+          "key": "additives.recognizedIngredients",
+          "label": "Danh sách thành phần nhận diện được (hơn một nửa thành phần chưa nhận diện)"
+        }
+      ],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

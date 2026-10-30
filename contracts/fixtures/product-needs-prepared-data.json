@@ -1,0 +1,159 @@
+{
+  "request": "GET /api/v1/products/8930000000057",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000057",
+      "name": "Mì ăn liền vị tôm (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "75 g",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Bột mì, dầu cọ, muối, đường, bột ngọt (E621), E627, E631, màu (E150a, E160a), chất chống oxy hóa (E320, E321), E451, E500, E501",
+        "language": "vi"
+      },
+      "allergens": [
+        {
+          "tag": "en:gluten",
+          "label": "gluten"
+        }
+      ],
+      "traces": [],
+      "additives": [
+        {
+          "tag": "en:e150a",
+          "code": "E150a",
+          "name": "Caramen nhóm I"
+        },
+        {
+          "tag": "en:e160a",
+          "code": "E160a",
+          "name": "Beta-caroten"
+        },
+        {
+          "tag": "en:e320",
+          "code": "E320",
+          "name": "BHA"
+        },
+        {
+          "tag": "en:e321",
+          "code": "E321",
+          "name": "BHT"
+        },
+        {
+          "tag": "en:e451",
+          "code": "E451",
+          "name": "Triphosphat"
+        },
+        {
+          "tag": "en:e500",
+          "code": "E500",
+          "name": "Natri carbonat"
+        },
+        {
+          "tag": "en:e501",
+          "code": "E501",
+          "name": "Kali carbonat"
+        },
+        {
+          "tag": "en:e621",
+          "code": "E621",
+          "name": "Mononatri glutamat (bột ngọt)"
+        },
+        {
+          "tag": "en:e627",
+          "code": "E627",
+          "name": "Dinatri guanylat"
+        },
+        {
+          "tag": "en:e631",
+          "code": "E631",
+          "name": "Dinatri inosinat"
+        }
+      ],
+      "novaGroup": 4,
+      "nutrition": {
+        "basis": "100g",
+        "per100": {
+          "energyKcal": 450,
+          "energyKj": 1883,
+          "fat": 17,
+          "saturatedFat": 8,
+          "carbohydrates": 62,
+          "sugars": 4,
+          "fiber": 2,
+          "proteins": 9,
+          "salt": 3.5
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000057",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": null,
+        "level": null,
+        "label": null,
+        "calculation": null
+      },
+      "nutrition": {
+        "value": null,
+        "status": "needs_prepared_data",
+        "productType": "food",
+        "productTypeLabel": "Thực phẩm",
+        "basis": null,
+        "points": null,
+        "negativePoints": null,
+        "positivePoints": null,
+        "band": null,
+        "indicators": [],
+        "missing": [
+          {
+            "key": "nutrition.preparedNutrition",
+            "label": "Dinh dưỡng của sản phẩm sau khi pha chế"
+          }
+        ]
+      },
+      "additives": {
+        "value": 0,
+        "status": "computed",
+        "count": 10,
+        "band": {
+          "countMin": 10,
+          "countMax": null,
+          "score": 0
+        }
+      },
+      "missing": [
+        {
+          "key": "nutrition.preparedNutrition",
+          "label": "Dinh dưỡng của sản phẩm sau khi pha chế"
+        }
+      ],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

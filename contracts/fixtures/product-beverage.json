@@ -1,0 +1,253 @@
+{
+  "request": "GET /api/v1/products/8930000000033",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "product": {
+      "barcode": "8930000000033",
+      "name": "Nước ngọt có ga vị cola (dữ liệu thử)",
+      "genericName": null,
+      "brand": "Fluw Test",
+      "quantity": "330 ml",
+      "manufacturer": {
+        "brandOwner": null,
+        "manufacturingPlaces": null
+      },
+      "images": {
+        "front": null,
+        "ingredients": null,
+        "nutrition": null
+      },
+      "ingredients": {
+        "text": "Nước bão hòa CO2, đường, màu caramen (E150d), chất điều chỉnh độ axit (E338), hương liệu",
+        "language": "vi"
+      },
+      "allergens": [],
+      "traces": [],
+      "additives": [
+        {
+          "tag": "en:e150d",
+          "code": "E150d",
+          "name": "Caramen nhóm IV"
+        },
+        {
+          "tag": "en:e338",
+          "code": "E338",
+          "name": "Axit phosphoric"
+        }
+      ],
+      "novaGroup": 4,
+      "nutrition": {
+        "basis": "100ml",
+        "per100": {
+          "energyKcal": 43,
+          "energyKj": 180,
+          "fat": 0,
+          "saturatedFat": 0,
+          "carbohydrates": 10.6,
+          "sugars": 10.6,
+          "fiber": 0,
+          "proteins": 0,
+          "salt": 0.01
+        },
+        "preparedPer100": null
+      },
+      "source": {
+        "provider": "Open Food Facts",
+        "url": "https://world.openfoodfacts.org/product/8930000000033",
+        "license": "ODbL",
+        "imagesLicense": "CC BY-SA",
+        "lastModified": "2025-10-30T04:53:20.000Z",
+        "fetchedAt": "2026-10-30T09:00:00.000Z"
+      }
+    },
+    "score": {
+      "version": "fluw-score-1.0",
+      "weights": {
+        "nutrition": 0.7,
+        "additives": 0.3
+      },
+      "total": {
+        "value": 37,
+        "level": "limit",
+        "label": "Nên hạn chế",
+        "calculation": {
+          "nutritionWeighted": 12.6,
+          "additivesWeighted": 24,
+          "sum": 36.6
+        }
+      },
+      "nutrition": {
+        "value": 18,
+        "status": "computed",
+        "productType": "beverage",
+        "productTypeLabel": "Đồ uống",
+        "basis": "as_sold",
+        "points": 12,
+        "negativePoints": 12,
+        "positivePoints": 0,
+        "band": {
+          "pointsMin": 10,
+          "pointsMax": 54,
+          "scoreMin": 0,
+          "scoreMax": 19
+        },
+        "indicators": [
+          {
+            "key": "energy",
+            "label": "Năng lượng",
+            "effect": "negative",
+            "value": 180,
+            "unit": "kJ",
+            "per": "100ml",
+            "points": 3,
+            "maxPoints": 10,
+            "range": {
+              "min": 150,
+              "minInclusive": false,
+              "max": 210,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "sugars",
+            "label": "Đường",
+            "effect": "negative",
+            "value": 10.6,
+            "unit": "g",
+            "per": "100ml",
+            "points": 9,
+            "maxPoints": 10,
+            "range": {
+              "min": 10,
+              "minInclusive": false,
+              "max": 11,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "saturatedFat",
+            "label": "Chất béo bão hòa",
+            "effect": "negative",
+            "value": 0,
+            "unit": "g",
+            "per": "100ml",
+            "points": 0,
+            "maxPoints": 10,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 1,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "salt",
+            "label": "Muối",
+            "effect": "negative",
+            "value": 0.01,
+            "unit": "g",
+            "per": "100ml",
+            "points": 0,
+            "maxPoints": 20,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 0.2,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "nonNutritiveSweeteners",
+            "label": "Chất tạo ngọt không đường",
+            "effect": "negative",
+            "value": 0,
+            "unit": "count",
+            "per": null,
+            "points": 0,
+            "maxPoints": 4,
+            "range": null,
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "proteins",
+            "label": "Chất đạm",
+            "effect": "positive",
+            "value": 0,
+            "unit": "g",
+            "per": "100ml",
+            "points": 0,
+            "maxPoints": 7,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 1.2,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fiber",
+            "label": "Chất xơ",
+            "effect": "positive",
+            "value": 0,
+            "unit": "g",
+            "per": "100ml",
+            "points": 0,
+            "maxPoints": 5,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 3,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          },
+          {
+            "key": "fruitsVegetablesLegumes",
+            "label": "Rau củ, quả, đậu",
+            "effect": "positive",
+            "value": 0,
+            "unit": "%",
+            "per": null,
+            "points": 0,
+            "maxPoints": 6,
+            "range": {
+              "min": null,
+              "minInclusive": null,
+              "max": 40,
+              "maxInclusive": true
+            },
+            "status": "counted",
+            "note": null
+          }
+        ],
+        "missing": []
+      },
+      "additives": {
+        "value": 80,
+        "status": "computed",
+        "count": 2,
+        "band": {
+          "countMin": 1,
+          "countMax": 2,
+          "score": 80
+        }
+      },
+      "missing": [],
+      "disclaimer": "Điểm Fluw là thông tin tham khảo, tính từ dữ liệu cộng đồng Open Food Facts theo công thức công khai, không phải chẩn đoán hay tư vấn y tế. Các phụ gia được liệt kê là chất được phép sử dụng; điểm phụ gia chỉ phản ánh mức độ sử dụng phụ gia, không đánh giá độ an toàn của từng chất."
+    }
+  }
+}

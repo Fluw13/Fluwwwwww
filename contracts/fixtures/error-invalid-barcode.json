@@ -1,0 +1,10 @@
+{
+  "request": "GET /api/v1/products/8930000000012",
+  "status": 400,
+  "headers": {},
+  "body": {
+    "success": false,
+    "error": "Mã vạch không hợp lệ. Mã vạch gồm 8 đến 14 chữ số và phải đúng số kiểm tra.",
+    "code": "INVALID_BARCODE"
+  }
+}

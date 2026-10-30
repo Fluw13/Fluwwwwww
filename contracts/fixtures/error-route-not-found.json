@@ -1,0 +1,10 @@
+{
+  "request": "GET /api/v1/unknown",
+  "status": 404,
+  "headers": {},
+  "body": {
+    "success": false,
+    "error": "Đường dẫn API không tồn tại: /api/v1/unknown",
+    "code": "ROUTE_NOT_FOUND"
+  }
+}

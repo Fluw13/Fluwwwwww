@@ -1,0 +1,10 @@
+{
+  "request": "GET /api/v1/search?q=a",
+  "status": 400,
+  "headers": {},
+  "body": {
+    "success": false,
+    "error": "Từ khóa tìm kiếm cần từ 2 đến 100 ký tự.",
+    "code": "INVALID_QUERY"
+  }
+}
