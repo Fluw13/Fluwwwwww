@@ -1,3 +1,5 @@
+const { toDelimitedJson } = require('./delimitedJson');
+
 const MAX_INGREDIENTS_LENGTH = 2000;
 const MAX_FIELD_LENGTH = 200;
 const MAX_ALLERGENS = 30;
@@ -27,13 +29,6 @@ const truncate = (value, maxLength) => (typeof value === 'string' ? value.slice(
 const truncateList = (value) => (Array.isArray(value)
     ? value.slice(0, MAX_ALLERGENS).map((item) => truncate(String(item), MAX_FIELD_LENGTH))
     : []);
-
-// Escaping `<`, `>` and `&` keeps the JSON valid while making it impossible for community-edited
-// text to close the <product_data> block and smuggle instructions outside of it.
-const toDelimitedJson = (data) => JSON.stringify(data)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
 
 const buildPrompt = (product) => {
     const nutriments = product.nutriments || {};

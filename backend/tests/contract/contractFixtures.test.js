@@ -9,13 +9,14 @@ const path = require('node:path');
 const { captureFixtures } = require('../../scripts/contractFixtures/captureContractFixtures');
 const app = require('../../src/app');
 const openFoodFactsClient = require('../../src/services/openFoodFacts/openFoodFactsClient');
+const geminiClient = require('../../src/services/ai/geminiClient');
 
 const FIXTURES_DIR = path.join(__dirname, '..', '..', '..', 'contracts', 'fixtures');
 
 test('contracts/fixtures khớp đúng phản hồi thật của API v1 (chạy npm run contract:fixtures khi contract đổi)', async (t) => {
     t.mock.method(console, 'info', () => {});
     t.mock.method(console, 'warn', () => {});
-    const captured = await captureFixtures({ app, openFoodFactsClient });
+    const captured = await captureFixtures({ app, openFoodFactsClient, geminiClient });
     const onDisk = fs.readdirSync(FIXTURES_DIR).filter((file) => file.endsWith('.json')).map((file) => file.slice(0, -5)).sort();
 
     assert.deepEqual(onDisk, Object.keys(captured).sort());

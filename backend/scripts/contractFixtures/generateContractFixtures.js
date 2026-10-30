@@ -7,11 +7,12 @@ Object.assign(process.env, LIMITS_FOR_CAPTURE);
 const { captureFixtures } = require('./captureContractFixtures');
 const app = require('../../src/app');
 const openFoodFactsClient = require('../../src/services/openFoodFacts/openFoodFactsClient');
+const geminiClient = require('../../src/services/ai/geminiClient');
 
 const OUTPUT_DIR = path.join(__dirname, '..', '..', '..', 'contracts', 'fixtures');
 
 const main = async () => {
-    const fixtures = await captureFixtures({ app, openFoodFactsClient });
+    const fixtures = await captureFixtures({ app, openFoodFactsClient, geminiClient });
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
     for (const [name, fixture] of Object.entries(fixtures)) {

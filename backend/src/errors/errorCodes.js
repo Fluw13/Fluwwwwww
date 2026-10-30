@@ -13,10 +13,12 @@ const API_ERROR_CODES = Object.freeze({
 });
 
 // Values of the `aiError` field; the Flutter app maps them to user-facing reasons.
+// AI_RATE_LIMITED: Gemini refused (quota). AI_DAILY_LIMIT: Fluw's own daily cap (AI_DAILY_LIMIT env) was reached.
 const AI_ERROR_CODES = Object.freeze({
     NOT_CONFIGURED: 'AI_NOT_CONFIGURED',
     UNAVAILABLE: 'AI_UNAVAILABLE',
     RATE_LIMITED: 'AI_RATE_LIMITED',
+    DAILY_LIMIT: 'AI_DAILY_LIMIT',
     INVALID_RESPONSE: 'AI_INVALID_RESPONSE'
 });
 

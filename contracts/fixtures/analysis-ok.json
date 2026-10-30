@@ -1,0 +1,29 @@
+{
+  "request": "GET /api/v1/products/8930000000019/analysis",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "barcode": "8930000000019",
+    "scoreVersion": "fluw-score-1.0",
+    "aiGenerated": true,
+    "aiAnalysis": {
+      "summary": "Bánh quy bơ (dữ liệu thử) có Điểm Fluw 31/100, mức Nên hạn chế. Điểm dinh dưỡng 18/100 chủ yếu do năng lượng, đường và chất béo bão hòa ở mức cao; điểm phụ gia 60/100 vì sản phẩm có 4 phụ gia.",
+      "highlights": [
+        "Năng lượng 2.000 kJ/100 g, bị trừ 5/10 điểm.",
+        "Đường 25 g/100 g, bị trừ 7/15 điểm.",
+        "Chất béo bão hòa 8 g/100 g, bị trừ 7/10 điểm.",
+        "Chất xơ 2 g/100 g, chưa đủ để được cộng điểm.",
+        "Có 4 phụ gia (E322i, E471, E500, E503), điểm phụ gia 60/100."
+      ],
+      "recommendation": "Có thể dùng như món ăn vặt với lượng vừa phải, kết hợp chế độ ăn nhiều rau, trái cây và ngũ cốc nguyên hạt.",
+      "alternatives": [
+        "Bánh quy nguyên cám ít đường",
+        "Trái cây tươi",
+        "Các loại hạt không tẩm muối"
+      ]
+    },
+    "aiError": null,
+    "disclaimer": "Nội dung do AI (Zero) tạo để giải thích Điểm Fluw từ dữ liệu Open Food Facts, có thể chưa chính xác. Điểm do Fluw tính theo công thức công khai, AI không chấm điểm. Đây là thông tin tham khảo, không phải chẩn đoán hay tư vấn y tế."
+  }
+}

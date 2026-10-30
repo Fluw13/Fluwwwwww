@@ -1,0 +1,14 @@
+{
+  "request": "GET /api/v1/products/8930000000033/analysis",
+  "status": 200,
+  "headers": {},
+  "body": {
+    "success": true,
+    "barcode": "8930000000033",
+    "scoreVersion": "fluw-score-1.0",
+    "aiGenerated": true,
+    "aiAnalysis": null,
+    "aiError": "AI_DAILY_LIMIT",
+    "disclaimer": "Nội dung do AI (Zero) tạo để giải thích Điểm Fluw từ dữ liệu Open Food Facts, có thể chưa chính xác. Điểm do Fluw tính theo công thức công khai, AI không chấm điểm. Đây là thông tin tham khảo, không phải chẩn đoán hay tư vấn y tế."
+  }
+}

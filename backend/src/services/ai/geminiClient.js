@@ -1,16 +1,21 @@
 const { GoogleGenAI } = require('@google/genai');
 const AppError = require('../../errors/AppError');
 const { AI_ERROR_CODES } = require('../../errors/errorCodes');
+const { readPositiveInteger } = require('../../config/env');
 
-const DEFAULT_MODEL = 'gemini-3.6-flash';
-// Gemini sometimes needs more than 20 s. Render cold start (~50 s) + OpenFoodFacts (10 s) + this still fits the app's 120 s timeout.
-const REQUEST_TIMEOUT_MS = 40000;
-// The abort signal below is shared by every attempt, so retries stay within REQUEST_TIMEOUT_MS in total.
+// Flash-Lite answers in a few seconds (thinking is minimal by default) and has a larger free daily quota than Flash.
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+const DEFAULT_TIMEOUT_SECONDS = 15;
+// The abort signal below is shared by every attempt, so retries stay within the timeout in total.
 // 429 is not retried: on the free tier it usually means the daily quota is used up, and a retry only burns more quota.
 const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2, httpStatusCodes: [408, 500, 502, 503, 504] });
 const QUOTA_EXCEEDED_STATUS = 429;
 
 let client = null;
+
+const isConfigured = () => Boolean(process.env.GEMINI_API_KEY);
+
+const defaultTimeoutMs = () => readPositiveInteger(process.env.GEMINI_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS) * 1000;
 
 const getClient = () => {
     if (client === null) {
@@ -43,7 +48,7 @@ const toGeminiError = (error) => {
     return new AppError('Zero tạm thời không thể phân tích sản phẩm. Vui lòng thử lại sau.', 502, AI_ERROR_CODES.UNAVAILABLE);
 };
 
-const generateJson = async ({ systemInstruction, prompt, schema }) => {
+const generateJson = async ({ systemInstruction, prompt, schema, timeoutMs = defaultTimeoutMs() }) => {
     const ai = getClient();
 
     try {
@@ -55,7 +60,7 @@ const generateJson = async ({ systemInstruction, prompt, schema }) => {
                 responseMimeType: 'application/json',
                 responseJsonSchema: schema,
                 httpOptions: { retryOptions: RETRY_OPTIONS },
-                abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+                abortSignal: AbortSignal.timeout(timeoutMs)
             }
         });
 
@@ -65,4 +70,4 @@ const generateJson = async ({ systemInstruction, prompt, schema }) => {
     }
 };
 
-module.exports = { generateJson, toGeminiError };
+module.exports = { generateJson, isConfigured, toGeminiError };
