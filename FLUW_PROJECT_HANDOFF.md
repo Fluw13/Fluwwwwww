@@ -52,7 +52,7 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `src/services/openFoodFacts/productNormalizer.js` | Chuẩn hóa dữ liệu sản phẩm (chỉ số liệu 100 g, kJ sang kcal) |
 | `src/services/openFoodFacts/allergenMapper.js` | Đổi mã dị ứng sang tên tiếng Việt |
 | `src/services/aiService.js` | Ghép prompt, gọi Gemini, kiểm tra phản hồi |
-| `src/services/ai/geminiClient.js` | Gọi Gemini (timeout 20 s, thử lại 1 lần với lỗi tạm thời) |
+| `src/services/ai/geminiClient.js` | Gọi Gemini (timeout 40 s, thử lại 1 lần với lỗi tạm thời) |
 | `src/services/ai/analysisPrompt.js` | Prompt, quy tắc chống prompt injection, schema đầu ra |
 | `src/services/ai/analysisParser.js` | Kiểm tra và làm sạch đầu ra của Gemini |
 | `src/middlewares/errorHandler.js` | Trả lỗi dạng JSON; lỗi lạ trả 500, không lộ chi tiết |
@@ -144,7 +144,7 @@ Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flu
 
 | Lỗi | Cách sửa |
 | :--- | :--- |
-| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout 20 giây |
+| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout của lần gọi |
 | Tìm "mì hảo hảo" ra "Nước khoáng Vĩnh Hảo" do chỉ lấy kết quả đầu tiên | Lấy 10 kết quả, chọn kết quả khớp nhiều từ nhất |
 | App có thể báo quá thời gian khi Render vừa khởi động (~50 s) | Timeout app 120 s, đánh thức server khi mở màn hình chính, gợi ý trên màn hình chờ |
 | Mã vạch sai số kiểm tra vẫn gửi đi OpenFoodFacts và báo "không tìm thấy" | Kiểm tra số kiểm tra mã 12-14 chữ số, trả 400 |
@@ -153,6 +153,15 @@ Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flu
 Kiểm thử: backend `npm test` 67/67 (sau khi gộp với PR #2); chạy thử thủ công server thật với OpenFoodFacts và Gemini giả lập; frontend kiểm tra bằng `flutter analyze`/`flutter test` trên GitHub Actions. Review độc lập: xem PR #3.
 
 Rủi ro đã biết: một số ít sản phẩm trên OpenFoodFacts được lưu dưới mã vạch sai số kiểm tra (do người đóng góp nhập sai) sẽ không tra được bằng mã đó; khi Gemini hết hạn mức (429), lần thử lại sau 1-2 giây thường cũng thất bại.
+
+### Đợt sửa lỗi 30/10/2026 (lần 2, sau khi deploy PR #3)
+
+| Lỗi | Bằng chứng | Cách sửa |
+| :--- | :--- | :--- |
+| Tìm "mì hảo hảo" (có dấu) vẫn ra "Nước khoáng Vĩnh Hảo"; "mi hao hao" thì đúng | Production sau PR #3 | Đếm cả từ lặp lại ("hảo hảo" khớp "Hao Hao" 2 lần, "Vĩnh Hảo" 1 lần), từ có cả ở tên và thương hiệu chỉ tính một lần; bằng điểm thì ưu tiên sản phẩm có tên, rồi (từ khóa từ 2 từ) tên ít từ thừa; chấm riêng tên tiếng Việt và tiếng Anh |
+| Gemini đôi khi chậm quá 20 giây, app hiện "Chưa có đánh giá AI" | Production: "sữa chua vinamilk" trả `AI_UNAVAILABLE` sau 20,47 s, gọi lại có điểm sau 7,3 s. Nguyên nhân hết giờ là LIKELY (chưa đối chiếu log Render) | Timeout Gemini 20 → 40 giây (vẫn nằm trong 120 giây của app) |
+
+Đánh đổi đã chấp nhận: với từ khóa từ 2 từ trở lên, khi số từ khớp bằng nhau thì tên ngắn hơn được ưu tiên hơn thứ tự của máy tìm kiếm (ví dụ "sữa chua vinamilk" chọn "Sữa chua Vinamilk" thay vì "Sữa chua ăn Vinamilk có đường").
 
 ## 7. Việc còn mở
 
