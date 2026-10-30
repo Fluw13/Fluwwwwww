@@ -11,6 +11,8 @@ class AiUnavailableCard extends StatelessWidget {
     switch (aiError) {
       case 'AI_NOT_CONFIGURED':
         return 'Tính năng phân tích AI hiện chưa được bật trên máy chủ.';
+      case 'AI_RATE_LIMITED':
+        return 'Zero đã hết lượt phân tích trong lúc này. Bạn có thể quay lại sau để xem đánh giá.';
       case 'AI_INVALID_RESPONSE':
         return 'Zero trả về kết quả không hợp lệ nên đã được bỏ qua để tránh hiển thị thông tin sai.';
       default:

@@ -1,8 +1,4 @@
-const foldVietnamese = (text) => text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[đĐ]/g, 'd')
-    .toLowerCase();
+const { foldVietnamese } = require('./foldVietnamese');
 
 const tokenize = (text) => foldVietnamese(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 
@@ -74,4 +70,15 @@ const pickBestSearchHit = (hits, query) => {
     return bestHit;
 };
 
-module.exports = { pickBestSearchHit };
+const matchesEveryQueryWord = (hit, query) => {
+    const queryCounts = countTokens(tokenize(query));
+    let totalQueryWords = 0;
+
+    for (const count of queryCounts.values()) {
+        totalQueryWords += count;
+    }
+
+    return totalQueryWords > 0 && scoreHit(queryCounts, hit, false).overlap === totalQueryWords;
+};
+
+module.exports = { pickBestSearchHit, matchesEveryQueryWord };

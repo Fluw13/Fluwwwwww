@@ -56,11 +56,11 @@ test('Gemini lỗi tạm thời (503) được thử lại một lần rồi th�
     assert.equal(calls, 2);
 });
 
-test('Gemini bị giới hạn lượt gọi (429) cũng được thử lại', async () => {
+test('Gemini hết hạn mức (429) không thử lại, báo AI_RATE_LIMITED', async () => {
     stubGemini(() => geminiFailure(429), geminiSuccess);
 
-    assert.equal((await analyzeProduct(product)).score, 80);
-    assert.equal(calls, 2);
+    await assert.rejects(analyzeProduct(product), (error) => error.code === AI_ERROR_CODES.RATE_LIMITED && error.statusCode === 503);
+    assert.equal(calls, 1);
 });
 
 test('Gemini lỗi liên tục chỉ thử tối đa 2 lần rồi báo AI_UNAVAILABLE', async () => {

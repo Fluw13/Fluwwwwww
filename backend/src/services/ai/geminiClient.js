@@ -6,7 +6,9 @@ const DEFAULT_MODEL = 'gemini-3.6-flash';
 // Gemini sometimes needs more than 20 s. Render cold start (~50 s) + OpenFoodFacts (10 s) + this still fits the app's 120 s timeout.
 const REQUEST_TIMEOUT_MS = 40000;
 // The abort signal below is shared by every attempt, so retries stay within REQUEST_TIMEOUT_MS in total.
-const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2 });
+// 429 is not retried: on the free tier it usually means the daily quota is used up, and a retry only burns more quota.
+const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2, httpStatusCodes: [408, 500, 502, 503, 504] });
+const QUOTA_EXCEEDED_STATUS = 429;
 
 let client = null;
 
@@ -29,6 +31,10 @@ const isTimeoutError = (error) => error?.name === 'TimeoutError' || error?.name 
 const toGeminiError = (error) => {
     // Only the error type and message are logged; request config (which holds the key) never is.
     console.error('[Gemini Error]', error?.name, error?.status ?? '', error?.message);
+
+    if (error?.status === QUOTA_EXCEEDED_STATUS) {
+        return new AppError('Zero đã hết lượt phân tích trong lúc này. Vui lòng thử lại sau.', 503, AI_ERROR_CODES.RATE_LIMITED);
+    }
 
     if (isTimeoutError(error)) {
         return new AppError('Zero phân tích quá lâu. Vui lòng thử lại sau.', 504, AI_ERROR_CODES.UNAVAILABLE);

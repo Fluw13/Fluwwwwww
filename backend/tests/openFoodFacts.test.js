@@ -4,7 +4,7 @@ const AppError = require('../src/errors/AppError');
 const {
     buildUserAgent,
     readBarcodeResponse,
-    readSearchResponse,
+    readSearchHits,
     toTransportError
 } = require('../src/services/openFoodFacts/openFoodFactsClient');
 const { normalizeProduct } = require('../src/services/openFoodFacts/productNormalizer');
@@ -41,7 +41,7 @@ test('OpenFoodFacts 429 trả 503 UPSTREAM_RATE_LIMITED kèm thời gian chờ',
 
     for (const read of [
         () => readBarcodeResponse({ status: 429, data: {} }, '12345678'),
-        () => readSearchResponse({ status: 429, data: {} }, 'sữa')
+        () => readSearchHits({ status: 429, data: {} })
     ]) {
         const error = captureError(read);
         assert.equal(error.statusCode, 503);
@@ -56,7 +56,7 @@ test('OpenFoodFacts 5xx là UPSTREAM_UNAVAILABLE', () => {
     mock.method(console, 'error', () => {});
 
     const barcodeError = captureError(() => readBarcodeResponse({ status: 503, data: '<html>' }, '12345678'));
-    const searchError = captureError(() => readSearchResponse({ status: 500, data: '' }, 'sữa'));
+    const searchError = captureError(() => readSearchHits({ status: 500, data: '' }));
 
     assert.equal(barcodeError.statusCode, 502);
     assert.equal(barcodeError.code, 'UPSTREAM_UNAVAILABLE');
@@ -65,12 +65,10 @@ test('OpenFoodFacts 5xx là UPSTREAM_UNAVAILABLE', () => {
     mock.restoreAll();
 });
 
-test('tìm theo tên không có kết quả là PRODUCT_NOT_FOUND', () => {
-    const error = captureError(() => readSearchResponse({ status: 200, data: { hits: [] } }, 'xyz'));
-
-    assert.equal(error.statusCode, 404);
-    assert.equal(error.code, 'PRODUCT_NOT_FOUND');
-    assert.deepEqual(readSearchResponse({ status: 200, data: { hits: [{ code: '1' }] } }, 'xyz'), { code: '1' });
+test('readSearchHits trả danh sách kết quả, rỗng khi không có hoặc sai định dạng', () => {
+    assert.deepEqual(readSearchHits({ status: 200, data: { hits: [{ code: '1' }] } }), [{ code: '1' }]);
+    assert.deepEqual(readSearchHits({ status: 200, data: { hits: [] } }), []);
+    assert.deepEqual(readSearchHits({ status: 200, data: 'html' }), []);
 });
 
 test('lỗi mạng phân biệt timeout (504) với mất kết nối (502)', () => {
