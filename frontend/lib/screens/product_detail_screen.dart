@@ -1,37 +1,46 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../core/app_colors.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/fluw_palette.dart';
 import '../models/product_model.dart';
 import '../models/score_level.dart';
 import '../services/api_service.dart';
 import '../widgets/ai_unavailable_card.dart';
+import '../widgets/async/async_content.dart';
+import '../widgets/async/loading_status_banner.dart';
 import '../widgets/circular_score_ring.dart';
 import '../widgets/macro_bar.dart';
 import '../widgets/tag_section.dart';
 import '../widgets/zero_analysis_card.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key, required this.query});
+  const ProductDetailScreen({super.key, required this.query, this.apiService});
 
   final String query;
+  final ApiService? apiService;
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  final ApiService _apiService = ApiService();
+  late final ApiService _apiService;
+  late final bool _ownsApiService;
   late Future<ProductModel> _productFuture;
 
   @override
   void initState() {
     super.initState();
+    _ownsApiService = widget.apiService == null;
+    _apiService = widget.apiService ?? ApiService();
     _productFuture = _apiService.fetchProduct(widget.query);
   }
 
   @override
   void dispose() {
-    _apiService.dispose();
+    if (_ownsApiService) {
+      _apiService.dispose();
+    }
     super.dispose();
   }
 
@@ -45,48 +54,45 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
-      body: FutureBuilder<ProductModel>(
+      body: AsyncContent<ProductModel>(
         future: _productFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const _LoadingView();
-          }
-
-          final ProductModel? product = snapshot.data;
-          if (product == null) {
-            return _ErrorView(error: snapshot.error, onRetry: _retry);
-          }
-
-          return _ProductContent(product: product);
-        },
+        loadingBuilder: (_) => _LoadingView(query: widget.query),
+        errorBuilder: (_, error) => _ErrorView(error: error, onRetry: _retry),
+        dataBuilder: (_, product) => _ProductContent(product: product),
       ),
     );
   }
 }
 
 class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+  const _LoadingView({required this.query});
+
+  static final RegExp _barcodePattern = RegExp(r'^\d{8,14}$');
+
+  final String query;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(color: AppColors.accent),
-            const SizedBox(height: 16),
-            const Text('Zero đang phân tích dữ liệu...'),
-            const SizedBox(height: 8),
-            Text(
-              'Nếu máy chủ vừa khởi động, lần tra cứu đầu tiên có thể mất khoảng 1 phút.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-            ),
-          ],
+    final String source = _barcodePattern.hasMatch(query) ? 'Mã $query' : 'Từ khóa “$query”';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!MediaQuery.disableAnimationsOf(context)) const LinearProgressIndicator(minHeight: 3),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screenPadding,
+            AppSpacing.md,
+            AppSpacing.screenPadding,
+            0,
+          ),
+          child: LoadingStatusBanner(
+            title: 'Đang mở chi tiết sản phẩm',
+            subtitle: '$source · Zero đang phân tích…',
+            slowHint: 'Nếu máy chủ vừa khởi động, lần tra cứu đầu tiên có thể mất khoảng 1 phút.',
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -94,12 +100,12 @@ class _LoadingView extends StatelessWidget {
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.error, required this.onRetry});
 
-  final Object? error;
+  final Object error;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final Object? cause = error;
+    final Object cause = error;
     final String message = cause is ApiException
         ? cause.message
         : 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.';
@@ -108,9 +114,9 @@ class _ErrorView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: AppColors.danger),
+            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               message,
@@ -133,6 +139,7 @@ class _ProductContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FluwPalette palette = context.palette;
     final int? score = product.score;
     final ScoreLevel? level = product.level;
 
@@ -149,7 +156,7 @@ class _ProductContent extends StatelessWidget {
                   height: 160,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                      Icon(Icons.broken_image, size: 100, color: palette.textSecondary),
                 ),
               ),
             const SizedBox(height: 16),
@@ -160,7 +167,7 @@ class _ProductContent extends StatelessWidget {
             ),
             Text(
               product.brand,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              style: TextStyle(color: palette.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 24),
             if (score != null && level != null) ...[
@@ -192,7 +199,7 @@ class _ProductContent extends StatelessWidget {
               child: TagSection(
                 title: 'Chất gây dị ứng theo nhãn',
                 tags: product.declaredAllergens,
-                tagColor: AppColors.danger,
+                tone: palette.scorePoor,
                 note: 'Nguồn: OpenFoodFacts. Luôn kiểm tra nhãn bao bì trước khi dùng.',
               ),
             ),
@@ -202,7 +209,7 @@ class _ProductContent extends StatelessWidget {
               child: TagSection(
                 title: 'Có thể chứa thêm (AI gợi ý)',
                 tags: product.suggestedAllergens,
-                tagColor: AppColors.warning,
+                tone: palette.scoreModerate,
                 note: 'Zero suy ra từ danh sách thành phần, chưa được xác nhận trên nhãn.',
               ),
             ),
@@ -212,7 +219,7 @@ class _ProductContent extends StatelessWidget {
               child: TagSection(
                 title: 'Lựa chọn lành mạnh hơn',
                 tags: product.alternatives,
-                tagColor: AppColors.accent,
+                tone: palette.scoreGood,
                 note: 'Gợi ý chung do Zero tạo.',
               ),
             ),
@@ -221,7 +228,7 @@ class _ProductContent extends StatelessWidget {
               'Dữ liệu sản phẩm: OpenFoodFacts (giấy phép ODbL), do cộng đồng đóng góp và có thể chưa đầy đủ.\n'
               'Phân tích: Zero AI (Google Gemini).',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
+              style: TextStyle(color: palette.textSecondary, fontSize: 11, fontStyle: FontStyle.italic),
             ),
           ],
         ),
