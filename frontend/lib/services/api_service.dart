@@ -22,7 +22,7 @@ class ApiService {
     defaultValue: 'https://fluw.onrender.com/api/product',
   );
 
-  // Covers a Render free-tier cold start (about 50 s) plus the backend's OpenFoodFacts (10 s) and Gemini (20 s) budgets.
+  // Covers a Render free-tier cold start (about 50 s) plus the backend's OpenFoodFacts (10 s) and Gemini (40 s) budgets.
   static const Duration _timeout = Duration(seconds: 120);
 
   static final Uri _healthUrl = Uri.parse(_baseUrl).replace(path: '/health');
