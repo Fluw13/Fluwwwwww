@@ -1,6 +1,7 @@
 const axios = require('axios');
 const AppError = require('../../errors/AppError');
 const { API_ERROR_CODES } = require('../../errors/errorCodes');
+const { offBudget } = require('./upstreamBudget');
 const { version: APP_VERSION } = require('../../../package.json');
 
 const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
@@ -23,9 +24,34 @@ const SHARED_FIELDS = [
     'allergens',
     'nutriments'
 ];
+const PRODUCT_DETAIL_FIELDS = [
+    'lang',
+    'last_modified_t',
+    'product_name_en',
+    'generic_name',
+    'generic_name_vi',
+    'quantity',
+    'brand_owner',
+    'manufacturing_places',
+    'categories_tags',
+    'allergens_tags',
+    'traces_tags',
+    'additives_tags',
+    'ingredients_text_en',
+    'ingredients_lc',
+    'ingredients_n',
+    'unknown_ingredients_n',
+    'ingredients_non_nutritive_sweeteners_n',
+    'nova_group',
+    'nutriscore',
+    'nutrition_score_warning_fruits_vegetables_legumes_estimate_from_ingredients',
+    'selected_images',
+    'image_ingredients_url',
+    'image_nutrition_url'
+];
 // The product API returns the full document (often hundreds of KB) unless fields are listed.
-const BARCODE_FIELDS = [...SHARED_FIELDS, 'allergens_tags'].join(',');
-const SEARCH_FIELDS = SHARED_FIELDS;
+const BARCODE_FIELDS = [...SHARED_FIELDS, ...PRODUCT_DETAIL_FIELDS].join(',');
+const SEARCH_FIELDS = [...SHARED_FIELDS, 'quantity', 'image_front_small_url'];
 const SEARCH_LANGUAGES = ['vi', 'en'];
 const SEARCH_PAGE_SIZE = 10;
 
@@ -120,6 +146,7 @@ const send = async (request) => {
 const buildSearchRequest = (name) => ({ q: name, page_size: SEARCH_PAGE_SIZE, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
 
 const fetchByBarcode = async (barcode) => {
+    offBudget.take('read');
     const response = await send(() => httpClient.get(BARCODE_PRODUCT_URL + encodeURIComponent(barcode) + '.json', {
         params: { fields: BARCODE_FIELDS }
     }));
@@ -128,6 +155,7 @@ const fetchByBarcode = async (barcode) => {
 };
 
 const fetchSearchHits = async (text, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) => {
+    offBudget.take('search');
     const response = await send(() => httpClient.post(SEARCH_URL, buildSearchRequest(text), {
         headers: { 'Content-Type': 'application/json' },
         timeout: timeoutMs

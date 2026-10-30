@@ -1,0 +1,29 @@
+{
+  "code": "8930000000064",
+  "lang": "vi",
+  "product_name": "Bánh gạo (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "150 g",
+  "nutriscore": {
+    "2023": {
+      "category_available": 0,
+      "nutriscore_applicable": 1,
+      "data": {
+        "is_beverage": 0,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0
+      }
+    }
+  },
+  "nutriments": {
+    "energy-kcal_100g": 410,
+    "fat_100g": 12,
+    "carbohydrates_100g": 70,
+    "sugars_100g": 8,
+    "proteins_100g": 6,
+    "sodium_100g": 0.4
+  }
+}

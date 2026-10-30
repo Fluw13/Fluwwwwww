@@ -1,0 +1,45 @@
+{
+  "code": "8930000000040",
+  "lang": "vi",
+  "product_name": "Nước khoáng thiên nhiên (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "500 ml",
+  "categories_tags": [
+    "en:beverages",
+    "en:waters",
+    "en:spring-waters"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 1,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 1,
+        "is_water": "1",
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": null,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutriments": {},
+  "ingredients_text_vi": "Nước khoáng thiên nhiên",
+  "ingredients_n": 1,
+  "unknown_ingredients_n": 0,
+  "ingredients_non_nutritive_sweeteners_n": 0,
+  "additives_tags": [],
+  "nova_group": 1
+}

@@ -31,14 +31,19 @@ const toAllergenName = (tag) => {
     return ALLERGEN_NAMES[key] || key.replace(/-/g, ' ');
 };
 
-const readAllergens = (value) => {
-    const names = toTagList(value)
-        .filter((tag) => typeof tag === 'string')
-        .map((tag) => tag.trim())
-        .filter((tag) => tag.length > 0)
-        .map(toAllergenName);
+const readTags = (value) => toTagList(value)
+    .filter((tag) => typeof tag === 'string')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
 
-    return [...new Set(names)];
+const readAllergens = (value) => [...new Set(readTags(value).map(toAllergenName))];
+
+const readLabelledAllergens = (value) => {
+    const seenLabels = new Set();
+
+    return readTags(value)
+        .map((tag) => ({ tag, label: toAllergenName(tag) }))
+        .filter(({ label }) => !seenLabels.has(label) && seenLabels.add(label));
 };
 
-module.exports = { readAllergens };
+module.exports = { readAllergens, readLabelledAllergens };

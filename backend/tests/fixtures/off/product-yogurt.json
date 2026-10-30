@@ -1,0 +1,56 @@
+{
+  "code": "8930000000026",
+  "lang": "vi",
+  "product_name": "Sữa chua không đường (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "100 g",
+  "categories_tags": [
+    "en:dairies",
+    "en:yogurts"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 1,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 0,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": 0,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutriments": {
+    "energy-kj_100g": 250,
+    "fat_100g": 3,
+    "saturated-fat_100g": 2,
+    "carbohydrates_100g": 4,
+    "sugars_100g": 4,
+    "fiber_100g": 0,
+    "proteins_100g": 4,
+    "salt_100g": 0.1
+  },
+  "ingredients_text": "Sữa tươi, men cái",
+  "ingredients_lc": "vi",
+  "ingredients_n": 2,
+  "unknown_ingredients_n": 0,
+  "additives_tags": [],
+  "allergens_tags": [
+    "en:milk"
+  ],
+  "nova_group": 1
+}

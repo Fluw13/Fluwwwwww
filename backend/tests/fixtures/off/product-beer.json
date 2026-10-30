@@ -1,0 +1,51 @@
+{
+  "code": "8930000000071",
+  "lang": "vi",
+  "product_name": "Bia lager (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "330 ml",
+  "categories_tags": [
+    "en:beverages",
+    "en:alcoholic-beverages",
+    "en:beers"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 0,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 1,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": 0,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutriments": {
+    "energy-kj_100g": 180,
+    "fat_100g": 0,
+    "saturated-fat_100g": 0,
+    "carbohydrates_100g": 3.5,
+    "sugars_100g": 0.2,
+    "proteins_100g": 0.4,
+    "salt_100g": 0.01
+  },
+  "ingredients_text_vi": "Nước, malt đại mạch, hoa bia",
+  "ingredients_n": 3,
+  "unknown_ingredients_n": 0,
+  "additives_tags": []
+}

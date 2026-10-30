@@ -1,0 +1,53 @@
+{
+  "code": "8930000000095",
+  "lang": "vi",
+  "product_name": "Kẹo dẻo (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "50 g",
+  "categories_tags": [
+    "en:confectioneries",
+    "en:gummies"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 1,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 0,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": 0,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutriments": {
+    "energy-kj_100g": 1400,
+    "fat_100g": 0.2,
+    "saturated-fat_100g": 0.1,
+    "carbohydrates_100g": 80,
+    "sugars_100g": 50,
+    "fiber_100g": 0,
+    "proteins_100g": 5,
+    "salt_100g": 0.05
+  },
+  "ingredients_text_vi": "Siro glucose, đường, gelatin, axit citric, hương liệu",
+  "ingredients_n": 5,
+  "unknown_ingredients_n": 4,
+  "additives_tags": [
+    "en:e330"
+  ]
+}

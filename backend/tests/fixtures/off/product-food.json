@@ -1,0 +1,90 @@
+{
+  "code": "8930000000019",
+  "lang": "vi",
+  "product_name": "Bánh quy bơ (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "product_name_vi": "Bánh quy bơ (dữ liệu thử)",
+  "generic_name": "Bánh quy",
+  "quantity": "120 g",
+  "brand_owner": "Công ty Thử nghiệm Fluw",
+  "manufacturing_places": "Việt Nam",
+  "categories_tags": [
+    "en:snacks",
+    "en:biscuits"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 1,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 0,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": 0,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutrition_score_warning_fruits_vegetables_legumes_estimate_from_ingredients": 1,
+  "nutriments": {
+    "energy-kj_100g": 2000,
+    "energy-kcal_100g": 478,
+    "fat_100g": 20,
+    "saturated-fat_100g": 8,
+    "carbohydrates_100g": 65,
+    "sugars_100g": 25,
+    "fiber_100g": 2,
+    "proteins_100g": 6,
+    "salt_100g": 0.5,
+    "sodium_100g": 0.2
+  },
+  "ingredients_text_vi": "Bột mì, đường, bơ, dầu cọ, chất nhũ hóa (E322i, E471), chất tạo xốp (E500, E503)",
+  "ingredients_n": 8,
+  "unknown_ingredients_n": 0,
+  "additives_tags": [
+    "en:e322",
+    "en:e322i",
+    "en:e471",
+    "en:e500",
+    "en:e503"
+  ],
+  "allergens_tags": [
+    "en:gluten",
+    "en:milk",
+    "en:soybeans"
+  ],
+  "traces_tags": [
+    "en:eggs"
+  ],
+  "nova_group": 4,
+  "selected_images": {
+    "front": {
+      "display": {
+        "en": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_en.3.400.jpg",
+        "vi": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.400.jpg"
+      },
+      "small": {
+        "vi": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.200.jpg"
+      }
+    },
+    "ingredients": {
+      "display": {
+        "vi": "https://images.openfoodfacts.org/images/products/893/000/000/0001/ingredients_vi.7.400.jpg"
+      }
+    }
+  },
+  "image_front_url": "https://images.openfoodfacts.org/images/products/893/000/000/0001/front_vi.5.400.jpg"
+}

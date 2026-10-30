@@ -1,0 +1,70 @@
+{
+  "code": "8930000000057",
+  "lang": "vi",
+  "product_name": "Mì ăn liền vị tôm (dữ liệu thử)",
+  "brands": "Fluw Test",
+  "last_modified_t": 1761800000,
+  "quantity": "75 g",
+  "categories_tags": [
+    "en:dried-products-to-be-rehydrated",
+    "en:noodles",
+    "en:instant-noodles"
+  ],
+  "nutriscore": {
+    "2023": {
+      "category_available": 1,
+      "nutriscore_applicable": 1,
+      "nutrients_available": 1,
+      "data": {
+        "is_beverage": 0,
+        "is_water": 0,
+        "is_cheese": 0,
+        "is_fat_oil_nuts_seeds": 0,
+        "is_red_meat_product": 0,
+        "components": {
+          "negative": [],
+          "positive": [
+            {
+              "id": "fruits_vegetables_legumes",
+              "value": 0,
+              "points": 0,
+              "points_max": 5
+            }
+          ]
+        }
+      }
+    }
+  },
+  "nutriments": {
+    "energy-kj_100g": 1883,
+    "energy-kcal_100g": 450,
+    "fat_100g": 17,
+    "saturated-fat_100g": 8,
+    "carbohydrates_100g": 62,
+    "sugars_100g": 4,
+    "fiber_100g": 2,
+    "proteins_100g": 9,
+    "salt_100g": 3.5
+  },
+  "ingredients_text_vi": "Bột mì, dầu cọ, muối, đường, bột ngọt (E621), E627, E631, màu (E150a, E160a), chất chống oxy hóa (E320, E321), E451, E500, E501",
+  "ingredients_n": 14,
+  "unknown_ingredients_n": 2,
+  "additives_tags": [
+    "en:e150",
+    "en:e150a",
+    "en:e160",
+    "en:e160a",
+    "en:e320",
+    "en:e321",
+    "en:e451",
+    "en:e500",
+    "en:e501",
+    "en:e621",
+    "en:e627",
+    "en:e631"
+  ],
+  "allergens_tags": [
+    "en:gluten"
+  ],
+  "nova_group": 4
+}
