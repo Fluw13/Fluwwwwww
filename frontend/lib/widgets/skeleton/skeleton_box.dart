@@ -6,41 +6,55 @@ import 'shimmer_scope.dart';
 
 /// A placeholder block shown in place of content that is still loading.
 /// Without a [ShimmerScope] ancestor it renders as a static block.
+/// A null [width] fills the available width.
 class SkeletonBox extends StatelessWidget {
-  const SkeletonBox({
-    super.key,
-    this.width,
-    required this.height,
-    this.radius = AppRadius.sm,
-  });
+  const SkeletonBox({super.key, this.width, required this.height, this.radius = AppRadius.sm}) : _isTextLine = false;
 
   const SkeletonBox.circle({super.key, required double size})
-      : width = size,
-        height = size,
-        radius = AppRadius.pill;
+    : width = size,
+      height = size,
+      radius = AppRadius.pill,
+      _isTextLine = false;
 
-  const SkeletonBox.line({super.key, this.width, this.height = 12}) : radius = 6;
+  /// Takes the same height as one line of text at [fontSize] and grows with the
+  /// system text size, so the skeleton keeps the shape of the real text.
+  const SkeletonBox.text({super.key, this.width, required double fontSize, double lineHeight = 1.3})
+    : height = fontSize * lineHeight,
+      radius = 6,
+      _isTextLine = true;
+
+  static const double _textBarFactor = 0.7;
 
   final double? width;
   final double height;
   final double radius;
+  final bool _isTextLine;
 
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
     final Animation<double>? shimmer = ShimmerScope.maybeOf(context);
+    final double outerHeight = _isTextLine ? MediaQuery.textScalerOf(context).scale(height) : height;
+    final double barHeight = _isTextLine ? outerHeight * _textBarFactor : outerHeight;
 
     Widget buildBox(double progress) {
       return SizedBox(
-        width: width,
-        height: height,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            gradient: LinearGradient(
-              colors: [palette.skeletonBase, palette.skeletonHighlight, palette.skeletonBase],
-              stops: const [0.35, 0.5, 0.65],
-              transform: _SlidingGradientTransform(progress),
+        width: width ?? double.infinity,
+        height: outerHeight,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: width ?? double.infinity,
+            height: barHeight,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(radius),
+                gradient: LinearGradient(
+                  colors: [palette.skeletonBase, palette.skeletonHighlight, palette.skeletonBase],
+                  stops: const [0.35, 0.5, 0.65],
+                  transform: _SlidingGradientTransform(progress),
+                ),
+              ),
             ),
           ),
         ),
@@ -50,10 +64,7 @@ class SkeletonBox extends StatelessWidget {
     return ExcludeSemantics(
       child: shimmer == null
           ? buildBox(0)
-          : AnimatedBuilder(
-              animation: shimmer,
-              builder: (context, _) => buildBox(shimmer.value),
-            ),
+          : AnimatedBuilder(animation: shimmer, builder: (context, _) => buildBox(shimmer.value)),
     );
   }
 }
