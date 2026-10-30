@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
-import '../core/app_colors.dart';
+import '../core/theme/fluw_palette.dart';
+import '../core/theme/score_colors.dart';
 import '../models/score_level.dart';
 
 class CircularScoreRing extends StatelessWidget {
@@ -15,20 +16,22 @@ class CircularScoreRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = ScoreLevel.fromScore(score).color;
+    final FluwPalette palette = context.palette;
+    final ScoreColors colors = palette.scoreColors(ScoreLevel.fromScore(score));
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white,
+        color: palette.surface,
         boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 24,
-            spreadRadius: 4,
-          ),
+          if (palette.ringGlowOpacity > 0)
+            BoxShadow(
+              color: colors.ring.withValues(alpha: palette.ringGlowOpacity),
+              blurRadius: 24,
+              spreadRadius: 4,
+            ),
         ],
       ),
       child: Stack(
@@ -40,8 +43,8 @@ class CircularScoreRing extends StatelessWidget {
             child: CircularProgressIndicator(
               value: score / 100,
               strokeWidth: 10,
-              backgroundColor: Colors.grey.shade200,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
+              backgroundColor: palette.surfaceMuted,
+              valueColor: AlwaysStoppedAnimation<Color>(colors.ring),
             ),
           ),
           Column(
@@ -51,15 +54,15 @@ class CircularScoreRing extends StatelessWidget {
                 '$score',
                 style: TextStyle(
                   fontSize: size * 0.3,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.ink,
+                  fontWeight: FontWeight.w800,
+                  color: palette.textPrimary,
                 ),
               ),
               Text(
                 '/100',
                 style: TextStyle(
                   fontSize: size * 0.1,
-                  color: Colors.grey.shade600,
+                  color: palette.textSecondary,
                   fontWeight: FontWeight.bold,
                 ),
               ),

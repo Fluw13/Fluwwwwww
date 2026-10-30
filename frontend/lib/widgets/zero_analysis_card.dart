@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_colors.dart';
+import '../core/theme/fluw_palette.dart';
 
 class ZeroAnalysisCard extends StatelessWidget {
   const ZeroAnalysisCard({
@@ -14,20 +14,22 @@ class ZeroAnalysisCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FluwPalette palette = context.palette;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: palette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.psychology, color: AppColors.ink),
+              Icon(Icons.psychology, color: palette.accentText),
               const SizedBox(width: 8),
               const Text(
                 'Zero Deep Think',
@@ -36,25 +38,25 @@ class ZeroAnalysisCard extends StatelessWidget {
               const Spacer(),
               Text(
                 'Do AI tạo',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 11, fontWeight: FontWeight.w600),
+                style: TextStyle(color: palette.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           if (deepThink.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(deepThink, style: TextStyle(color: Colors.grey.shade800, fontSize: 14)),
+            Text(deepThink, style: TextStyle(color: palette.textPrimary, fontSize: 14)),
           ],
           if (recommendation.isNotEmpty) ...[
             const Divider(height: 24),
             const Text('Lời khuyên dinh dưỡng:', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(recommendation, style: TextStyle(color: Colors.grey.shade700, fontSize: 14)),
+            Text(recommendation, style: TextStyle(color: palette.textPrimary, fontSize: 14)),
           ],
           const SizedBox(height: 12),
           Text(
             'Nội dung do AI tạo, chỉ mang tính tham khảo và có thể chưa chính xác. '
             'Không thay thế tư vấn của bác sĩ hoặc chuyên gia dinh dưỡng.',
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
+            style: TextStyle(color: palette.textSecondary, fontSize: 11, fontStyle: FontStyle.italic),
           ),
         ],
       ),

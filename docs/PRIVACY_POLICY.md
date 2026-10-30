@@ -16,6 +16,7 @@ Fluw là ứng dụng tra cứu thông tin thực phẩm bằng mã vạch hoặ
 | Mã vạch hoặc tên sản phẩm bạn nhập | Tra cứu sản phẩm | Máy chủ Fluw, OpenFoodFacts |
 | Thông tin sản phẩm (tên, thương hiệu, thành phần, dinh dưỡng) | Tạo phân tích dinh dưỡng | Máy chủ Fluw, Google Gemini API |
 | Địa chỉ IP | Chống lạm dụng (giới hạn số lần tra cứu) | Máy chủ Fluw, chỉ lưu tạm trong bộ nhớ |
+| Lựa chọn giao diện (Theo máy / Sáng / Tối) | Giữ giao diện bạn đã chọn cho lần mở sau | Chỉ lưu trên thiết bị của bạn, không gửi đi đâu. Gỡ ứng dụng hoặc xóa dữ liệu ứng dụng sẽ xóa lựa chọn này. |
 
 Fluw **không** yêu cầu tài khoản và **không** thu thập tên, email, số điện thoại, vị trí hay danh bạ. Lịch sử tra cứu không được lưu lại.
 
