@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../core/app_colors.dart';
+import '../core/theme/fluw_palette.dart';
 import '../services/api_service.dart';
 import 'product_detail_screen.dart';
 import 'scanner_screen.dart';
@@ -57,11 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final FluwPalette palette = context.palette;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Fluw',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
         ),
       ),
       body: SafeArea(
@@ -95,8 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 56,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.black,
+                    backgroundColor: palette.primaryAction,
+                    foregroundColor: palette.onPrimaryAction,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
@@ -133,13 +135,8 @@ class _SearchField extends StatelessWidget {
         prefixIcon: const Icon(Icons.search),
         suffixIcon: IconButton(
           icon: const Icon(Icons.arrow_forward),
+          tooltip: 'Tìm',
           onPressed: onSubmit,
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
         ),
       ),
     );
@@ -151,30 +148,33 @@ class _ZeroIntroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FluwPalette palette = context.palette;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: palette.surface,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: palette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome, color: AppColors.accent),
-              SizedBox(width: 8),
-              Text(
+              Icon(Icons.auto_awesome, color: palette.accentText),
+              const SizedBox(width: 8),
+              const Text(
                 'Trợ lý Zero AI',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             'Quét mã vạch bất kỳ đồ ăn hoặc thức uống để Zero phân tích chỉ số dinh dưỡng & chấm điểm sức khỏe.',
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            style: TextStyle(color: palette.textSecondary, fontSize: 13),
           ),
         ],
       ),

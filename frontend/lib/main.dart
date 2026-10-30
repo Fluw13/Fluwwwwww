@@ -1,35 +1,43 @@
 ﻿import 'package:flutter/material.dart';
 
-import 'core/app_colors.dart';
+import 'core/licenses/font_licenses.dart';
+import 'core/settings/shared_prefs_theme_mode_store.dart';
+import 'core/settings/theme_mode_controller.dart';
+import 'core/settings/theme_mode_scope.dart';
+import 'core/theme/app_theme.dart';
 import 'screens/home_screen.dart';
 
-void main() {
-  runApp(const FluwApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  registerFontLicenses();
+
+  final ThemeModeController themeModeController = ThemeModeController(SharedPrefsThemeModeStore());
+  await themeModeController.load();
+
+  runApp(FluwApp(themeModeController: themeModeController));
 }
 
 class FluwApp extends StatelessWidget {
-  const FluwApp({super.key});
+  const FluwApp({super.key, required this.themeModeController, this.home});
+
+  final ThemeModeController themeModeController;
+  final Widget? home;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Fluw',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.background,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.accent,
-          primary: AppColors.ink,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          foregroundColor: AppColors.ink,
-          elevation: 0,
-          scrolledUnderElevation: 0,
+    return ThemeModeScope(
+      controller: themeModeController,
+      child: ListenableBuilder(
+        listenable: themeModeController,
+        builder: (context, _) => MaterialApp(
+          title: 'Fluw',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: themeModeController.mode,
+          home: home ?? const HomeScreen(),
         ),
       ),
-      home: const HomeScreen(),
     );
   }
 }

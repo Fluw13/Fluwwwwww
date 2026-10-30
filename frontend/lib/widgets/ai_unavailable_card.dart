@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../core/app_colors.dart';
+import '../core/theme/fluw_palette.dart';
 
 class AiUnavailableCard extends StatelessWidget {
   const AiUnavailableCard({super.key, required this.aiError});
@@ -22,22 +22,24 @@ class AiUnavailableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final FluwPalette palette = context.palette;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: palette.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: palette.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome_outlined, color: AppColors.ink),
-              SizedBox(width: 8),
-              Text(
+              Icon(Icons.auto_awesome_outlined, color: palette.textPrimary),
+              const SizedBox(width: 8),
+              const Text(
                 'Chưa có đánh giá AI',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
@@ -46,12 +48,12 @@ class AiUnavailableCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             reasonFor(aiError),
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+            style: TextStyle(color: palette.textPrimary, fontSize: 14),
           ),
           const SizedBox(height: 8),
           Text(
             'Thông tin sản phẩm và dinh dưỡng bên dưới vẫn lấy từ OpenFoodFacts.',
-            style: TextStyle(color: Colors.grey.shade500, fontSize: 11, fontStyle: FontStyle.italic),
+            style: TextStyle(color: palette.textSecondary, fontSize: 11, fontStyle: FontStyle.italic),
           ),
         ],
       ),

@@ -82,3 +82,5 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/product
 ```
 
 Build bản release cần tạo `frontend/android/key.properties` từ file `key.properties.example`. Không commit file này và file `.jks`.
+
+Yêu cầu Flutter 3.44 trở lên (do `shared_preferences`). Kiến trúc giao diện (theme sáng/tối, skeleton, chuyển trang) xem [`docs/FRONTEND_UI_FOUNDATION.md`](docs/FRONTEND_UI_FOUNDATION.md).

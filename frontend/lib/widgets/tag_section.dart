@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/fluw_palette.dart';
+import '../core/theme/score_colors.dart';
+
 class TagSection extends StatelessWidget {
   const TagSection({
     super.key,
     required this.title,
     required this.tags,
-    required this.tagColor,
+    required this.tone,
     this.note,
   });
 
   final String title;
   final List<String> tags;
-  final Color tagColor;
+  final ScoreColors tone;
   final String? note;
 
   @override
   Widget build(BuildContext context) {
     if (tags.isEmpty) return const SizedBox.shrink();
+
+    final String? note = this.note;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,8 +34,8 @@ class TagSection extends StatelessWidget {
           children: [
             for (final String tag in tags)
               Chip(
-                label: Text(tag, style: const TextStyle(fontSize: 12)),
-                backgroundColor: tagColor.withValues(alpha: 0.15),
+                label: Text(tag, style: TextStyle(fontSize: 12, color: tone.text, fontWeight: FontWeight.w600)),
+                backgroundColor: tone.container,
                 side: BorderSide.none,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
@@ -38,7 +43,7 @@ class TagSection extends StatelessWidget {
         ),
         if (note != null) ...[
           const SizedBox(height: 6),
-          Text(note!, style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+          Text(note, style: TextStyle(color: context.palette.textSecondary, fontSize: 11)),
         ],
       ],
     );

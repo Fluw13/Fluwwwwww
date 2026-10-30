@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../core/theme/fluw_palette.dart';
+
 class MacroBar extends StatelessWidget {
   const MacroBar({
     super.key,
@@ -47,7 +49,7 @@ class MacroBar extends StatelessWidget {
           hasMissingValue
               ? 'Trên 100 g · Nguồn: OpenFoodFacts · "—" là chưa có dữ liệu'
               : 'Trên 100 g · Nguồn: OpenFoodFacts',
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+          style: TextStyle(color: context.palette.textSecondary, fontSize: 11),
         ),
       ],
     );
@@ -71,7 +73,7 @@ class _MacroTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: context.palette.surfaceMuted,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -85,7 +87,7 @@ class _MacroTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+              style: TextStyle(color: context.palette.textSecondary, fontSize: 11),
             ),
           ],
         ),
