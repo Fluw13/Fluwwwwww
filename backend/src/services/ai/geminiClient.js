@@ -3,8 +3,8 @@ const AppError = require('../../errors/AppError');
 const { AI_ERROR_CODES } = require('../../errors/errorCodes');
 
 const DEFAULT_MODEL = 'gemini-3.6-flash';
-// Kept well under the app's 120 s client timeout so a Render cold start still fits in the budget.
-const REQUEST_TIMEOUT_MS = 20000;
+// Gemini sometimes needs more than 20 s. Render cold start (~50 s) + OpenFoodFacts (10 s) + this still fits the app's 120 s timeout.
+const REQUEST_TIMEOUT_MS = 40000;
 // The abort signal below is shared by every attempt, so retries stay within REQUEST_TIMEOUT_MS in total.
 const RETRY_OPTIONS = Object.freeze({ attempts: 2, initialDelay: 1, maxDelay: 2 });
 
