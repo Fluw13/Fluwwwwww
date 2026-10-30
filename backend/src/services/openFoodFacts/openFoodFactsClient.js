@@ -2,7 +2,6 @@ const axios = require('axios');
 const AppError = require('../../errors/AppError');
 const { API_ERROR_CODES } = require('../../errors/errorCodes');
 const { version: APP_VERSION } = require('../../../package.json');
-const { pickBestSearchHit } = require('../../search/pickBestSearchHit');
 
 const BARCODE_PRODUCT_URL = 'https://world.openfoodfacts.org/api/v2/product/';
 const SEARCH_URL = 'https://search.openfoodfacts.org/search';
@@ -101,16 +100,14 @@ const readBarcodeResponse = (response, barcode) => {
     return response.data.product;
 };
 
-const readSearchResponse = (response, name) => {
+const readSearchHits = (response) => {
     assertUsableStatus(response.status);
 
     const hits = response.data?.hits;
-    if (!Array.isArray(hits) || hits.length === 0) {
-        throw notFoundError('có tên "' + name + '"');
-    }
-
-    return pickBestSearchHit(hits, name);
+    return Array.isArray(hits) ? hits : [];
 };
+
+const nameNotFoundError = (name) => notFoundError('có tên "' + name + '"');
 
 const send = async (request) => {
     try {
@@ -130,20 +127,22 @@ const fetchByBarcode = async (barcode) => {
     return readBarcodeResponse(response, barcode);
 };
 
-const searchByName = async (name) => {
-    const response = await send(() => httpClient.post(SEARCH_URL, buildSearchRequest(name), {
-        headers: { 'Content-Type': 'application/json' }
+const fetchSearchHits = async (text, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) => {
+    const response = await send(() => httpClient.post(SEARCH_URL, buildSearchRequest(text), {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: timeoutMs
     }));
 
-    return readSearchResponse(response, name);
+    return readSearchHits(response);
 };
 
 module.exports = {
     fetchByBarcode,
-    searchByName,
+    fetchSearchHits,
+    nameNotFoundError,
     buildSearchRequest,
     buildUserAgent,
     readBarcodeResponse,
-    readSearchResponse,
+    readSearchHits,
     toTransportError
 };

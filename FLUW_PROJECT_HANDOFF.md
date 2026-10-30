@@ -44,6 +44,8 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | `src/validators/productQueryValidator.js` | Kiểm tra từ khóa, nhận diện mã vạch |
 | `src/validators/gtinCheckDigit.js` | Kiểm tra số kiểm tra mã vạch 12-14 chữ số |
 | `src/search/pickBestSearchHit.js` | Chọn kết quả tìm theo tên khớp nhiều từ nhất |
+| `src/search/foldVietnamese.js` | Bỏ dấu tiếng Việt, nhận biết từ khóa có dấu |
+| `src/services/openFoodFacts/productSearch.js` | Tìm theo tên; khi cần thì tìm thêm bản không dấu và gộp kết quả |
 | `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
 | `src/cache/productCacheKey.js` | Tạo khóa cache từ mã vạch hoặc tên đã chuẩn hóa |
 | `src/config/env.js` | Đọc số nguyên dương từ biến môi trường |
@@ -90,8 +92,8 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 
 - `nutriments`: chỉ đọc giá trị trên 100 g (khóa `_100g` của OpenFoodFacts), không bao giờ dùng giá trị theo khẩu phần. `null` là không có dữ liệu, khác với `0`. Nếu chỉ có năng lượng theo kJ thì quy đổi sang kcal (chia 4,184, làm tròn 1 chữ số thập phân).
 - `product.allergens`: lấy từ nhãn (OpenFoodFacts). `aiAnalysis.allergens`: AI gợi ý thêm từ danh sách thành phần.
-- `aiAnalysis` có thể là `null` khi Gemini lỗi, quá hạn, trả kết quả không hợp lệ hoặc chưa cấu hình key. Khi đó vẫn trả HTTP 200 kèm dữ liệu sản phẩm, và `aiError` là `AI_NOT_CONFIGURED`, `AI_UNAVAILABLE` hoặc `AI_INVALID_RESPONSE`. Kết quả thiếu phân tích AI không được lưu cache.
-- Lỗi: `{ "success": false, "error": "…" }`, mã 400 (đầu vào sai), 404 (không tìm thấy), 429 (quá giới hạn), 502/504 (OpenFoodFacts lỗi hay quá hạn), 500 (lỗi không lường trước).
+- `aiAnalysis` có thể là `null` khi Gemini lỗi, quá hạn, trả kết quả không hợp lệ hoặc chưa cấu hình key. Khi đó vẫn trả HTTP 200 kèm dữ liệu sản phẩm, và `aiError` là `AI_NOT_CONFIGURED`, `AI_UNAVAILABLE`, `AI_RATE_LIMITED` (Gemini hết hạn mức, HTTP 429) hoặc `AI_INVALID_RESPONSE`. Kết quả thiếu phân tích AI không được lưu cache.
+- Lỗi: `{ "success": false, "error": "…", "code": "<MÃ_LỖI>" }` (danh sách mã: README), mã 400 (đầu vào sai), 404 (không tìm thấy), 429 (quá giới hạn), 502/504 (OpenFoodFacts lỗi hay quá hạn), 500 (lỗi không lường trước).
 
 ### Biến môi trường
 
@@ -144,7 +146,7 @@ Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flu
 
 | Lỗi | Cách sửa |
 | :--- | :--- |
-| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout của lần gọi |
+| Gemini thỉnh thoảng lỗi tạm thời, app hiện "Chưa có đánh giá AI" dù gọi lại thì được | Bật thử lại 1 lần của SDK cho lỗi 408, 429, 500, 502-504 và lỗi mạng, dùng chung timeout của lần gọi (lần 3: bỏ thử lại với 429) |
 | Tìm "mì hảo hảo" ra "Nước khoáng Vĩnh Hảo" do chỉ lấy kết quả đầu tiên | Lấy 10 kết quả, chọn kết quả khớp nhiều từ nhất |
 | App có thể báo quá thời gian khi Render vừa khởi động (~50 s) | Timeout app 120 s, đánh thức server khi mở màn hình chính, gợi ý trên màn hình chờ |
 | Mã vạch sai số kiểm tra vẫn gửi đi OpenFoodFacts và báo "không tìm thấy" | Kiểm tra số kiểm tra mã 12-14 chữ số, trả 400 |
@@ -152,7 +154,7 @@ Kiểm thử: backend `npm test` 32/32. Frontend được kiểm tra bằng `flu
 
 Kiểm thử: backend `npm test` 67/67 (sau khi gộp với PR #2); chạy thử thủ công server thật với OpenFoodFacts và Gemini giả lập; frontend kiểm tra bằng `flutter analyze`/`flutter test` trên GitHub Actions. Review độc lập: xem PR #3.
 
-Rủi ro đã biết: một số ít sản phẩm trên OpenFoodFacts được lưu dưới mã vạch sai số kiểm tra (do người đóng góp nhập sai) sẽ không tra được bằng mã đó; khi Gemini hết hạn mức (429), lần thử lại sau 1-2 giây thường cũng thất bại.
+Rủi ro đã biết: một số ít sản phẩm trên OpenFoodFacts được lưu dưới mã vạch sai số kiểm tra (do người đóng góp nhập sai) sẽ không tra được bằng mã đó; khi Gemini hết hạn mức (429) thì app chỉ hiện dữ liệu sản phẩm (`AI_RATE_LIMITED`, từ lần 3 không còn thử lại) — hạn mức gói miễn phí là rủi ro vận hành.
 
 ### Đợt sửa lỗi 30/10/2026 (lần 2, sau khi deploy PR #3)
 
@@ -163,12 +165,22 @@ Rủi ro đã biết: một số ít sản phẩm trên OpenFoodFacts được l
 
 Đánh đổi đã chấp nhận: với từ khóa từ 2 từ trở lên, khi số từ khớp bằng nhau thì tên ngắn hơn được ưu tiên hơn thứ tự của máy tìm kiếm (ví dụ "sữa chua vinamilk" chọn "Sữa chua Vinamilk" thay vì "Sữa chua ăn Vinamilk có đường").
 
+### Đợt sửa lỗi 30/10/2026 (lần 3, sau khi deploy PR #4)
+
+| Lỗi | Bằng chứng | Cách sửa |
+| :--- | :--- | :--- |
+| "mì hảo hảo", "hảo hảo" vẫn ra sai sản phẩm | Production sau PR #4: ra "Mì" (Koreno) và nước Vĩnh Hảo; "mi hao hao" thì đúng. Suy ra máy tìm kiếm không trả mì Hảo Hảo trong 10 kết quả đầu khi từ khóa có dấu | Khi kết quả đầu không khớp đủ từ và từ khóa có dấu, tìm thêm bằng bản không dấu (timeout 5 s; lỗi thì vẫn dùng kết quả lần đầu) rồi gộp |
+| Gemini trả `AI_UNAVAILABLE` chỉ sau ~2 giây | Production: 5/6 lượt lỗi trong 1,6-2,4 s (không phải timeout). Gói miễn phí của `gemini-3.6-flash` chỉ có 5 lượt/phút, 20 lượt/ngày (nguồn thứ cấp). Nguyên nhân hết hạn mức là LIKELY, chưa xem được log Render | Lỗi 429 không thử lại nữa (thử lại chỉ tốn thêm hạn mức) và trả mã riêng `AI_RATE_LIMITED`; app hiện "Zero đã hết lượt phân tích" |
+
+Sau khi deploy, mã `aiError` trên production sẽ cho biết chắc lỗi Gemini có phải hết hạn mức hay không.
+
 ## 7. Việc còn mở
 
 ### Cần chủ dự án quyết định hoặc cung cấp
 - [ ] Email liên hệ thật cho `docs/PRIVACY_POLICY.md` và User-Agent gửi OpenFoodFacts (đang là `contact@fluw.app`).
 - [ ] Đăng chính sách quyền riêng tư lên URL công khai cho Google Play.
 - [ ] `ndkVersion = "30.0.16248370"` đang cố định trong `android/app/build.gradle.kts`, máy khác có thể không có bản NDK này.
+- [ ] Hạn mức Gemini gói miễn phí (20 lượt/ngày với `gemini-3.6-flash`) không đủ cho app thật. Cần chọn: đổi `GEMINI_MODEL` sang model có hạn mức cao hơn (ví dụ `gemini-3.5-flash-lite`, 500 lượt/ngày) hoặc bật thanh toán.
 - [ ] Cache hiện nằm trong bộ nhớ, mất khi server khởi động lại. Khi có database có thể chuyển sang cache bền vững.
 - [ ] Android cần `minSdkVersion 23` (bản bàn giao cũ ghi app crash camera trên máy thật nếu thấp hơn). Giá trị này đang đặt trong `android/local.properties`, file không được commit, nên máy khác sẽ không có.
 
