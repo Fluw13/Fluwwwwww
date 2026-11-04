@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
 import '../core/theme/fluw_palette.dart';
 
 class AiUnavailableCard extends StatelessWidget {
@@ -26,10 +28,10 @@ class AiUnavailableCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: palette.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.hero),
         border: Border.all(color: palette.border),
       ),
       child: Column(
@@ -37,23 +39,19 @@ class AiUnavailableCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome_outlined, color: palette.textPrimary),
-              const SizedBox(width: 8),
-              const Text(
-                'Chưa có đánh giá AI',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Icon(Icons.auto_awesome_outlined, size: 18, color: palette.textPrimary),
+              const SizedBox(width: AppSpacing.sm),
+              const Expanded(
+                child: Text('Chưa có đánh giá AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
+          Text(reasonFor(aiError), style: TextStyle(color: palette.textPrimary, fontSize: 14, height: 1.5)),
+          const SizedBox(height: AppSpacing.sm),
           Text(
-            reasonFor(aiError),
-            style: TextStyle(color: palette.textPrimary, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Thông tin sản phẩm và dinh dưỡng bên dưới vẫn lấy từ OpenFoodFacts.',
-            style: TextStyle(color: palette.textSecondary, fontSize: 11, fontStyle: FontStyle.italic),
+            'Thông tin sản phẩm và dinh dưỡng bên dưới vẫn lấy từ Open Food Facts.',
+            style: TextStyle(color: palette.textSecondary, fontSize: 12),
           ),
         ],
       ),
