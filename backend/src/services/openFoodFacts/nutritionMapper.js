@@ -90,4 +90,4 @@ const toNutritionDetails = (nutrients, { quantity, isBeverage }) => ({
     preparedPer100: nutrients.prepared === null ? null : toPer100(nutrients.prepared)
 });
 
-module.exports = { readNutrients, toNutritionDetails };
+module.exports = { readNutrients, readNutritionBasis, toNutritionDetails };

@@ -2,7 +2,6 @@ const { prepareNutritionInputs } = require('./nutrientInputs');
 const { computeNutritionPoints } = require('./nutritionPoints');
 const { pointsToScore, WATER_SCORE } = require('./pointsToScore');
 const { INDICATOR_LABELS, INDICATOR_NOTES, PRODUCT_TYPE_LABELS, toMissingItem } = require('../scoreLabels');
-const { roundTo } = require('../../utils/roundTo');
 
 const UNITS = Object.freeze({
     energy: 'kJ',
@@ -17,6 +16,7 @@ const UNITS = Object.freeze({
     fruitsVegetablesLegumes: '%'
 });
 const PER_AMOUNT_UNITS = new Set(['kJ', 'g']);
+const ESTIMATE_NOTES = new Set(['estimatedFromIngredients', 'estimatedFromCategory']);
 
 const proteinNote = (component) => {
     if (!component.counted) {
@@ -40,7 +40,7 @@ const describeStatus = (component, notes) => {
         return 'excluded_by_rule';
     }
 
-    return notes[component.key] === 'estimatedFromIngredients' ? 'estimated' : 'counted';
+    return ESTIMATE_NOTES.has(notes[component.key]) ? 'estimated' : 'counted';
 };
 
 const toIndicator = (component, { per, notes }) => {
@@ -50,7 +50,7 @@ const toIndicator = (component, { per, notes }) => {
         key: component.key,
         label: INDICATOR_LABELS[component.key],
         effect: component.effect,
-        value: roundTo(component.value, unit === 'kJ' ? 1 : 2),
+        value: component.value,
         unit,
         per: PER_AMOUNT_UNITS.has(unit) ? per : null,
         points: component.points,
@@ -88,7 +88,8 @@ const computeNutritionScore = (scoringInputs) => {
 
     const result = computeNutritionPoints(prepared);
     const score = pointsToScore(prepared.table, result.points);
-    const per = prepared.table === 'beverage' ? '100ml' : '100g';
+    // Same basis as product.nutrition, so a sauce sold in ml reads "/100ml" in both the table and the score.
+    const per = scoringInputs.nutritionBasis ?? (prepared.table === 'beverage' ? '100ml' : '100g');
 
     return {
         ...emptyResult(prepared),

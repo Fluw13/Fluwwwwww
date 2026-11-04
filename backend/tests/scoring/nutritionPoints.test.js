@@ -70,3 +70,16 @@ test('quy tắc đạm: thực phẩm có điểm trừ từ 11 không tính đ�
     assert.equal(redMeatProteins.points, 2);
     assert.equal(redMeatProteins.limitedReason, 'red_meat');
 });
+
+test('nhiễu dấu phẩy động không tạo thêm điểm: muối 1.4000000000000001 g được so như 1,4 g', () => {
+    const base = { table: 'food', values: { energy: 0, sugars: 0, saturatedFat: 0, proteins: 0, fiber: 0, fruitsVegetablesLegumes: 0 } };
+    const noisy = computeNutritionPoints({ ...base, values: { ...base.values, salt: 0.56 * 2.5 } });
+    const exact = computeNutritionPoints({ ...base, values: { ...base.values, salt: 1.4 } });
+    const salt = (result) => result.components.find((component) => component.key === 'salt');
+
+    assert.notEqual(0.56 * 2.5, 1.4);
+    assert.equal(salt(noisy).points, salt(exact).points);
+    assert.equal(salt(noisy).value, 1.4);
+    assert.equal(salt(noisy).range.maxInclusive, true);
+    assert.equal(salt(noisy).range.max, 1.4);
+});

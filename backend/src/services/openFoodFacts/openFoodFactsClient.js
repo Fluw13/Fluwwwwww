@@ -45,6 +45,7 @@ const PRODUCT_DETAIL_FIELDS = [
     'nova_group',
     'nutriscore',
     'nutrition_score_warning_fruits_vegetables_legumes_estimate_from_ingredients',
+    'nutrition_score_warning_fruits_vegetables_legumes_from_category',
     'selected_images',
     'image_ingredients_url',
     'image_nutrition_url'

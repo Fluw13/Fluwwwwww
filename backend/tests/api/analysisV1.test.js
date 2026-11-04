@@ -203,3 +203,18 @@ test('sản phẩm không có trên Open Food Facts trả 404 PRODUCT_NOT_FOUND,
     assert.equal((await response.json()).code, 'PRODUCT_NOT_FOUND');
     assert.equal(generateJson.mock.callCount(), 0);
 });
+
+test('dữ liệu sản phẩm đổi thì giải thích cũ không được dùng lại cho điểm mới', async () => {
+    let raw = foodRaw;
+    mock.method(openFoodFactsClient, 'fetchByBarcode', async () => raw);
+    const generateJson = mock.method(geminiClient, 'generateJson', async () => EXPLANATION);
+
+    await getAnalysis();
+    productDetailsService.clearProductDetailsCache();
+    raw = { ...foodRaw, nutriments: { ...foodRaw.nutriments, sugars_100g: 2 } };
+    const afterChange = await getAnalysis();
+
+    assert.equal(afterChange.headers.get('x-cache'), 'MISS');
+    assert.equal(generateJson.mock.callCount(), 2);
+    assert.match(generateJson.mock.calls[1].arguments[0].prompt, /"sugars":2/);
+});

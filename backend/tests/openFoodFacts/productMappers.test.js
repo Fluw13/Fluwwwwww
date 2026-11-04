@@ -78,6 +78,8 @@ test('thành phần: ưu tiên tiếng Việt, kèm mã ngôn ngữ', () => {
 test('phụ gia: gộp mã cha và mã biến thể, không gộp nhầm mã khác', () => {
     assert.deepEqual(readAdditiveCodes(noodlesRaw.additives_tags), ['e150a', 'e160a', 'e320', 'e321', 'e451', 'e500', 'e501', 'e621', 'e627', 'e631']);
     assert.deepEqual(readAdditiveCodes(['en:e150', 'en:e1505']), ['e150', 'e1505']);
+    assert.deepEqual(readAdditiveCodes(['en:e450', 'en:e450i', 'en:e450iii']), ['e450i', 'e450iii']);
+    assert.deepEqual(readAdditiveCodes(['en:e341i', 'en:e341iii']), ['e341i', 'e341iii']);
     assert.deepEqual(readAdditiveCodes(['fr:e330', 'en:not-an-additive', 42]), []);
     assert.deepEqual(readAdditives(['en:e621', 'en:e9999']), [
         { tag: 'en:e621', code: 'E621', name: 'Mononatri glutamat (bột ngọt)' },
@@ -99,8 +101,8 @@ test('đầu vào chấm điểm lấy cờ loại sản phẩm, rau củ quả 
     assert.equal(inputs.categoryAvailable, true);
     assert.equal(inputs.nutriscoreApplicable, true);
     assert.equal(inputs.productFlags.isBeverage, false);
-    assert.deepEqual(inputs.fruitsVegetablesLegumes, { value: 0, estimated: true });
-    assert.deepEqual(inputs.ingredients, { analyzed: true, count: 8, unknownCount: 0, nonNutritiveSweeteners: null });
+    assert.deepEqual(inputs.fruitsVegetablesLegumes, { value: 0, estimated: true, estimatedFrom: 'ingredients' });
+    assert.deepEqual(inputs.ingredients, { analyzed: true, recognized: true, count: 8, unknownCount: 0, nonNutritiveSweeteners: null });
     assert.equal(inputs.additiveCount, 4);
 
     const noodles = toScoringInputs(noodlesRaw, readNutrients(noodlesRaw));
@@ -117,10 +119,24 @@ test('đầu vào chấm điểm lấy cờ loại sản phẩm, rau củ quả 
 
 test('rau củ quả: giá trị khai báo đứng trước ước tính; giá trị null không bị đọc thành 0', () => {
     const declared = toScoringInputs({ nutriments: { 'fruits-vegetables-legumes_100g': 55 } }, readNutrients({}));
-    assert.deepEqual(declared.fruitsVegetablesLegumes, { value: 55, estimated: false });
+    assert.deepEqual(declared.fruitsVegetablesLegumes, { value: 55, estimated: false, estimatedFrom: null });
 
     const nullEstimate = toScoringInputs({ nutriments: { 'fruits-vegetables-legumes-estimate-from-ingredients_100g': null } }, readNutrients({}));
     assert.equal(nullEstimate.fruitsVegetablesLegumes, null);
+});
+
+test('rau củ quả Open Food Facts ước tính theo danh mục được đánh dấu là ước tính', () => {
+    const raw = {
+        nutrition_score_warning_fruits_vegetables_legumes_from_category: 'en:jams',
+        nutriscore: { 2023: { data: { components: { positive: [{ id: 'fruits_vegetables_legumes', value: 50 }] } } } }
+    };
+
+    assert.deepEqual(toScoringInputs(raw, readNutrients({})).fruitsVegetablesLegumes, { value: 50, estimated: true, estimatedFrom: 'category' });
+});
+
+test('đơn vị /100 ml của điểm theo cùng quy tắc với bảng dinh dưỡng (nước tương bán theo ml)', () => {
+    assert.equal(toScoringInputs({ quantity: '500 ml' }, readNutrients({})).nutritionBasis, '100ml');
+    assert.equal(toScoringInputs({ quantity: '120 g' }, readNutrients({})).nutritionBasis, '100g');
 });
 
 test('thông tin sản phẩm đầy đủ theo contract, trường thiếu là null', () => {

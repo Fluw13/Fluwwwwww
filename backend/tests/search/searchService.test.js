@@ -114,3 +114,56 @@ test('xếp hạng: khớp đúng dấu đứng trước khớp không dấu, t�
     assert.equal(ranked[ranked.length - 1], 'Jasmine Tea');
     assert.ok(!ranked.includes('Yin Zhen'));
 });
+
+test('lần tìm không dấu lỗi: trả kết quả lần đầu nhưng không cache, lần sau tìm lại đủ', async (t) => {
+    t.mock.method(console, 'info', () => {});
+    t.mock.method(console, 'warn', () => {});
+    let unaccentedFails = true;
+    const fetchSearchHits = mock.method(openFoodFactsClient, 'fetchSearchHits', async (text) => {
+        if (text === 'hao hao' && unaccentedFails) {
+            throw new AppError('Fluw đang tạm giới hạn số lượt tra cứu tới Open Food Facts.', 503, 'UPSTREAM_RATE_LIMITED');
+        }
+        return recordedHits[text.toLowerCase()] ?? [];
+    });
+
+    const partial = await searchService.searchProducts('Hảo hảo');
+    unaccentedFails = false;
+    const retried = await searchService.searchProducts('Hảo hảo');
+
+    assert.ok(partial.result.results.every((item) => item.matchesAllWords === false));
+    assert.equal(retried.cacheStatus, 'MISS');
+    assert.equal(retried.result.results[0].name, 'Mỳ Hảo Hảo');
+    assert.equal(fetchSearchHits.mock.callCount(), 4);
+});
+
+test('kết quả lấy từ cache trả lại đúng từ khóa của người gọi', async (t) => {
+    t.mock.method(console, 'info', () => {});
+    stubSearch();
+
+    await searchService.searchProducts('VĨNH HẢO');
+    const second = await searchService.searchProducts('vĩnh hảo');
+
+    assert.equal(second.cacheStatus, 'HIT');
+    assert.equal(second.result.query, 'vĩnh hảo');
+});
+
+test('từ khóa không có chữ hoặc số bị từ chối; xuống dòng và tab được gộp thành khoảng trắng', async (t) => {
+    t.mock.method(console, 'info', () => {});
+    const fetchSearchHits = stubSearch();
+
+    for (const query of ['!!', '--', '.. ..']) {
+        await assert.rejects(searchService.searchProducts(query), (error) => error.code === 'INVALID_QUERY', query);
+    }
+    assert.equal(fetchSearchHits.mock.callCount(), 0);
+
+    const { result } = await searchService.searchProducts('vĩnh\n\thảo');
+    assert.equal(result.query, 'vĩnh hảo');
+});
+
+test('kết quả có mã vạch app không mở được (sai số kiểm tra, sai độ dài) bị bỏ', () => {
+    const { toSearchResult } = require('../../src/services/openFoodFacts/searchResultMapper');
+
+    assert.equal(toSearchResult({ code: '8934563122200', product_name: 'Sai số kiểm tra' }), null);
+    assert.equal(toSearchResult({ code: '1234567890', product_name: 'Mười số' }), null);
+    assert.equal(toSearchResult({ code: '8934563122201', product_name: 'Mỳ Hảo Hảo' }).barcode, '8934563122201');
+});

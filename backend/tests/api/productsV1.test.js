@@ -68,7 +68,7 @@ test('mã UPC-A 12 số được chuẩn hóa thành 13 số trước khi tra', 
 test('mã vạch sai số kiểm tra hoặc không phải số bị từ chối, không gọi Open Food Facts', async () => {
     const fetchByBarcode = mock.method(openFoodFactsClient, 'fetchByBarcode', async () => foodRaw);
 
-    for (const barcode of ['8930000000012', 'abc12345', '1234567', '123456789012345']) {
+    for (const barcode of ['8930000000012', 'abc12345', '1234567', '1234567890', '123456789012345']) {
         const response = await fetch(baseUrl + '/api/v1/products/' + barcode);
         assert.equal(response.status, 400, barcode);
         assert.equal((await response.json()).code, 'INVALID_BARCODE', barcode);
@@ -101,4 +101,23 @@ test('route cũ /api/product vẫn chạy song song cho tới khi app chuyển s
 
     assert.equal(response.status, 400);
     assert.equal((await response.json()).code, 'INVALID_BARCODE');
+});
+
+test('log lỗi chỉ ghi mẫu route, không ghi mã vạch hay tham số người dùng gửi', async () => {
+    const consoleError = mock.method(console, 'error', () => {});
+    const consoleWarn = mock.method(console, 'warn', () => {});
+    mock.method(openFoodFactsClient, 'fetchByBarcode', async () => {
+        throw new TypeError('lỗi lập trình');
+    });
+
+    await fetch(baseUrl + '/api/v1/products/8930000000019');
+    await fetch(baseUrl + '/api/v1/products/8934563%E0%A4%A');
+
+    const logged = [...consoleError.mock.calls, ...consoleWarn.mock.calls]
+        .flatMap((call) => call.arguments)
+        .map((argument) => (argument instanceof Error ? argument.name : String(argument)))
+        .join(' ');
+    assert.match(logged, /\/api\/v1\/products\/:param/);
+    assert.ok(!logged.includes('8930000000019'));
+    assert.ok(!logged.includes('8934563'));
 });

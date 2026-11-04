@@ -50,7 +50,7 @@ const collectValues = (set, fruitsVegetablesLegumes, notes) => {
     }
 
     if (fruitsVegetablesLegumes?.estimated) {
-        notes.fruitsVegetablesLegumes = 'estimatedFromIngredients';
+        notes.fruitsVegetablesLegumes = fruitsVegetablesLegumes.estimatedFrom === 'category' ? 'estimatedFromCategory' : 'estimatedFromIngredients';
     }
 
     return {
@@ -110,7 +110,7 @@ const prepareNutritionInputs = (inputs) => {
     if (table === 'beverage') {
         values.nonNutritiveSweeteners = inputs.ingredients.nonNutritiveSweeteners;
         if (values.nonNutritiveSweeteners === null) {
-            missing.push('nutrition.ingredients');
+            missing.push(inputs.ingredients.analyzed ? 'nutrition.recognizedIngredients' : 'nutrition.ingredients');
         }
     }
 

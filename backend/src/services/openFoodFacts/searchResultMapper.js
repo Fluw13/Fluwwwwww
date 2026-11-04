@@ -1,11 +1,12 @@
 const { readText, readBrands, readCode } = require('./fieldReaders');
 const { readThumbnailUrl } = require('./imageMapper');
+const { isValidBarcode } = require('../../validators/barcodeValidator');
 
-// Hits without a usable barcode cannot be opened in the app, so they are dropped.
+// Hits the product route would reject (no barcode, wrong length or check digit) cannot be opened in the app, so they are dropped.
 const toSearchResult = (hit) => {
     const barcode = readCode(hit?.code);
 
-    if (barcode === null) {
+    if (barcode === null || !isValidBarcode(barcode)) {
         return null;
     }
 

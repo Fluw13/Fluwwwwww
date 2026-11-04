@@ -33,7 +33,8 @@ App xử lý theo `code`; `error` chỉ để hiển thị và có thể đổi 
 
 Tìm sản phẩm theo tên hoặc thương hiệu. App chỉ gọi khi người dùng bấm tìm, **không gọi theo từng ký tự gõ** (Open Food Facts cấm search-as-you-type).
 
-- `q`: 2–100 ký tự sau khi bỏ khoảng trắng đầu cuối, chuẩn hóa Unicode NFC.
+- `q`: 2–100 ký tự sau khi chuẩn hóa Unicode NFC, bỏ khoảng trắng đầu cuối và gộp khoảng trắng liên tiếp (kể cả tab, xuống dòng) thành một dấu cách. Ký tự điều khiển khác bị từ chối. Phải có ít nhất một chữ cái hoặc chữ số.
+- `query` trong phản hồi là từ khóa của chính người gọi sau khi chuẩn hóa.
 - Nếu `q` là 8–14 chữ số, app nên mở thẳng `GET /api/v1/products/:barcode` thay vì tìm.
 
 ```json
@@ -52,8 +53,8 @@ Tìm sản phẩm theo tên hoặc thương hiệu. App chỉ gọi khi người
   - `true`: tên hoặc thương hiệu chứa đủ mọi từ của từ khóa (không phân biệt dấu, chữ hoa).
   - `false`: không có sản phẩm nào khớp đủ, đây là kết quả gần đúng (khớp ít nhất một nửa số từ). App nên ghi chú "kết quả gần đúng".
 - Không có kết quả phù hợp → `results: []`, `total: 0` (HTTP 200). Không bao giờ trả một sản phẩm bất kỳ.
-- Nếu lần tìm đầu không có sản phẩm khớp đủ, server tự tìm thêm một lần bằng từ khóa không dấu ("hảo hảo" → "hao hao").
-- `barcode` luôn có; `name`, `brand`, `quantity`, `imageUrl` có thể `null`. `imageUrl` chỉ là https từ `images.openfoodfacts.org` hoặc `static.openfoodfacts.org`.
+- Nếu từ khóa có dấu và lần tìm đầu không có sản phẩm khớp đủ, server tự tìm thêm một lần bằng từ khóa không dấu ("hảo hảo" → "hao hao"). Nếu lần tìm thêm lỗi thì vẫn trả kết quả lần đầu nhưng không lưu cache, để lần sau tìm lại đủ.
+- `barcode` luôn có và luôn mở được bằng route sản phẩm (kết quả có mã sai độ dài hoặc sai số kiểm tra bị bỏ); `name`, `brand`, `quantity`, `imageUrl` có thể `null`. `imageUrl` chỉ là https từ `images.openfoodfacts.org` hoặc `static.openfoodfacts.org`.
 - Lỗi: `INVALID_QUERY`, `RATE_LIMITED`, `UPSTREAM_*`.
 - Fixture: `search-results`, `search-partial-results`, `search-empty`, `error-invalid-query`, `error-rate-limited`.
 
@@ -61,7 +62,7 @@ Tìm sản phẩm theo tên hoặc thương hiệu. App chỉ gọi khi người
 
 Chi tiết sản phẩm và Điểm Fluw. Header `X-Cache: HIT|MISS`.
 
-- `barcode`: GTIN 8, 12, 13 hoặc 14 chữ số. Mã 12–14 số phải đúng số kiểm tra. Mã 8 số không kiểm tra (có thể là UPC-E).
+- `barcode`: GTIN 8, 12, 13 hoặc 14 chữ số (mã 9–11 số bị từ chối). Mã 12–14 số phải đúng số kiểm tra. Mã 8 số không kiểm tra (có thể là UPC-E).
 - Chuẩn hóa: mã 12 số (UPC-A) thêm số 0 ở đầu; mã 14 số bắt đầu bằng 0 bỏ số 0 đó. `product.barcode` là mã đã chuẩn hóa.
 
 ```json
@@ -76,7 +77,7 @@ Chi tiết sản phẩm và Điểm Fluw. Header `X-Cache: HIT|MISS`.
 | `name`, `genericName`, `brand`, `quantity` | string \| null | `name` và `genericName` ưu tiên bản tiếng Việt, rồi ngôn ngữ chính của sản phẩm (`name` thêm tiếng Anh) |
 | `manufacturer` | `{brandOwner, manufacturingPlaces}` | Mỗi trường string \| null |
 | `images` | `{front, ingredients, nutrition}` | Mỗi ảnh là `null` hoặc `{small, display, full}`: 200 px, 400 px, ảnh gốc. Chỉ https từ máy chủ ảnh Open Food Facts. App chỉ tải `full` khi người dùng mở phóng to |
-| `ingredients` | `{text, language}` | `text` null khi không có danh sách thành phần |
+| `ingredients` | `{text, language}` \| null | Cả object là `null` khi không có danh sách thành phần |
 | `allergens`, `traces` | `[{tag, label}]` | Chất gây dị ứng khai báo / "có thể chứa". `label` tiếng Việt khi có |
 | `additives` | `[{tag, code, name}]` | Ví dụ `{"tag": "en:e471", "code": "E471", "name": "Mono- và diglycerid của axit béo"}`; `name` có thể null |
 | `novaGroup` | 1–4 \| null | Chỉ để tham khảo, **không tính vào điểm** |
@@ -148,7 +149,7 @@ Zero (Gemini) giải thích Điểm Fluw đã tính. App gọi riêng, sau khi �
 | `AI_RATE_LIMITED` | Gemini từ chối vì hết hạn mức của nhà cung cấp | Báo thử lại sau |
 | `AI_DAILY_LIMIT` | Fluw đã dùng hết số lượt gọi AI tự đặt cho ngày hôm nay (UTC) | Báo quay lại ngày mai, ẩn nút thử lại |
 
-- Giải thích được cache theo mã vạch + phiên bản điểm (mặc định 24 giờ); lỗi không được cache. Nhiều request trùng cùng lúc chỉ gọi Gemini một lần.
+- Giải thích được cache theo mã vạch, phiên bản điểm và đúng dữ liệu đã gửi cho AI (mặc định 24 giờ): dữ liệu sản phẩm hoặc điểm đổi thì Zero giải thích lại. Lỗi không được cache. Nhiều request trùng cùng lúc chỉ gọi Gemini một lần.
 - Dùng lại cache sản phẩm, nên mở sản phẩm rồi hỏi Zero **không tốn thêm lượt gọi Open Food Facts**.
 - Lỗi HTTP (không phải lỗi AI): như route sản phẩm.
 - Fixture: `analysis-ok`, `analysis-ai-unavailable`, `analysis-ai-daily-limit`.
@@ -161,7 +162,7 @@ Zero (Gemini) giải thích Điểm Fluw đã tính. App gọi riêng, sau khi �
 | Products mỗi IP | 30 lượt/phút | `PRODUCT_RATE_LIMIT_PER_MINUTE` |
 | Analysis mỗi IP | 10 lượt/phút | `ANALYSIS_RATE_LIMIT_PER_MINUTE` |
 | Toàn server gọi Open Food Facts | 14 lượt đọc + 9 lượt tìm mỗi phút (OFF cho phép 15 + 10) | `OFF_READS_PER_MINUTE`, `OFF_SEARCHES_PER_MINUTE` |
-| Gọi Gemini toàn server | 200 lượt/ngày (UTC) | `AI_DAILY_LIMIT` |
+| Gọi Gemini toàn server | 200 lượt giải thích/ngày (UTC). Mỗi lượt có thể gồm 2 request tới Gemini khi lần đầu gặp lỗi tạm thời | `AI_DAILY_LIMIT` |
 | Cache sản phẩm và giải thích | 24 giờ, tối đa 500 mục | `CACHE_TTL_HOURS`, `CACHE_MAX_ENTRIES` |
 | Cache tìm kiếm | 60 phút | `SEARCH_CACHE_TTL_MINUTES` |
 

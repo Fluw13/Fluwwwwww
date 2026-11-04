@@ -2,8 +2,11 @@ const { findAdditiveName } = require('./additiveNames');
 
 const ADDITIVE_TAG_PATTERN = /^en:(e\d{3,4}[a-z]*)$/;
 const VARIANT_SUFFIX_PATTERN = /^[a-z]+$/;
+const BASE_CODE_PATTERN = /^e\d+$/;
 
-const isVariantOf = (code, parent) => code.length > parent.length
+// Only a purely numeric code is a parent: "e450i" and "e450iii" are different substances, not parent and variant.
+const isVariantOf = (code, parent) => BASE_CODE_PATTERN.test(parent)
+    && code.length > parent.length
     && code.startsWith(parent)
     && VARIANT_SUFFIX_PATTERN.test(code.slice(parent.length));
 

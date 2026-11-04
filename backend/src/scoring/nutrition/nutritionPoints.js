@@ -9,6 +9,7 @@ const {
     PROTEIN_LIMIT_FAT_OIL_NUTS_SEEDS
 } = require('./thresholds');
 const { scoreComponent } = require('./componentPoints');
+const { toComparableValue } = require('./comparableValue');
 
 const TABLES = Object.freeze({ food: FOOD, beverage: BEVERAGE, fat_oil_nuts_seeds: FAT_OIL_NUTS_SEEDS });
 
@@ -18,11 +19,15 @@ const negativeKeysFor = (table) => (table === 'fat_oil_nuts_seeds'
 
 const POSITIVE_KEYS = Object.freeze(['proteins', 'fiber', 'fruitsVegetablesLegumes']);
 
-const scoreKey = (key, value, thresholds) => ({
-    key,
-    value: value ?? null,
-    ...scoreComponent(value, thresholds[key], { inclusive: INCLUSIVE_THRESHOLDS.has(key) })
-});
+const scoreKey = (key, rawValue, thresholds) => {
+    const value = toComparableValue(key, rawValue ?? null);
+
+    return {
+        key,
+        value,
+        ...scoreComponent(value, thresholds[key], { inclusive: INCLUSIVE_THRESHOLDS.has(key) })
+    };
+};
 
 const scoreNonNutritiveSweeteners = (count) => ({
     key: 'nonNutritiveSweeteners',

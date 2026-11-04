@@ -64,7 +64,7 @@ npm test
 - Đầu ra của Gemini được kiểm tra lại: điểm phải là số thật (không chấp nhận `null`), danh sách chỉ giữ chuỗi và bị giới hạn độ dài.
 - Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
 - Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả HTTP 200 với `aiAnalysis: null` và `aiError` cho biết lý do.
-- API v1: điểm do backend tính, AI chỉ nhận bảng điểm đã tính và không có trường điểm trong đầu ra. Gemini có timeout 15 giây, giới hạn `AI_DAILY_LIMIT` lượt mỗi ngày; giải thích được cache theo mã vạch + phiên bản điểm.
+- API v1: điểm do backend tính, AI chỉ nhận bảng điểm đã tính và không có trường điểm trong đầu ra. Gemini có timeout 15 giây, giới hạn `AI_DAILY_LIMIT` lượt mỗi ngày; giải thích được cache theo đúng dữ liệu sản phẩm và bảng điểm đã gửi cho AI.
 - Route cũ: gọi Gemini có timeout 40 giây (tự thử lại 1 lần khi gặp lỗi tạm thời 408, 500, 502-504 hoặc lỗi mạng, vẫn nằm trong 40 giây; lỗi 429 hết hạn mức không thử lại và trả `aiError: AI_RATE_LIMITED`), gọi OpenFoodFacts có timeout 10 giây (lần tìm thêm bản không dấu: 5 giây). Tổng tối đa 55 giây, còn dư cho cold start của Render (~50 giây) trong giới hạn 120 giây của app; app gọi `/health` khi mở để đánh thức server.
 - Mã vạch 12-14 chữ số (UPC-A, EAN-13, GTIN-14) được kiểm tra số kiểm tra; sai thì trả `400 INVALID_BARCODE` thay vì gọi OpenFoodFacts.
 - OpenFoodFacts trả 404 → `PRODUCT_NOT_FOUND`; trả 429 → `503 UPSTREAM_RATE_LIMITED` kèm `Retry-After: 60`; các lỗi khác → 502/504.

@@ -2,7 +2,8 @@
 // Rate limits must be configured through the environment before this module is loaded; see LIMITS_FOR_CAPTURE.
 const path = require('node:path');
 const AppError = require('../../src/errors/AppError');
-const { API_ERROR_CODES, AI_ERROR_CODES } = require('../../src/errors/errorCodes');
+const { AI_ERROR_CODES } = require('../../src/errors/errorCodes');
+const { createUpstreamBudget } = require('../../src/services/openFoodFacts/upstreamBudget');
 
 const OFF_FIXTURES_DIR = path.join(__dirname, '..', '..', 'tests', 'fixtures', 'off');
 const FIXED_FETCHED_AT = '2026-10-30T09:00:00.000Z';
@@ -53,6 +54,21 @@ const GEMINI_REPLIES_IN_ORDER = Object.freeze([
     }
 ]);
 
+// The refusal comes from the real budget (5 reads per minute, clock stopped), so the fixture follows upstreamBudget.js.
+const exhaustedBudgetError = () => {
+    const budget = createUpstreamBudget({ readsPerMinute: 5, searchesPerMinute: 5, now: () => 0 });
+    for (let taken = 0; taken < 5; taken += 1) {
+        budget.take('read');
+    }
+
+    try {
+        budget.take('read');
+    } catch (error) {
+        return error;
+    }
+    throw new Error('Expected the budget to refuse a sixth read');
+};
+
 const loadOffProduct = (name) => require(path.join(OFF_FIXTURES_DIR, 'product-' + name + '.json'));
 
 const stubOpenFoodFacts = (openFoodFactsClient) => {
@@ -64,12 +80,7 @@ const stubOpenFoodFacts = (openFoodFactsClient) => {
 
     openFoodFactsClient.fetchByBarcode = async (barcode) => {
         if (barcode === BUDGET_EXHAUSTED_BARCODE) {
-            throw new AppError(
-                'Fluw đang tạm giới hạn số lượt tra cứu tới Open Food Facts. Vui lòng thử lại sau khoảng 12 giây.',
-                503,
-                API_ERROR_CODES.UPSTREAM_RATE_LIMITED,
-                { retryAfterSeconds: 12 }
-            );
+            throw exhaustedBudgetError();
         }
 
         if (!productsByCode.has(barcode)) {

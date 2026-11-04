@@ -50,14 +50,23 @@ const describeError = (error) => {
     return describeUnexpectedError();
 };
 
+const STATIC_SEGMENT_PATTERN = /^([A-Za-z]+|v\d+)$/;
+
+// Barcodes travel in the URL path, so logs keep only static segments (`/api/v1/products/:param/analysis`), and client
+// errors are logged by type only: a URIError message quotes the raw parameter.
+const routePatternOf = (request) => request.path
+    .split('/')
+    .map((segment) => (segment === '' || STATIC_SEGMENT_PATTERN.test(segment) ? segment : ':param'))
+    .join('/');
+
 const logError = (error, description, request) => {
     if (description.status >= 500 && !(error instanceof AppError)) {
-        console.error('[Unhandled Error]', request.method, request.path, error);
+        console.error('[Unhandled Error]', request.method, routePatternOf(request), error);
         return;
     }
 
     if (!(error instanceof AppError)) {
-        console.warn('[Client Error]', description.status, request.method, error?.message);
+        console.warn('[Client Error]', description.status, request.method, routePatternOf(request), error?.name);
     }
 };
 
