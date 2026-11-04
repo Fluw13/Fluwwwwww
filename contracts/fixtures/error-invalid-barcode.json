@@ -4,7 +4,7 @@
   "headers": {},
   "body": {
     "success": false,
-    "error": "Mã vạch không hợp lệ. Mã vạch gồm 8 đến 14 chữ số và phải đúng số kiểm tra.",
+    "error": "Mã vạch không hợp lệ. Mã vạch gồm 8, 12, 13 hoặc 14 chữ số và phải đúng số kiểm tra.",
     "code": "INVALID_BARCODE"
   }
 }

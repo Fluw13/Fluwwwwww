@@ -14,14 +14,14 @@ const findBand = (count) => ADDITIVE_BANDS.find((band) => count >= band.countMin
 
 const notScored = (status, missingKey) => ({ value: null, status, count: null, band: null, missing: [toMissingItem(missingKey)] });
 
-// Additive data is only trusted when Open Food Facts parsed the ingredient list and recognised at least half of it,
-// the same rule it uses before assigning a NOVA group. An empty list is never read as "no additives".
+// Additive data is only trusted when the ingredient list was parsed and mostly recognised (see scoringInputsMapper).
+// An empty list is never read as "no additives".
 const computeAdditivesScore = ({ ingredients, additiveCount }) => {
     if (!ingredients.analyzed) {
         return notScored('missing_ingredients', 'additives.ingredients');
     }
 
-    if (ingredients.unknownCount === null || ingredients.unknownCount > ingredients.count / 2) {
+    if (!ingredients.recognized) {
         return notScored('ingredients_not_recognized', 'additives.recognizedIngredients');
     }
 

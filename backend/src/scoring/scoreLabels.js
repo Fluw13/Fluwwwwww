@@ -22,6 +22,7 @@ const MISSING_LABELS = Object.freeze({
     'nutrition.fiber': 'Chất xơ',
     'nutrition.fruitsVegetablesLegumes': 'Tỷ lệ rau củ, quả, đậu',
     'nutrition.ingredients': 'Danh sách thành phần (để kiểm tra chất tạo ngọt)',
+    'nutrition.recognizedIngredients': 'Danh sách thành phần nhận diện được (để kiểm tra chất tạo ngọt; hơn một nửa thành phần chưa nhận diện)',
     'nutrition.preparedNutrition': 'Dinh dưỡng của sản phẩm sau khi pha chế',
     'additives.ingredients': 'Danh sách thành phần',
     'additives.recognizedIngredients': 'Danh sách thành phần nhận diện được (hơn một nửa thành phần chưa nhận diện)'
@@ -47,6 +48,7 @@ const INDICATOR_NOTES = Object.freeze({
     proteinsNotCountedFat: 'Không tính vì tổng điểm trừ từ 7 trở lên (quy tắc Nutri-Score cho dầu, mỡ, hạt).',
     proteinsRedMeatCap: 'Thịt đỏ: điểm đạm tối đa là 2 (quy tắc Nutri-Score).',
     estimatedFromIngredients: 'Ước tính từ danh sách thành phần (Open Food Facts).',
+    estimatedFromCategory: 'Ước tính theo danh mục sản phẩm (Open Food Facts).',
     saturatedFatFromZeroFat: 'Bằng 0 vì tổng chất béo bằng 0.',
     sugarsFromZeroCarbohydrates: 'Bằng 0 vì carbohydrate bằng 0.',
     saltFromSodium: 'Quy đổi từ natri × 2,5.',

@@ -26,7 +26,7 @@ const scoringInputs = (overrides = {}) => ({
     requiresPreparedData: false,
     nutrients: { asSold: nutrientSet(), prepared: null },
     fruitsVegetablesLegumes: { value: 0, estimated: true },
-    ingredients: { analyzed: true, count: 8, unknownCount: 0, nonNutritiveSweeteners: 0 },
+    ingredients: { analyzed: true, recognized: true, count: 8, unknownCount: 0, nonNutritiveSweeteners: 0 },
     additiveCount: 4,
     ...overrides
 });
@@ -132,7 +132,7 @@ test('thiếu chỉ số trừ điểm → không chấm; béo = 0 và carb = 0 
 test('đồ uống không có danh sách thành phần → không chấm vì không biết có chất tạo ngọt', () => {
     const score = computeFluwScore(scoringInputs({
         productFlags: { ...foodFlags, isBeverage: true },
-        ingredients: { analyzed: false, count: 0, unknownCount: null, nonNutritiveSweeteners: null }
+        ingredients: { analyzed: false, recognized: false, count: 0, unknownCount: null, nonNutritiveSweeteners: null }
     }));
 
     assert.deepEqual(score.nutrition.missing.map((item) => item.key), ['nutrition.ingredients']);
@@ -160,14 +160,14 @@ test('danh mục không áp dụng phương pháp → not_applicable, không có
 });
 
 test('phụ gia: không có thành phần hoặc hơn nửa thành phần không nhận diện → Chưa đủ dữ liệu, không coi là 0 phụ gia', () => {
-    const missing = computeFluwScore(scoringInputs({ ingredients: { analyzed: false, count: 0, unknownCount: null, nonNutritiveSweeteners: null }, additiveCount: 0 }));
+    const missing = computeFluwScore(scoringInputs({ ingredients: { analyzed: false, recognized: false, count: 0, unknownCount: null, nonNutritiveSweeteners: null }, additiveCount: 0 }));
     assert.equal(missing.additives.value, null);
     assert.equal(missing.additives.status, 'missing_ingredients');
 
-    const unrecognized = computeFluwScore(scoringInputs({ ingredients: { analyzed: true, count: 6, unknownCount: 4, nonNutritiveSweeteners: 0 }, additiveCount: 0 }));
+    const unrecognized = computeFluwScore(scoringInputs({ ingredients: { analyzed: true, recognized: false, count: 6, unknownCount: 4, nonNutritiveSweeteners: null }, additiveCount: 0 }));
     assert.equal(unrecognized.additives.status, 'ingredients_not_recognized');
 
-    const half = computeFluwScore(scoringInputs({ ingredients: { analyzed: true, count: 6, unknownCount: 3, nonNutritiveSweeteners: 0 } }));
+    const half = computeFluwScore(scoringInputs({ ingredients: { analyzed: true, recognized: true, count: 6, unknownCount: 3, nonNutritiveSweeteners: 0 } }));
     assert.equal(half.additives.status, 'computed');
 });
 
@@ -200,4 +200,30 @@ test('chỉ số đạm bị loại theo quy tắc vẫn hiện với trạng th
     assert.equal(proteins.status, 'excluded_by_rule');
     assert.match(proteins.note, /từ 11 trở lên/);
     assert.equal(score.nutrition.indicators.find((item) => item.key === 'fruitsVegetablesLegumes').status, 'estimated');
+});
+
+test('đồ uống có hơn một nửa thành phần chưa nhận diện: không tin số chất tạo ngọt, không chấm', () => {
+    const beverageFlags = { ...foodFlags, isBeverage: true };
+    const score = computeFluwScore(scoringInputs({
+        productFlags: beverageFlags,
+        nutrients: { asSold: nutrientSet({ energyKj: 180, fat: 0, saturatedFat: 0, sugars: 10, fiber: 0, proteins: 0, salt: 0 }), prepared: null },
+        ingredients: { analyzed: true, recognized: false, count: 5, unknownCount: 4, nonNutritiveSweeteners: null }
+    }));
+
+    assert.equal(score.nutrition.status, 'missing_data');
+    assert.deepEqual(score.nutrition.missing.map((item) => item.key), ['nutrition.recognizedIngredients']);
+    assert.equal(score.additives.status, 'ingredients_not_recognized');
+    assert.equal(score.total.value, null);
+});
+
+test('chỉ số ghi đơn vị theo nutritionBasis của sản phẩm; rau củ quả ước tính theo danh mục có ghi chú riêng', () => {
+    const score = computeFluwScore(scoringInputs({
+        nutritionBasis: '100ml',
+        fruitsVegetablesLegumes: { value: 50, estimated: true, estimatedFrom: 'category' }
+    }));
+    const byKey = Object.fromEntries(score.nutrition.indicators.map((indicator) => [indicator.key, indicator]));
+
+    assert.equal(byKey.energy.per, '100ml');
+    assert.equal(byKey.fruitsVegetablesLegumes.status, 'estimated');
+    assert.equal(byKey.fruitsVegetablesLegumes.note, 'Ước tính theo danh mục sản phẩm (Open Food Facts).');
 });

@@ -29,6 +29,7 @@ Tài liệu chính thức về cách Fluw tính điểm. Code nằm ở `backend
 - Các ngưỡng bên dưới đã **đối chiếu từng con số** với `lib/ProductOpener/Nutriscore.pm`, bản cài đặt đang chạy của Open Food Facts (commit `d67e1ce`, 29/10/2026).
 - Fluw **tự viết code** theo các ngưỡng đã công bố, không sao chép code của Open Food Facts (code đó theo giấy phép AGPL; nếu sao chép sẽ buộc toàn bộ backend Fluw phải theo AGPL).
 - So sánh dùng dấu ">" nghiêm ngặt: giá trị **bằng** ngưỡng thì chưa bị tính thêm điểm. Riêng tỷ lệ béo bão hòa dùng "≥".
+- Giá trị được làm tròn **đúng như app hiển thị** trước khi so ngưỡng (kJ đến 0,1; gam và % đến 0,01). Nhờ vậy sai số tính toán (ví dụ muối 1,4000000000000001 g khi quy đổi từ natri) không tạo ra điểm mà người dùng không thấy.
 
 ### 2.2. Loại sản phẩm (quyết định dùng bảng nào)
 Lấy theo danh mục Open Food Facts (các cờ `is_beverage`, `is_water`, `is_cheese`, `is_fat_oil_nuts_seeds`, `is_red_meat_product` do OFF tính từ danh mục):
@@ -96,8 +97,8 @@ Mỗi dải điểm thô tương ứng một dải 0–100. Bên trong mỗi d�
 | Béo = 0 mà thiếu béo bão hòa · Carb = 0 mà thiếu đường | Béo bão hòa = 0 · Đường = 0 | Suy ra trực tiếp từ nhãn (giống OFF), ghi chú rõ |
 | Chỉ có natri | Muối = natri × 2,5 | Quy đổi chuẩn |
 | Chỉ có kcal | kJ = kcal × 4,184 | Quy đổi chuẩn |
-| Thiếu chất xơ hoặc % rau củ quả | "Chưa đủ dữ liệu", **không chấm** | Quyết định của chủ dự án: không suy diễn thành điểm tốt hay xấu. (OFF thì tính 0 điểm cộng.) % rau củ quả do OFF ước tính từ danh sách thành phần được dùng, kèm ghi chú "ước tính" |
-| Đồ uống không có danh sách thành phần | "Chưa đủ dữ liệu" (không biết có chất tạo ngọt hay không) | **Chặt hơn OFF** (OFF giả định là không có), theo nguyên tắc "không suy diễn thành điểm tốt" |
+| Thiếu chất xơ hoặc % rau củ quả | "Chưa đủ dữ liệu", **không chấm** | Quyết định của chủ dự án: không suy diễn thành điểm tốt hay xấu. (OFF thì tính 0 điểm cộng.) % rau củ quả do OFF ước tính (từ danh sách thành phần hoặc theo danh mục sản phẩm) được dùng, kèm ghi chú "ước tính" và nguồn ước tính |
+| Đồ uống không có danh sách thành phần, hoặc hơn một nửa thành phần chưa nhận diện | "Chưa đủ dữ liệu" (không biết có chất tạo ngọt hay không; OFF đếm chất tạo ngọt từ chính danh sách thành phần đã nhận diện) | **Chặt hơn OFF** (OFF giả định là không có), theo nguyên tắc "không suy diễn thành điểm tốt". Cùng điều kiện tin cậy với điểm phụ gia (mục 3.1) |
 | Sản phẩm cần pha (mì gói, bột pha uống, siro…) mà chỉ có số liệu dạng khô | "Chưa đủ dữ liệu: cần số liệu sau khi pha" | Giống OFF. Chấm dạng khô sẽ sai (ví dụ mì Hảo Hảo 450 kcal/100 g dạng khô) |
 | Loại sản phẩm mà OFF đánh dấu "không áp dụng" (đồ uống có cồn, thực phẩm trẻ nhỏ…) | "Phương pháp không áp dụng cho loại sản phẩm này" | Giống OFF |
 
@@ -112,7 +113,7 @@ Mỗi dải điểm thô tương ứng một dải 0–100. Bên trong mỗi d�
 Không thỏa một trong hai điều kiện → "Chưa đủ dữ liệu phụ gia". **Không coi là 0 phụ gia.**
 
 ### 3.2. Đếm phụ gia
-- Đếm số phụ gia **khác nhau** trong `additives_tags`. Mã cha và mã con chỉ tính một lần, ví dụ E150 và E150a.
+- Đếm số phụ gia **khác nhau** trong `additives_tags`. Mã cha (chỉ gồm số) và mã con chỉ tính một lần, ví dụ E150 và E150a. Hai mã con khác nhau vẫn tính riêng, ví dụ E450i và E450iii.
 - Danh sách rỗng mà dữ liệu kiểm chứng được = 0 phụ gia (dữ liệu thật).
 
 ### 3.3. Bảng điểm (công khai trong app)

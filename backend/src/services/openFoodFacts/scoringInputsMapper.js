@@ -1,5 +1,6 @@
-const { readNonNegativeInteger, readFlag } = require('./fieldReaders');
+const { readNonNegativeInteger, readFlag, readText } = require('./fieldReaders');
 const { readAdditiveCodes } = require('./additiveMapper');
+const { readNutritionBasis } = require('./nutritionMapper');
 
 // Categories whose Nutri-Score must be computed on the prepared product (Open Food Facts rule).
 const CATEGORIES_NEEDING_PREPARED_DATA = Object.freeze([
@@ -35,31 +36,45 @@ const readComponentValue = (data, id) => {
     return readNumber(positive.find((component) => component?.id === id)?.value);
 };
 
+const readEstimateSource = (raw) => {
+    if (readFlag(raw.nutrition_score_warning_fruits_vegetables_legumes_estimate_from_ingredients)) {
+        return 'ingredients';
+    }
+
+    return readText(raw.nutrition_score_warning_fruits_vegetables_legumes_from_category) === null ? null : 'category';
+};
+
 // Declared values come first; Open Food Facts' own figure (from the label, the category or the ingredient list) next.
 const readFruitsVegetablesLegumes = (raw, data) => {
     const nutriments = raw.nutriments && typeof raw.nutriments === 'object' ? raw.nutriments : {};
     const declared = readNumeric(nutriments['fruits-vegetables-legumes_100g']);
     if (declared !== null) {
-        return { value: declared, estimated: false };
+        return { value: declared, estimated: false, estimatedFrom: null };
     }
 
     const computed = readComponentValue(data, FRUITS_VEGETABLES_LEGUMES_ID);
     if (computed !== null) {
-        return { value: computed, estimated: readFlag(raw.nutrition_score_warning_fruits_vegetables_legumes_estimate_from_ingredients) };
+        const estimatedFrom = readEstimateSource(raw);
+        return { value: computed, estimated: estimatedFrom !== null, estimatedFrom };
     }
 
     const estimate = readNumeric(nutriments['fruits-vegetables-legumes-estimate-from-ingredients_100g']);
-    return estimate === null ? null : { value: estimate, estimated: true };
+    return estimate === null ? null : { value: estimate, estimated: true, estimatedFrom: 'ingredients' };
 };
 
+// Open Food Facts derives additives and sweeteners from the parsed ingredient list, so both are only trusted when
+// at least half of the ingredients were recognised (the rule it applies before assigning a NOVA group).
 const readIngredientAnalysis = (raw) => {
     const count = readNonNegativeInteger(raw.ingredients_n) ?? 0;
+    const unknownCount = readNonNegativeInteger(raw.unknown_ingredients_n);
+    const recognized = count > 0 && unknownCount !== null && unknownCount <= count / 2;
 
     return {
         analyzed: count > 0,
+        recognized,
         count,
-        unknownCount: readNonNegativeInteger(raw.unknown_ingredients_n),
-        nonNutritiveSweeteners: count > 0 ? readNonNegativeInteger(raw.ingredients_non_nutritive_sweeteners_n) : null
+        unknownCount,
+        nonNutritiveSweeteners: recognized ? readNonNegativeInteger(raw.ingredients_non_nutritive_sweeteners_n) : null
     };
 };
 
@@ -68,11 +83,13 @@ const readCategoryTags = (raw) => (Array.isArray(raw.categories_tags) ? raw.cate
 const toScoringInputs = (raw, nutrients) => {
     const nutriscore = readNutriscore2023(raw);
     const categoryTags = readCategoryTags(raw);
+    const productFlags = readProductFlags(nutriscore?.data);
 
     return {
         categoryAvailable: readFlag(nutriscore?.category_available),
         nutriscoreApplicable: readFlag(nutriscore?.nutriscore_applicable),
-        productFlags: readProductFlags(nutriscore?.data),
+        productFlags,
+        nutritionBasis: readNutritionBasis(readText(raw.quantity), productFlags.isBeverage),
         requiresPreparedData: CATEGORIES_NEEDING_PREPARED_DATA.some((tag) => categoryTags.includes(tag)),
         nutrients,
         fruitsVegetablesLegumes: readFruitsVegetablesLegumes(raw, nutriscore?.data),
