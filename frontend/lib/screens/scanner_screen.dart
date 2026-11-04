@@ -1,7 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import 'product_detail_screen.dart';
+import '../core/navigation/app_routes.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -37,10 +37,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
       if (code == null || code.isEmpty) continue;
 
       _hasNavigated = true;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => ProductDetailScreen(query: code)),
-      );
+      AppRoutes.openProduct(context, code, replace: true);
       return;
     }
   }

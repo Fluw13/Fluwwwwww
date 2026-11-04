@@ -1,16 +1,15 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/navigation/app_routes.dart';
+import '../core/search/search_input.dart';
 import '../core/theme/fluw_palette.dart';
-import '../services/api_service.dart';
-import 'product_detail_screen.dart';
+import '../data/api/fluw_api_scope.dart';
 import 'scanner_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.apiService});
-
-  final ApiService? apiService;
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,34 +17,39 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late final ApiService _apiService;
-  late final bool _ownsApiService;
+  bool _wakeUpSent = false;
+  String? _inputError;
 
   @override
-  void initState() {
-    super.initState();
-    _ownsApiService = widget.apiService == null;
-    _apiService = widget.apiService ?? ApiService();
-    unawaited(_apiService.wakeUpServer());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_wakeUpSent) return;
+    _wakeUpSent = true;
+    unawaited(FluwApiScope.of(context).wakeUp());
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    if (_ownsApiService) {
-      _apiService.dispose();
-    }
     super.dispose();
   }
 
-  void _searchProduct() {
-    final String query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: query)),
+  /// Only runs when the user submits: Open Food Facts forbids
+  /// search-as-you-type.
+  void _submitSearch() {
+    final SearchInput input = SearchInput.parse(_searchController.text);
+    setState(
+      () => _inputError = input is InvalidSearchInput ? input.message : null,
     );
+
+    switch (input) {
+      case BarcodeSearchInput(:final String barcode):
+        AppRoutes.openProduct(context, barcode);
+      case KeywordSearchInput(:final String query):
+        AppRoutes.openSearch(context, query);
+      case EmptySearchInput() || InvalidSearchInput():
+        break;
+    }
   }
 
   void _openScanner() {
@@ -78,12 +82,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Text(
                         'Bạn đang ăn món gì?',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       _SearchField(
                         controller: _searchController,
-                        onSubmit: _searchProduct,
+                        errorText: _inputError,
+                        onSubmit: _submitSearch,
                       ),
                       const SizedBox(height: 30),
                       const _ZeroIntroCard(),
@@ -100,7 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     backgroundColor: palette.primaryAction,
                     foregroundColor: palette.onPrimaryAction,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   onPressed: _openScanner,
                   icon: const Icon(Icons.qr_code_scanner, size: 26),
@@ -119,9 +129,14 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.onSubmit});
+  const _SearchField({
+    required this.controller,
+    required this.errorText,
+    required this.onSubmit,
+  });
 
   final TextEditingController controller;
+  final String? errorText;
   final VoidCallback onSubmit;
 
   @override
@@ -132,6 +147,8 @@ class _SearchField extends StatelessWidget {
       onSubmitted: (_) => onSubmit(),
       decoration: InputDecoration(
         hintText: 'Nhập mã vạch hoặc tên sản phẩm...',
+        errorText: errorText,
+        errorMaxLines: 3,
         prefixIcon: const Icon(Icons.search),
         suffixIcon: IconButton(
           icon: const Icon(Icons.arrow_forward),
@@ -173,7 +190,8 @@ class _ZeroIntroCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Quét mã vạch bất kỳ đồ ăn hoặc thức uống để Zero phân tích chỉ số dinh dưỡng & chấm điểm sức khỏe.',
+            'Quét mã vạch hoặc tìm theo tên để xem Điểm Fluw, tính từ dữ liệu Open Food Facts theo công thức công khai. '
+            'Bấm "Hỏi Zero" để AI giải thích điểm.',
             style: TextStyle(color: palette.textSecondary, fontSize: 13),
           ),
         ],
