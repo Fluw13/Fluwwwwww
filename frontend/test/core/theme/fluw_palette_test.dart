@@ -59,7 +59,7 @@ void main() {
     const FluwPalette palette = FluwPalette.light;
     expect(palette.scoreColors(ScoreLevel.good), same(palette.scoreGood));
     expect(palette.scoreColors(ScoreLevel.moderate), same(palette.scoreModerate));
-    expect(palette.scoreColors(ScoreLevel.poor), same(palette.scorePoor));
+    expect(palette.scoreColors(ScoreLevel.limit), same(palette.scorePoor));
   });
 
   test('lerp trả về đúng hai đầu khi chuyển sáng ↔ tối', () {

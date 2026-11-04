@@ -69,7 +69,7 @@ class _LevelChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final ScoreLevel level = ScoreLevel.fromScore(score);
     final ScoreColors colors = context.palette.scoreColors(level);
-    return InfoChip(label: level.label, foreground: colors.text, background: colors.container, emphasized: true);
+    return InfoChip(label: level.legacyLabel, foreground: colors.text, background: colors.container, emphasized: true);
   }
 }
 

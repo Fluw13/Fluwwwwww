@@ -113,7 +113,7 @@ void main() {
       expect(ScoreLevel.fromScore(70), ScoreLevel.good);
       expect(ScoreLevel.fromScore(69), ScoreLevel.moderate);
       expect(ScoreLevel.fromScore(40), ScoreLevel.moderate);
-      expect(ScoreLevel.fromScore(39), ScoreLevel.poor);
+      expect(ScoreLevel.fromScore(39), ScoreLevel.limit);
     });
   });
 }

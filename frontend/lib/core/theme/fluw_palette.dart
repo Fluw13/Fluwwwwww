@@ -111,7 +111,7 @@ class FluwPalette extends ThemeExtension<FluwPalette> {
     return switch (level) {
       ScoreLevel.good => scoreGood,
       ScoreLevel.moderate => scoreModerate,
-      ScoreLevel.poor => scorePoor,
+      ScoreLevel.limit => scorePoor,
     };
   }
 
