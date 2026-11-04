@@ -19,7 +19,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Bạn đang ăn món gì?'), findsOneWidget);
-    expect(find.text('QUÉT MÃ VẠCH'), findsOneWidget);
+    expect(find.text('Quét mã vạch'), findsOneWidget);
     expect(requests.map((url) => url.path), ['/health']);
   });
 }

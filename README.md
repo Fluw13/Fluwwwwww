@@ -81,6 +81,10 @@ Mặc định ứng dụng gọi `https://fluw.onrender.com`. Để trỏ tới 
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/product
 ```
 
+Email hỗ trợ hiện trong màn Tài khoản đặt bằng `--dart-define=SUPPORT_EMAIL=...`. Nếu không đặt, app hiện một địa chỉ mẫu và ghi rõ đó là mẫu.
+
+Lịch sử quét và tìm kiếm chỉ giữ trong lúc app đang mở, không ghi xuống máy và không gửi đi. Muốn lưu lâu dài cần có đăng nhập, phần này chưa làm.
+
 Build bản release cần tạo `frontend/android/key.properties` từ file `key.properties.example`. Không commit file này và file `.jks`.
 
 Yêu cầu Flutter 3.44 trở lên (do `shared_preferences`). Kiến trúc giao diện (theme sáng/tối, skeleton, chuyển trang) xem [`docs/FRONTEND_UI_FOUNDATION.md`](docs/FRONTEND_UI_FOUNDATION.md).

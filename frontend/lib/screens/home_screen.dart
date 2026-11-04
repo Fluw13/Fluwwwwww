@@ -1,10 +1,24 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/history/history_kind.dart';
+import '../core/history/history_scope.dart';
+import '../core/history/session_history.dart';
+import '../core/navigation/product_origin.dart';
 import '../core/scanner/scanner_exit.dart';
+import '../core/theme/app_spacing.dart';
 import '../core/theme/fluw_palette.dart';
+import '../models/product_summary.dart';
 import '../services/api_service.dart';
+import '../widgets/home/home_header.dart';
+import '../widgets/home/product_search_field.dart';
+import '../widgets/home/recent_scans_section.dart';
+import '../widgets/home/recent_searches.dart';
+import '../widgets/home/scan_button.dart';
+import '../widgets/home/zero_intro_card.dart';
+import 'account_screen.dart';
+import 'history_screen.dart';
 import 'product_detail_screen.dart';
 import 'scanner_screen.dart';
 
@@ -42,14 +56,34 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _searchProduct() {
-    final String query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
+  void _openProduct(String query, ProductOrigin origin) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: query, apiService: _apiService)),
+      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: query, origin: origin, apiService: _apiService)),
     );
+  }
+
+  void _search(String query) {
+    final String trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+
+    HistoryScope.read(context)?.addSearch(trimmed);
+    _openProduct(trimmed, ProductOrigin.search);
+  }
+
+  void _openRecentScan(ProductSummary product) {
+    _openProduct(product.barcode.isNotEmpty ? product.barcode : product.name, ProductOrigin.history);
+  }
+
+  void _openScanHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => HistoryScreen(kind: HistoryKind.scans, apiService: _apiService)),
+    );
+  }
+
+  void _openAccount() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => AccountScreen(apiService: _apiService)));
   }
 
   Future<void> _openScanner() async {
@@ -69,128 +103,63 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
+    final SessionHistory? history = HistoryScope.watch(context);
+    final List<ProductSummary> scans = history?.scans ?? const [];
+    final List<String> searches = history?.searches ?? const [];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Fluw',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26),
-        ),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Bạn đang ăn món gì?',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      _SearchField(
-                        controller: _searchController,
-                        focusNode: _searchFocus,
-                        onSubmit: _searchProduct,
-                      ),
-                      const SizedBox(height: 30),
-                      const _ZeroIntroCard(),
-                    ],
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            HomeHeader(onOpenAccount: _openAccount),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screenPadding,
+                  AppSpacing.xl,
+                  AppSpacing.screenPadding,
+                  AppSpacing.lg,
                 ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: palette.primaryAction,
-                    foregroundColor: palette.onPrimaryAction,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                children: [
+                  const Text(
+                    'Bạn đang ăn món gì?',
+                    style: TextStyle(fontSize: 26, height: 1.25, fontWeight: FontWeight.w800),
                   ),
-                  onPressed: _openScanner,
-                  icon: const Icon(Icons.qr_code_scanner, size: 26),
-                  label: const Text(
-                    'QUÉT MÃ VẠCH',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Quét mã vạch hoặc tìm theo tên để Zero chấm điểm.',
+                    style: TextStyle(fontSize: 15, height: 1.45, color: palette.textSecondary),
                   ),
-                ),
+                  const SizedBox(height: AppSpacing.lg),
+                  ProductSearchField(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    onSubmit: () => _search(_searchController.text),
+                  ),
+                  if (searches.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    RecentSearches(queries: searches, onSelected: _search),
+                  ],
+                  const SizedBox(height: AppSpacing.xxl),
+                  if (scans.isEmpty)
+                    const ZeroIntroCard()
+                  else
+                    RecentScansSection(scans: scans, onOpen: _openRecentScan, onSeeAll: _openScanHistory),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.focusNode, required this.onSubmit});
-
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final VoidCallback onSubmit;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      focusNode: focusNode,
-      textInputAction: TextInputAction.search,
-      onSubmitted: (_) => onSubmit(),
-      decoration: InputDecoration(
-        hintText: 'Nhập mã vạch hoặc tên sản phẩm...',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: IconButton(
-          icon: const Icon(Icons.arrow_forward),
-          tooltip: 'Tìm',
-          onPressed: onSubmit,
-        ),
-      ),
-    );
-  }
-}
-
-class _ZeroIntroCard extends StatelessWidget {
-  const _ZeroIntroCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final FluwPalette palette = context.palette;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: palette.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.auto_awesome, color: palette.accentText),
-              const SizedBox(width: 8),
-              const Text(
-                'Trợ lý Zero AI',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.screenPadding,
+                AppSpacing.sm,
+                AppSpacing.screenPadding,
+                AppSpacing.lg,
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Quét mã vạch bất kỳ đồ ăn hoặc thức uống để Zero phân tích chỉ số dinh dưỡng & chấm điểm sức khỏe.',
-            style: TextStyle(color: palette.textSecondary, fontSize: 13),
-          ),
-        ],
+              child: ScanButton(onPressed: _openScanner),
+            ),
+          ],
+        ),
       ),
     );
   }

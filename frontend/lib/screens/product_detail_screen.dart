@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../core/history/history_scope.dart';
+import '../core/navigation/product_origin.dart';
 import '../models/product_model.dart';
+import '../models/product_summary.dart';
 import '../services/api_service.dart';
 import '../widgets/async/async_content.dart';
 import '../widgets/async/error_retry_view.dart';
@@ -8,9 +11,10 @@ import '../widgets/product/product_detail_loading_view.dart';
 import '../widgets/product/product_detail_view.dart';
 
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key, required this.query, this.apiService});
+  const ProductDetailScreen({super.key, required this.query, required this.origin, this.apiService});
 
   final String query;
+  final ProductOrigin origin;
   final ApiService? apiService;
 
   @override
@@ -27,7 +31,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.initState();
     _ownsApiService = widget.apiService == null;
     _apiService = widget.apiService ?? ApiService();
-    _productFuture = _apiService.fetchProduct(widget.query);
+    _productFuture = _load();
   }
 
   @override
@@ -38,9 +42,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     super.dispose();
   }
 
+  /// A product enters the scan history only once it has loaded and while its
+  /// page is still open; leaving early records nothing.
+  Future<ProductModel> _load() async {
+    final ProductModel product = await _apiService.fetchProduct(widget.query);
+    if (mounted && widget.origin.recordsScan) {
+      HistoryScope.read(context)?.addScan(ProductSummary.fromProduct(product));
+    }
+    return product;
+  }
+
   void _retry() {
     setState(() {
-      _productFuture = _apiService.fetchProduct(widget.query);
+      _productFuture = _load();
     });
   }
 
