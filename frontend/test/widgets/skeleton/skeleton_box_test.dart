@@ -51,7 +51,7 @@ void main() {
           child: Column(
             children: [
               SkeletonBox(width: 100, height: 12),
-              SkeletonBox.line(width: 80),
+              SkeletonBox.text(width: 80, fontSize: 12),
               SkeletonBox.circle(size: 32),
             ],
           ),
