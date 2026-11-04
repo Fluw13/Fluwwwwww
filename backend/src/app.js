@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const productRoutes = require('./routes/productRoutes');
 const v1Routes = require('./routes/v1');
-const { productRateLimiter } = require('./middlewares/rateLimiter');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
 const parseAllowedOrigins = (value) => {
@@ -20,7 +18,6 @@ app.get('/health', (request, response) => {
     response.status(200).json({ success: true, status: 'ok' });
 });
 
-app.use('/api/product', productRateLimiter, productRoutes);
 app.use('/api/v1', v1Routes);
 
 app.use(notFoundHandler);

@@ -1,7 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const TtlCache = require('../src/cache/TtlCache');
-const { barcodeKey, productCacheKey } = require('../src/cache/productCacheKey');
 
 const createClock = () => {
     let current = 0;
@@ -32,11 +31,4 @@ test('TtlCache bỏ mục ít được dùng nhất khi vượt giới hạn', (
     assert.equal(cache.get('b'), undefined);
     assert.equal(cache.get('a'), 1);
     assert.equal(cache.get('c'), 3);
-});
-
-test('productCacheKey tách mã vạch với tên và chuẩn hóa tên tiếng Việt', () => {
-    assert.equal(productCacheKey('8934563138165'), barcodeKey('8934563138165'));
-    assert.equal(productCacheKey('Sữa   CHUA'), productCacheKey('sữa chua'));
-    assert.equal(productCacheKey('Sữa chua'), productCacheKey('Sữa chua'));
-    assert.notEqual(productCacheKey('12345678'), productCacheKey('name 12345678'));
 });

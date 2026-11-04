@@ -134,8 +134,6 @@ const readSearchHits = (response) => {
     return Array.isArray(hits) ? hits : [];
 };
 
-const nameNotFoundError = (name) => notFoundError('có tên "' + name + '"');
-
 const send = async (request) => {
     try {
         return await request();
@@ -168,7 +166,6 @@ const fetchSearchHits = async (text, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) =>
 module.exports = {
     fetchByBarcode,
     fetchSearchHits,
-    nameNotFoundError,
     buildSearchRequest,
     buildUserAgent,
     readBarcodeResponse,

@@ -1,7 +1,7 @@
 # Tài liệu bàn giao dự án Fluw
 
 **Ứng dụng:** Fluw, quét mã vạch thực phẩm và phân tích dinh dưỡng bằng AI **Zero**
-**Cập nhật:** 29/10/2026, theo code trên nhánh `main` (sau khi gộp PR #1 và đợt sửa lỗi QA cùng ngày)
+**Cập nhật:** 04/11/2026, phần backend theo API v1 (nhánh `chore/remove-legacy-api`, đã gỡ route cũ `/api/product/:query`)
 **Phiên bản app:** 1.0.0+1
 
 > File này dành cho lập trình viên. Bản tóm tắt dễ đọc cho mọi người là `FLUW_PROJECT_HANDOFF.docx`.
@@ -10,15 +10,17 @@
 
 ## 1. Luồng chính
 
-Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọi `GET /api/product/:query` → backend tra cứu OpenFoodFacts → Gemini (Zero) chấm điểm 0-100 → app hiển thị kết quả.
+Người dùng quét mã vạch hoặc tìm theo tên → app gọi `GET /api/v1/search` (chọn sản phẩm trong danh sách) hoặc thẳng `GET /api/v1/products/:barcode` → backend lấy dữ liệu Open Food Facts và tính **Điểm Fluw** 0–100 bằng công thức công khai → app hiển thị sản phẩm, điểm và cách tính → khi người dùng bấm "Hỏi Zero", app gọi `GET /api/v1/products/:barcode/analysis` để Gemini giải thích điểm (AI không chấm điểm).
 
-Điểm sức khỏe dùng 3 mức, định nghĩa tại `frontend/lib/models/score_level.dart`:
+Mức điểm do backend tính và gửi kèm nhãn (đặc tả: `docs/SCORING.md`):
 
-| Điểm | Mức | Màu |
+| Điểm | Mức (`level`) | Nhãn |
 | :--- | :--- | :--- |
-| 70-100 | Tốt | Xanh `#00E676` |
-| 40-69 | Trung bình | Vàng `#FFD600` |
-| 0-39 | Kém | Đỏ `#FF3D00` |
+| 70-100 | `good` | Tốt |
+| 40-69 | `moderate` | Trung bình |
+| 0-39 | `limit` | Nên hạn chế |
+
+Thiếu dữ liệu cần thiết (danh mục, chỉ số dinh dưỡng, chất xơ, % rau củ quả, thành phần) thì không chấm và ghi "Chưa đủ dữ liệu".
 
 ## 2. Hạ tầng
 
@@ -27,77 +29,43 @@ Người dùng quét mã vạch hoặc nhập tên sản phẩm → Flutter gọ
 | Repository | GitHub `Fluw13/Fluwwwwww` | Nhánh chính `main` |
 | Backend | Node.js, Express 5 | Entry `backend/server.js` |
 | Hosting | Render, `https://fluw.onrender.com` | Deploy tự động từ `main` |
-| AI | `@google/genai`, model đọc từ `GEMINI_MODEL` | Mặc định `gemini-3.6-flash` |
+| AI | `@google/genai`, model đọc từ `GEMINI_MODEL` | Mặc định `gemini-3.5-flash-lite`; biến trên Render được ưu tiên |
 | Dữ liệu thực phẩm | OpenFoodFacts | API v2 theo mã vạch, `search.openfoodfacts.org` theo tên |
 | Mobile | Flutter (Dart SDK `^3.13.7`) | Android là mục tiêu chính, `applicationId = com.fluw.app` |
 | Ký app Android | `frontend/android/app/upload-keystore.jks`, alias `upload` | Mật khẩu trong `frontend/android/key.properties`, không commit |
 
 ## 3. Backend (`backend/`)
 
-| File | Vai trò |
+Hợp đồng API đầy đủ: `docs/API_CONTRACT_v1.md`; phản hồi mẫu: `contracts/fixtures/`. Quyết định kiến trúc: `docs/adr/`.
+
+| File / thư mục | Vai trò |
 | :--- | :--- |
-| `server.js` | Nạp `.env`, khởi động server |
-| `src/app.js` | Cấu hình Express: CORS, `trust proxy`, `/health`, mount route, xử lý lỗi |
-| `src/routes/productRoutes.js` | `GET /:query` |
-| `src/controllers/productController.js` | Nhận request, trả JSON và header `X-Cache` |
-| `src/services/productService.js` | Điều phối: kiểm tra đầu vào, cache, gộp request trùng, gọi dữ liệu rồi AI; AI lỗi thì vẫn trả dữ liệu sản phẩm |
-| `src/validators/productQueryValidator.js` | Kiểm tra từ khóa, nhận diện mã vạch |
-| `src/validators/gtinCheckDigit.js` | Kiểm tra số kiểm tra mã vạch 12-14 chữ số |
-| `src/search/pickBestSearchHit.js` | Chọn kết quả tìm theo tên khớp nhiều từ nhất |
-| `src/search/foldVietnamese.js` | Bỏ dấu tiếng Việt, nhận biết từ khóa có dấu |
-| `src/services/openFoodFacts/productSearch.js` | Tìm theo tên; khi cần thì tìm thêm bản không dấu và gộp kết quả |
-| `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
-| `src/cache/productCacheKey.js` | Tạo khóa cache từ mã vạch hoặc tên đã chuẩn hóa |
-| `src/config/env.js` | Đọc số nguyên dương từ biến môi trường |
-| `src/services/foodApiService.js` | Chọn tra theo mã vạch hay theo tên, trả sản phẩm đã chuẩn hóa |
-| `src/services/openFoodFacts/openFoodFactsClient.js` | Gọi OpenFoodFacts (User-Agent, timeout 10 s, `fields=`, ưu tiên tiếng Việt), phân loại lỗi 404/429/502/504 |
-| `src/services/openFoodFacts/productNormalizer.js` | Chuẩn hóa dữ liệu sản phẩm (chỉ số liệu 100 g, kJ sang kcal) |
-| `src/services/openFoodFacts/allergenMapper.js` | Đổi mã dị ứng sang tên tiếng Việt |
-| `src/services/aiService.js` | Ghép prompt, gọi Gemini, kiểm tra phản hồi |
-| `src/services/ai/geminiClient.js` | Gọi Gemini (timeout 40 s, thử lại 1 lần với lỗi tạm thời) |
-| `src/services/ai/analysisPrompt.js` | Prompt, quy tắc chống prompt injection, schema đầu ra |
-| `src/services/ai/analysisParser.js` | Kiểm tra và làm sạch đầu ra của Gemini |
+| `server.js` | Nạp `.env`, khởi động server, dừng êm khi nhận `SIGTERM`/`SIGINT` |
+| `src/app.js` | Cấu hình Express: CORS, `trust proxy`, `/health`, mount `/api/v1`, xử lý lỗi |
+| `src/routes/v1/`, `src/controllers/v1/` | `search`, `products/:barcode`, `products/:barcode/analysis` |
+| `src/middlewares/routeRateLimiters.js` | Giới hạn mỗi IP mỗi phút cho từng route |
 | `src/middlewares/errorHandler.js` | Trả lỗi dạng JSON; lỗi lạ trả 500, không lộ chi tiết |
-| `src/middlewares/rateLimiter.js` | Giới hạn số lần tra cứu theo IP |
-| `src/errors/AppError.js` | Lỗi có mã HTTP và mã lỗi tùy chọn |
-| `src/errors/errorCodes.js` | Danh sách mã lỗi trả về cho app (`INVALID_BARCODE`, `PRODUCT_NOT_FOUND`, `AI_*`...) |
-
-### API contract
-
-`GET /api/product/:query`, với `query` là mã vạch 8-14 chữ số hoặc tên sản phẩm (tối đa 100 ký tự). Mã 12-14 chữ số sai số kiểm tra trả 400.
-
-```json
-{
-  "success": true,
-  "barcode": "8934563138165",
-  "product": {
-    "barcode": "8934563138165",
-    "product_name": "…",
-    "brands": "…",
-    "image_front_url": "https://…",
-    "ingredients_text": "… hoặc null",
-    "allergens": ["sữa"],
-    "nutriments": { "energy-kcal": 450, "proteins": 9, "fat": null, "carbohydrates": 62 }
-  },
-  "aiAnalysis": {
-    "score": 35,
-    "deepThink": "…",
-    "recommendation": "…",
-    "allergens": ["…"],
-    "alternatives": ["…"]
-  },
-  "aiError": null
-}
-```
-
-- `nutriments`: chỉ đọc giá trị trên 100 g (khóa `_100g` của OpenFoodFacts), không bao giờ dùng giá trị theo khẩu phần. `null` là không có dữ liệu, khác với `0`. Nếu chỉ có năng lượng theo kJ thì quy đổi sang kcal (chia 4,184, làm tròn 1 chữ số thập phân).
-- `product.allergens`: lấy từ nhãn (OpenFoodFacts). `aiAnalysis.allergens`: AI gợi ý thêm từ danh sách thành phần.
-- `aiAnalysis` có thể là `null` khi Gemini lỗi, quá hạn, trả kết quả không hợp lệ hoặc chưa cấu hình key. Khi đó vẫn trả HTTP 200 kèm dữ liệu sản phẩm, và `aiError` là `AI_NOT_CONFIGURED`, `AI_UNAVAILABLE`, `AI_RATE_LIMITED` (Gemini hết hạn mức, HTTP 429) hoặc `AI_INVALID_RESPONSE`. Kết quả thiếu phân tích AI không được lưu cache.
-- Lỗi: `{ "success": false, "error": "…", "code": "<MÃ_LỖI>" }` (danh sách mã: README), mã 400 (đầu vào sai), 404 (không tìm thấy), 429 (quá giới hạn), 502/504 (OpenFoodFacts lỗi hay quá hạn), 500 (lỗi không lường trước).
+| `src/validators/` | `barcodeValidator` (GTIN 8–14 số, số kiểm tra, chuẩn hóa), `gtinCheckDigit`, `searchQueryValidator` |
+| `src/services/search/` | `searchService` (tìm, tìm thêm không dấu, cache), `searchRanker` (xếp hạng, kết quả gần đúng) |
+| `src/search/foldVietnamese.js` | Bỏ dấu tiếng Việt, nhận biết từ khóa có dấu |
+| `src/services/productDetailsService.js` | Sản phẩm + điểm, cache, gộp request trùng |
+| `src/services/analysisService.js` | Zero giải thích điểm: kiểm tra cấu hình, hạn mức ngày, cache theo phiên bản điểm |
+| `src/services/openFoodFacts/openFoodFactsClient.js` | Gọi Open Food Facts (User-Agent, timeout 10 s, `fields=`), phân loại lỗi 404/429/502/504 |
+| `src/services/openFoodFacts/upstreamBudget.js` | Giới hạn lượt gọi Open Food Facts toàn server (14 đọc + 9 tìm mỗi phút) |
+| `src/services/openFoodFacts/*Mapper.js` | Chuyển dữ liệu Open Food Facts sang contract: ảnh, dinh dưỡng, thành phần, phụ gia, dị ứng, dữ liệu tính điểm, kết quả tìm |
+| `src/scoring/` | Tính Điểm Fluw (hàm thuần): `computeFluwScore`, `nutrition/*`, `additives/*`, `scoreVersion`, `scoreLabels`, `scoreLevel` |
+| `src/services/ai/geminiClient.js` | Gọi Gemini (timeout 15 s, thử lại 1 lần với lỗi tạm thời, 429 không thử lại) |
+| `src/services/ai/explanationPrompt.js`, `explanationParser.js` | Prompt + schema không có trường điểm; kiểm tra đầu ra |
+| `src/services/ai/aiUsageGuard.js` | Giới hạn lượt gọi Gemini mỗi ngày (`AI_DAILY_LIMIT`) |
+| `src/services/ai/delimitedJson.js` | Đặt dữ liệu cộng đồng trong khối `<product_data>` đã escape (chống prompt injection) |
+| `src/cache/TtlCache.js` | Cache trong bộ nhớ có hạn dùng và giới hạn số mục |
+| `src/config/env.js` | Đọc số nguyên dương từ biến môi trường |
+| `src/errors/` | `AppError`, danh sách mã lỗi `errorCodes` (gồm `AI_*`) |
+| `scripts/contractFixtures/` | Tạo lại `contracts/fixtures` (`npm run contract:fixtures`) |
 
 ### Biến môi trường
 
-Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_MODEL`, `PORT`, `RATE_LIMIT_WINDOW_MINUTES`, `RATE_LIMIT_MAX_REQUESTS`, `TRUST_PROXY_HOPS`, `CORS_ORIGINS`, `CACHE_TTL_HOURS`, `CACHE_MAX_ENTRIES`.
+Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_MODEL`, `GEMINI_TIMEOUT_SECONDS`, `AI_DAILY_LIMIT`, `PORT`, `OFF_CONTACT_EMAIL`, `OFF_READS_PER_MINUTE`, `OFF_SEARCHES_PER_MINUTE`, `SEARCH_RATE_LIMIT_PER_MINUTE`, `PRODUCT_RATE_LIMIT_PER_MINUTE`, `ANALYSIS_RATE_LIMIT_PER_MINUTE`, `TRUST_PROXY_HOPS`, `CORS_ORIGINS`, `CACHE_TTL_HOURS`, `CACHE_MAX_ENTRIES`, `SEARCH_CACHE_TTL_MINUTES`.
 
 ## 4. Frontend (`frontend/lib/`)
 
@@ -192,7 +160,7 @@ Sau khi deploy, mã `aiError` trên production sẽ cho biết chắc lỗi Gemi
 - [ ] Email liên hệ thật cho `docs/PRIVACY_POLICY.md` và User-Agent gửi OpenFoodFacts (đang là `contact@fluw.app`).
 - [ ] Đăng chính sách quyền riêng tư lên URL công khai cho Google Play.
 - [ ] `ndkVersion = "30.0.16248370"` đang cố định trong `android/app/build.gradle.kts`, máy khác có thể không có bản NDK này.
-- [ ] Hạn mức Gemini gói miễn phí (20 lượt/ngày với `gemini-3.6-flash`) không đủ cho app thật. Cần chọn: đổi `GEMINI_MODEL` sang model có hạn mức cao hơn (ví dụ `gemini-3.5-flash-lite`, 500 lượt/ngày) hoặc bật thanh toán.
+- [ ] Hạn mức Gemini gói miễn phí: mặc định trong code đã là `gemini-3.5-flash-lite` (500 lượt/ngày theo nguồn thứ cấp) và `AI_DAILY_LIMIT=200`, nhưng nếu Render đang đặt `GEMINI_MODEL=gemini-3.6-flash` (20 lượt/ngày) thì biến đó được ưu tiên. Cần kiểm tra và sửa biến trên Render, hoặc bật thanh toán.
 - [ ] Cache hiện nằm trong bộ nhớ, mất khi server khởi động lại. Khi có database có thể chuyển sang cache bền vững.
 - [ ] Android cần `minSdkVersion 23` (bản bàn giao cũ ghi app crash camera trên máy thật nếu thấp hơn). Giá trị này đang đặt trong `android/local.properties`, file không được commit, nên máy khác sẽ không có.
 

@@ -2,13 +2,12 @@ const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const AppError = require('../src/errors/AppError');
 const {
+    buildSearchRequest,
     buildUserAgent,
     readBarcodeResponse,
     readSearchHits,
     toTransportError
 } = require('../src/services/openFoodFacts/openFoodFactsClient');
-const { normalizeProduct } = require('../src/services/openFoodFacts/productNormalizer');
-const { readAllergens } = require('../src/services/openFoodFacts/allergenMapper');
 const { version } = require('../package.json');
 
 const captureError = (action) => {
@@ -85,23 +84,30 @@ test('lỗi mạng phân biệt timeout (504) với mất kết nối (502)', ()
     mock.restoreAll();
 });
 
-test('readAllergens nhận cả mảng tag lẫn chuỗi tag phân tách bằng dấu phẩy', () => {
-    assert.deepEqual(readAllergens(['en:milk', 'en:eggs']), ['sữa', 'trứng']);
-    assert.deepEqual(readAllergens('en:milk,en:gluten, en:milk'), ['sữa', 'gluten']);
-    assert.deepEqual(readAllergens(''), []);
-    assert.deepEqual(readAllergens(null), []);
+test('buildSearchRequest ưu tiên tiếng Việt và lấy các trường tiếng Việt', () => {
+    const request = buildSearchRequest('sữa chua');
+
+    assert.equal(request.q, 'sữa chua');
+    assert.deepEqual(request.langs, ['vi', 'en']);
+    assert.ok(request.fields.includes('product_name_vi'));
+    assert.ok(request.fields.includes('image_front_small_url'));
 });
 
-test('normalizeProduct không dùng từ khóa tìm kiếm làm mã vạch', () => {
-    assert.equal(normalizeProduct({ product_name: 'Sữa' }, 'sữa tươi').barcode, null);
-    assert.equal(normalizeProduct({}, '8934563138164').barcode, '8934563138164');
-    assert.equal(normalizeProduct({ code: 8934563138164 }, 'sữa').barcode, '8934563138164');
-});
+test('readBarcodeResponse trả sản phẩm, phân biệt "không tìm thấy" (404) với lỗi từ Open Food Facts', () => {
+    const product = { code: '12345678' };
+    const statusOf = (response) => {
+        try {
+            readBarcodeResponse(response, '12345678');
+            return 200;
+        } catch (error) {
+            return error.statusCode;
+        }
+    };
 
-test('normalizeProduct bỏ qua tên rỗng và thương hiệu không phải chuỗi', () => {
-    const product = normalizeProduct({ product_name_vi: '   ', product_name: 'Milk', brands: ['A', 7, 'B'] }, '12345678');
-
-    assert.equal(product.product_name, 'Milk');
-    assert.equal(product.brands, 'A, B');
-    assert.equal(normalizeProduct({ brands: '' }, '12345678').brands, 'Chưa rõ thương hiệu');
+    assert.equal(readBarcodeResponse({ status: 200, data: { status: 1, product } }, '12345678'), product);
+    assert.equal(statusOf({ status: 404, data: {} }), 404);
+    assert.equal(statusOf({ status: 200, data: { status: 0 } }), 404);
+    assert.equal(statusOf({ status: 403, data: 'Forbidden' }), 502);
+    assert.equal(statusOf({ status: 429, data: {} }), 503);
+    assert.equal(statusOf({ status: 500, data: '' }), 502);
 });

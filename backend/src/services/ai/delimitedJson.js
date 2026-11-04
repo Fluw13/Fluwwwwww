@@ -7,4 +7,4 @@ const toDelimitedJson = (data) => JSON.stringify(data)
 
 const wrapProductData = (data) => '<product_data>\n' + toDelimitedJson(data) + '\n</product_data>';
 
-module.exports = { toDelimitedJson, wrapProductData };
+module.exports = { wrapProductData };

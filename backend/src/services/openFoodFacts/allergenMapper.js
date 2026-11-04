@@ -36,8 +36,6 @@ const readTags = (value) => toTagList(value)
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
-const readAllergens = (value) => [...new Set(readTags(value).map(toAllergenName))];
-
 const readLabelledAllergens = (value) => {
     const seenLabels = new Set();
 
@@ -46,4 +44,4 @@ const readLabelledAllergens = (value) => {
         .filter(({ label }) => !seenLabels.has(label) && seenLabels.add(label));
 };
 
-module.exports = { readAllergens, readLabelledAllergens };
+module.exports = { readLabelledAllergens };

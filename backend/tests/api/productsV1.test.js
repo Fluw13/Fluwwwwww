@@ -96,13 +96,6 @@ test('lỗi không lưu cache: lần sau gọi lại Open Food Facts', async () 
     assert.equal(retried.status, 200);
 });
 
-test('route cũ /api/product vẫn chạy song song cho tới khi app chuyển sang v1', async () => {
-    const response = await fetch(baseUrl + '/api/product/8930000000012');
-
-    assert.equal(response.status, 400);
-    assert.equal((await response.json()).code, 'INVALID_BARCODE');
-});
-
 test('log lỗi chỉ ghi mẫu route, không ghi mã vạch hay tham số người dùng gửi', async () => {
     const consoleError = mock.method(console, 'error', () => {});
     const consoleWarn = mock.method(console, 'warn', () => {});
