@@ -55,13 +55,39 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
 ## 6. Skeleton
 
 - Bọc vùng skeleton bằng một `ShimmerScope`. Toàn bộ `SkeletonBox` bên trong dùng chung một animation, nên chỉ tốn một ticker.
-- Các dạng có sẵn: `SkeletonBox(width:, height:, radius:)`, `SkeletonBox.circle(size:)`, `SkeletonBox.line(width:)`.
-- Skeleton của một màn phải có cùng bố cục với màn thật, để khi dữ liệu về giao diện không bị nhảy.
+- Các dạng có sẵn: `SkeletonBox(width:, height:, radius:)`, `SkeletonBox.circle(size:)`, `SkeletonBox.text(width:, fontSize:, lineHeight:)`.
+  - `SkeletonBox.text` cao đúng bằng một dòng chữ cùng cỡ và tự to lên theo cỡ chữ hệ thống.
+- **Skeleton khớp với màn thật nhờ cách dựng, không nhờ đo tay:**
+  - `ProductDetailView` và `ProductDetailSkeleton` cùng dựng trên `ProductDetailLayout` (lề, khoảng cách giữa các phần, footer).
+  - Mỗi phần có thêm hàm dựng `.loading()` (`ScoreSummaryCard.loading()`, `ProductHeader.loading()`, `NutritionGrid.loading()`, `ZeroAnalysisCard.loading()`), dùng chung khung, padding và tiêu đề với bản thật, chỉ thay chữ và số bằng `SkeletonBox`.
+  - Kích thước dùng chung nằm trong `ProductDetailMetrics`.
+  - Test `product_detail_skeleton_test.dart` so vị trí từng phần giữa skeleton và màn thật.
 - Skeleton bị ẩn khỏi trình đọc màn hình. `LoadingStatusBanner` là phần thông báo trạng thái tải.
+  - Ở màn chi tiết, banner nằm ở đáy màn hình, đè lên skeleton, nên khi dữ liệu về nội dung không bị đẩy lên.
 - Khi bật giảm chuyển động, skeleton đứng yên.
-- Skeleton chi tiết sản phẩm được thêm ở PR `feat/product-detail-template`.
 
-## 7. Kiểm thử
+## 7. Khung sản phẩm dùng chung
+
+- **Một khung cho mọi sản phẩm:** `ProductDetailView(product:)` (`lib/widgets/product/product_detail_view.dart`). Sản phẩm nào cũng dùng file này, chỉ dữ liệu thay đổi.
+- Mỗi phần nằm ở một file riêng:
+  - `ScoreSummaryCard`: vòng điểm 160 ở giữa, nhãn mức, "Do AI tạo".
+  - `ProductHeader`: ảnh, tên, thương hiệu · mã vạch.
+  - `NutritionGrid` / `NutrientTile`: lưới 2×2, trên 100 g. Số không bị cắt; chữ to thì xuống dòng và cả hàng cao bằng nhau.
+  - `ZeroAnalysisCard`: ẩn hẳn khi AI không viết gì.
+  - `TagSection`: dị ứng theo nhãn, AI gợi ý, lựa chọn thay thế.
+  - `DataSourceFooter`
+- Tiêu đề các phần dùng `SectionTitle` (`lib/widgets/common/`), được trình đọc màn hình đọc là tiêu đề.
+- **Phần không có dữ liệu thì ẩn đi:**
+  - Không có AI: thay thẻ điểm bằng `AiUnavailableCard`, ẩn mọi nội dung do AI tạo.
+  - Thiếu chỉ số dinh dưỡng: hiện "—" kèm chú thích.
+  - Danh sách rỗng: ẩn cả mục, kể cả tiêu đề.
+- **Lỗi tải:** `ErrorRetryView` cuộn được khi chữ to hoặc màn thấp; thông báo lỗi được đọc ngay khi hiện.
+- **Định dạng số:** kiểu Việt Nam, xem `NutrientFormat`: "9,8 g", "1.250,3 g", "2.000 kcal". Số âm (dữ liệu lỗi) hiện là 0.
+- **Danh sách sản phẩm** (thẻ sản phẩm, lịch sử quét) thuộc PR màn chính, chưa có trong khung này.
+- **Ảnh:** chỉ tải ảnh https từ `*.openfoodfacts.org` (`isTrustedImageUrl`). Ảnh khác hoặc lỗi tải thì hiện ảnh giữ chỗ.
+- **Kiểm tra bố cục:** test chạy ở màn 320 px và cỡ chữ 200%, không được tràn.
+
+## 8. Kiểm thử
 
 - Chạy trong thư mục `frontend/`: `flutter analyze`, `flutter test`.
 - Mỗi phần ở trên có test tương ứng dưới `test/`, cùng cấu trúc thư mục với `lib/`.

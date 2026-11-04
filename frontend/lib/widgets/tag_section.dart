@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_radius.dart';
+import '../core/theme/app_spacing.dart';
 import '../core/theme/fluw_palette.dart';
 import '../core/theme/score_colors.dart';
+import 'common/section_title.dart';
 
 class TagSection extends StatelessWidget {
-  const TagSection({
-    super.key,
-    required this.title,
-    required this.tags,
-    required this.tone,
-    this.note,
-  });
+  const TagSection({super.key, required this.title, required this.tags, required this.tone, this.icon, this.note});
 
   final String title;
   final List<String> tags;
   final ScoreColors tone;
+  final IconData? icon;
   final String? note;
 
   @override
@@ -22,28 +20,39 @@ class TagSection extends StatelessWidget {
     if (tags.isEmpty) return const SizedBox.shrink();
 
     final String? note = this.note;
+    final IconData? icon = this.icon;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 8),
+        SectionTitle(title),
+        const SizedBox(height: AppSpacing.sm),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             for (final String tag in tags)
-              Chip(
-                label: Text(tag, style: TextStyle(fontSize: 12, color: tone.text, fontWeight: FontWeight.w600)),
-                backgroundColor: tone.container,
-                side: BorderSide.none,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 7),
+                decoration: BoxDecoration(color: tone.container, borderRadius: BorderRadius.circular(AppRadius.pill)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[Icon(icon, size: 14, color: tone.text), const SizedBox(width: 6)],
+                    Flexible(
+                      child: Text(
+                        tag,
+                        style: TextStyle(fontSize: 13, color: tone.text, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
         if (note != null) ...[
-          const SizedBox(height: 6),
-          Text(note, style: TextStyle(color: context.palette.textSecondary, fontSize: 11)),
+          const SizedBox(height: AppSpacing.sm),
+          Text(note, style: TextStyle(color: context.palette.textSecondary, fontSize: 12)),
         ],
       ],
     );

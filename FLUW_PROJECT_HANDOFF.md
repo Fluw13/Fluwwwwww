@@ -112,7 +112,7 @@ Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_
 | `screens/scanner_screen.dart` | Camera `mobile_scanner`, chỉ EAN/UPC |
 | `screens/product_detail_screen.dart` | Loading, lỗi + thử lại, kết quả |
 | `widgets/circular_score_ring.dart` | Vòng điểm |
-| `widgets/macro_bar.dart` | 4 chỉ số dinh dưỡng, "—" khi thiếu dữ liệu |
+| `widgets/product/` | Khung chi tiết dùng chung (`ProductDetailView`, `ProductDetailLayout`) và skeleton cùng bố cục; xem `docs/FRONTEND_UI_FOUNDATION.md` |
 | `widgets/zero_analysis_card.dart` | Phân tích Zero và tuyên bố miễn trừ AI |
 | `widgets/tag_section.dart` | Danh sách thẻ (dị ứng, gợi ý thay thế) |
 | `widgets/ai_unavailable_card.dart` | Thẻ "Chưa có đánh giá AI" kèm lý do, hiện thay cho vòng điểm |
