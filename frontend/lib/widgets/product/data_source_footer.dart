@@ -64,7 +64,7 @@ class DataSourceFooter extends StatelessWidget {
           ),
           Text(
             'Dữ liệu do cộng đồng đóng góp và có thể chưa đầy đủ. '
-            'Giải thích bằng AI (Zero, Google Gemini) chỉ có khi bạn bấm "Hỏi Zero".',
+            'Phần giải thích của Zero do AI (Google Gemini) tạo; điểm do Fluw tính, không do AI.',
             textAlign: TextAlign.center,
             style: style,
           ),

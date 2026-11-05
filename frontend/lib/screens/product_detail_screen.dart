@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/async/handled_future.dart';
 import '../data/api/api_cancel_token.dart';
 import '../data/api/fluw_api_client.dart';
 import '../data/api/fluw_api_scope.dart';
@@ -39,7 +40,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Future<ProductDetails> _load() =>
-      _client.product(widget.barcode, cancelToken: _cancelToken);
+      handledLater(_client.product(widget.barcode, cancelToken: _cancelToken));
 
   void _retry() {
     setState(() {
@@ -56,7 +57,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         loadingBuilder: (_) =>
             ProductDetailLoadingView(barcode: widget.barcode),
         errorBuilder: (_, error) => ApiErrorView(error: error, onRetry: _retry),
-        dataBuilder: (_, details) => ProductDetailView(details: details),
+        dataBuilder: (_, details) => ProductDetailView(
+          details: details,
+          loadAnalysis: (token) =>
+              _client.analysis(details.product.barcode, cancelToken: token),
+        ),
       ),
     );
   }

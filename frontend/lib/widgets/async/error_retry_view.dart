@@ -1,16 +1,15 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/fluw_palette.dart';
+import 'retry_countdown_button.dart';
 
 /// Full-area error state with a single retry action. Scrolls when the screen
 /// is short (landscape, large text) and announces the message to screen readers.
 ///
 /// With [retryAfter] the button stays disabled and counts down; it never
 /// retries by itself. Without [onRetry] there is no button.
-class ErrorRetryView extends StatefulWidget {
+class ErrorRetryView extends StatelessWidget {
   const ErrorRetryView({
     super.key,
     required this.message,
@@ -23,48 +22,9 @@ class ErrorRetryView extends StatefulWidget {
   final Duration? retryAfter;
 
   @override
-  State<ErrorRetryView> createState() => _ErrorRetryViewState();
-}
-
-class _ErrorRetryViewState extends State<ErrorRetryView> {
-  Timer? _ticker;
-  int _secondsLeft = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _startCooldown();
-  }
-
-  @override
-  void didUpdateWidget(ErrorRetryView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.retryAfter != widget.retryAfter) _startCooldown();
-  }
-
-  void _startCooldown() {
-    _ticker?.cancel();
-    final Duration wait = widget.retryAfter ?? Duration.zero;
-    _secondsLeft = (wait.inMilliseconds / 1000).ceil();
-    if (_secondsLeft <= 0) return;
-
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() => _secondsLeft--);
-      if (_secondsLeft <= 0) timer.cancel();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker?.cancel();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
-    final VoidCallback? onRetry = widget.onRetry;
-    final bool coolingDown = _secondsLeft > 0;
+    final VoidCallback? onRetry = this.onRetry;
 
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
@@ -93,7 +53,7 @@ class _ErrorRetryViewState extends State<ErrorRetryView> {
                   Semantics(
                     liveRegion: true,
                     child: Text(
-                      widget.message,
+                      message,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 16,
@@ -104,16 +64,9 @@ class _ErrorRetryViewState extends State<ErrorRetryView> {
                   ),
                   if (onRetry != null) ...[
                     const SizedBox(height: AppSpacing.xxl),
-                    FilledButton.icon(
-                      onPressed: coolingDown ? null : onRetry,
-                      icon: Icon(
-                        coolingDown ? Icons.hourglass_top : Icons.refresh,
-                      ),
-                      label: Text(
-                        coolingDown
-                            ? 'Thử lại sau $_secondsLeft giây'
-                            : 'Thử lại',
-                      ),
+                    RetryCountdownButton(
+                      onRetry: onRetry,
+                      retryAfter: retryAfter,
                     ),
                   ],
                 ],

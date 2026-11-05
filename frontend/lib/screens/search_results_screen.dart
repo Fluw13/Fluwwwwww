@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_routes.dart';
+import '../core/async/handled_future.dart';
 import '../data/api/api_cancel_token.dart';
 import '../data/api/fluw_api_client.dart';
 import '../data/api/fluw_api_scope.dart';
@@ -40,7 +41,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
   }
 
   Future<SearchResults> _search() =>
-      _client.search(widget.query, cancelToken: _cancelToken);
+      handledLater(_client.search(widget.query, cancelToken: _cancelToken));
 
   void _retry() {
     setState(() {

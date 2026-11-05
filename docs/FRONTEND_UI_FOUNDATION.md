@@ -76,6 +76,7 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
   - `NutritionGrid` / `NutrientTile` / `NutrientRow`: lưới 2×2 (năng lượng kcal, đạm, béo, carbohydrate) + các dòng kJ, béo bão hòa, đường, chất xơ, muối; trên 100 g hoặc 100 ml theo `nutrition.basis`; thêm một bảng "sau khi pha" khi có.
   - `IngredientsSection`, `TagSection` (dị ứng theo nhãn, "có thể chứa"), `AdditivesSection` (mã E + tên), `ProductInfoSection`, `ProductImagesSection`.
   - `DataSourceFooter`: "Dữ liệu: Open Food Facts · ODbL · ảnh CC BY-SA", ngày cập nhật, nút sao chép link sản phẩm (dùng `Clipboard`).
+  - `ZeroAnalysisSection` + `ZeroAnalysisCard`: giải thích của Zero, tải riêng qua `GET /api/v1/products/:barcode/analysis` sau khi sản phẩm đã hiện. Mặc định là nút "Hỏi Zero"; `--dart-define=ZERO_AUTO_LOAD=true` cho tự tải (`FeatureFlags.zeroAutoLoad`). Luôn có nhãn "Nội dung do AI tạo" và lời miễn trừ. Mỗi `aiError` có câu riêng (`AiErrorText`); không có nút thử lại khi `AI_NOT_CONFIGURED` hoặc `AI_DAILY_LIMIT`. Lỗi của Zero không ảnh hưởng sản phẩm và điểm.
 - Màn `ScoreExplanationScreen`: tổng + công thức, loại sản phẩm, điểm thô → dải → điểm dinh dưỡng, từng chỉ số (`IndicatorRow`, nhiều dòng ngắn để vừa 360 dp), phụ gia, mục thiếu, NOVA (không tính vào điểm), nguồn, lời miễn trừ.
 - Tiêu đề các phần dùng `SectionTitle` (`lib/widgets/common/`), được trình đọc màn hình đọc là tiêu đề. Điểm được đọc là "Điểm tổng 74 trên 100, mức Tốt".
 - **Thiếu dữ liệu thì ghi rõ, không đoán, không ẩn:**

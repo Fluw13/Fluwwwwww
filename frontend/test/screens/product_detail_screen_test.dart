@@ -6,6 +6,7 @@ import 'package:frontend/core/theme/fluw_palette.dart';
 import 'package:frontend/data/api/api_error_kind.dart';
 import 'package:frontend/screens/product_detail_screen.dart';
 import 'package:frontend/widgets/product/product_detail_skeleton.dart';
+import 'package:frontend/widgets/zero_analysis_card.dart';
 import 'package:http/http.dart' as http;
 
 import '../helpers/fake_backend.dart';
@@ -41,10 +42,11 @@ void main() {
       expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
       expect(find.textContaining('Mã $_barcode'), findsOneWidget);
       expect(
-        find.textContaining('Zero'),
+        find.text(ZeroAnalysisCard.writingText),
         findsNothing,
         reason: 'Zero không chạy cùng lúc tải sản phẩm',
       );
+      expect(find.textContaining('Zero đang'), findsNothing);
       expect(backend.requests.single.path, '/api/v1/products/$_barcode');
 
       pending.complete(FakeBackend.fixture('product-food-complete'));
@@ -214,6 +216,80 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
 
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Zero tải riêng: chỉ gọi /analysis khi bấm "Hỏi Zero", sau khi sản phẩm đã hiện',
+    (tester) async {
+      final FakeBackend backend = FakeBackend(
+        product: (_) => FakeBackend.fixture('product-food-complete'),
+        analysis: (_) => FakeBackend.fixture('analysis-ok'),
+      );
+      await _open(tester, backend);
+      await settleRequest(tester);
+
+      expect(backend.paths, ['/api/v1/products/$_barcode']);
+
+      await tester.scrollUntilVisible(
+        find.text(ZeroAnalysisCard.askLabel),
+        300,
+      );
+      await tester.tap(find.text(ZeroAnalysisCard.askLabel));
+      await settleRequest(tester);
+
+      expect(backend.paths, [
+        '/api/v1/products/$_barcode',
+        '/api/v1/products/$_barcode/analysis',
+      ]);
+      expect(find.text('Điểm chính'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('31'), -300);
+      expect(
+        find.text('31'),
+        findsOneWidget,
+        reason: 'điểm vẫn lấy từ score, không đổi theo AI',
+      );
+    },
+  );
+
+  testWidgets('Zero lỗi không ảnh hưởng sản phẩm và điểm', (tester) async {
+    final FakeBackend backend = FakeBackend(
+      product: (_) => FakeBackend.fixture('product-food-complete'),
+      analysis: (_) => http.Response('<html>502</html>', 502),
+    );
+    await _open(tester, backend);
+    await settleRequest(tester);
+    await tester.scrollUntilVisible(find.text(ZeroAnalysisCard.askLabel), 300);
+    await tester.tap(find.text(ZeroAnalysisCard.askLabel));
+    await settleRequest(tester);
+
+    expect(
+      find.text(ApiErrorKind.serverUnavailable.defaultMessage),
+      findsOneWidget,
+    );
+    await tester.scrollUntilVisible(find.text('31'), -300);
+    expect(find.text('Bánh quy bơ (dữ liệu thử)'), findsOneWidget);
+  });
+
+  testWidgets(
+    'rời màn khi Zero đang viết thì hủy request, không còn hẹn giờ chạy ngầm',
+    (tester) async {
+      final FakeBackend backend = FakeBackend(
+        product: (_) => FakeBackend.fixture('product-food-complete'),
+        analysis: (_) => Completer<http.Response>().future,
+      );
+      await _open(tester, backend);
+      await settleRequest(tester);
+      await tester.scrollUntilVisible(
+        find.text(ZeroAnalysisCard.askLabel),
+        300,
+      );
+      await tester.tap(find.text(ZeroAnalysisCard.askLabel));
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
       expect(tester.takeException(), isNull);
     },
   );

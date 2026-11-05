@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/config/feature_flags.dart';
 import '../../core/theme/fluw_palette.dart';
 import '../../models/product/product.dart';
 import '../../models/product/product_details.dart';
@@ -19,19 +20,30 @@ import 'product_header.dart';
 import 'product_images_section.dart';
 import 'product_info_section.dart';
 import 'score_summary_card.dart';
+import 'zero_analysis_section.dart';
 
 /// The single layout used for every product: only the data changes. Missing
 /// data is written out as "Chưa có dữ liệu" rather than guessed or hidden.
 class ProductDetailView extends StatelessWidget {
-  const ProductDetailView({super.key, required this.details});
+  const ProductDetailView({
+    super.key,
+    required this.details,
+    this.loadAnalysis,
+    this.autoLoadZero = FeatureFlags.zeroAutoLoad,
+  });
 
   final ProductDetails details;
+
+  /// Fetches Zero's explanation; without it the Zero card is not shown.
+  final AnalysisLoader? loadAnalysis;
+  final bool autoLoadZero;
 
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
     final Product product = details.product;
     final NutrientValues? prepared = product.nutrition.preparedPer100;
+    final AnalysisLoader? loadAnalysis = this.loadAnalysis;
 
     void openImage(ProductImageSet image, String caption) {
       Navigator.push(
@@ -71,6 +83,12 @@ class ProductDetailView extends StatelessWidget {
             values: prepared,
             basis: product.nutrition.basis,
             prepared: true,
+          ),
+        if (loadAnalysis != null)
+          ZeroAnalysisSection(
+            loadAnalysis: loadAnalysis,
+            scoreVersion: details.score.version,
+            autoLoad: autoLoadZero,
           ),
         IngredientsSection(text: product.ingredientsText),
         TagSection(

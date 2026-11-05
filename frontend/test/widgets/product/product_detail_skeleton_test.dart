@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/models/analysis/product_analysis.dart';
 import 'package:frontend/widgets/product/nutrition_grid.dart';
 import 'package:frontend/widgets/product/product_detail_skeleton.dart';
 import 'package:frontend/widgets/product/product_detail_view.dart';
@@ -7,6 +10,7 @@ import 'package:frontend/widgets/product/product_header.dart';
 import 'package:frontend/widgets/product/score_summary_card.dart';
 import 'package:frontend/widgets/skeleton/shimmer_scope.dart';
 import 'package:frontend/widgets/skeleton/skeleton_box.dart';
+import 'package:frontend/widgets/zero_analysis_card.dart';
 
 import '../../helpers/product_fixtures.dart';
 import '../../helpers/test_app.dart';
@@ -14,7 +18,12 @@ import '../../helpers/test_app.dart';
 /// Top-left corner and width of each section, in screen coordinates.
 Map<Type, Rect> _sectionRects(WidgetTester tester) {
   return {
-    for (final Type type in [ScoreSummaryCard, ProductHeader, NutritionGrid])
+    for (final Type type in [
+      ScoreSummaryCard,
+      ProductHeader,
+      NutritionGrid,
+      ZeroAnalysisCard,
+    ])
       type: tester.getRect(find.byType(type).first),
   };
 }
@@ -71,7 +80,10 @@ void main() {
 
         await pumpOnPhone(
           tester,
-          ProductDetailView(details: _oneLineProduct),
+          ProductDetailView(
+            details: _oneLineProduct,
+            loadAnalysis: (_) => Completer<ProductAnalysis>().future,
+          ),
           size: size,
         );
         final Map<Type, Rect> content = _sectionRects(tester);
@@ -81,7 +93,7 @@ void main() {
         // every section below moves with it. So at 2x only the score card,
         // which starts the page, must line up exactly.
         final List<Type> mustAlign = textScale == 1.0
-            ? [ScoreSummaryCard, ProductHeader, NutritionGrid]
+            ? [ScoreSummaryCard, ProductHeader, NutritionGrid, ZeroAnalysisCard]
             : [ScoreSummaryCard];
 
         for (final Type type in mustAlign) {
