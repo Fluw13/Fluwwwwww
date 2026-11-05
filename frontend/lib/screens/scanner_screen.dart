@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../core/navigation/product_origin.dart';
 import '../core/scanner/barcode_picker.dart';
 import '../core/scanner/scanner_exit.dart';
 import '../core/theme/app_spacing.dart';
@@ -108,7 +109,9 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: barcode, apiService: widget.apiService)),
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(query: barcode, origin: ProductOrigin.scan, apiService: widget.apiService),
+      ),
     );
   }
 

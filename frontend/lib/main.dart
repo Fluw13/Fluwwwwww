@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import 'core/history/history_scope.dart';
+import 'core/history/session_history.dart';
 import 'core/licenses/font_licenses.dart';
 import 'core/settings/shared_prefs_theme_mode_store.dart';
 import 'core/settings/theme_mode_controller.dart';
@@ -14,28 +16,32 @@ Future<void> main() async {
   final ThemeModeController themeModeController = ThemeModeController(SharedPrefsThemeModeStore());
   await themeModeController.load();
 
-  runApp(FluwApp(themeModeController: themeModeController));
+  runApp(FluwApp(themeModeController: themeModeController, sessionHistory: SessionHistory()));
 }
 
 class FluwApp extends StatelessWidget {
-  const FluwApp({super.key, required this.themeModeController, this.home});
+  const FluwApp({super.key, required this.themeModeController, required this.sessionHistory, this.home});
 
   final ThemeModeController themeModeController;
+  final SessionHistory sessionHistory;
   final Widget? home;
 
   @override
   Widget build(BuildContext context) {
     return ThemeModeScope(
       controller: themeModeController,
-      child: ListenableBuilder(
-        listenable: themeModeController,
-        builder: (context, _) => MaterialApp(
-          title: 'Fluw',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          themeMode: themeModeController.mode,
-          home: home ?? const HomeScreen(),
+      child: HistoryScope(
+        history: sessionHistory,
+        child: ListenableBuilder(
+          listenable: themeModeController,
+          builder: (context, _) => MaterialApp(
+            title: 'Fluw',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            themeMode: themeModeController.mode,
+            home: home ?? const HomeScreen(),
+          ),
         ),
       ),
     );

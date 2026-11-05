@@ -3,6 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/history/history_scope.dart';
+import 'package:frontend/core/history/session_history.dart';
+import 'package:frontend/core/navigation/product_origin.dart';
 import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/core/theme/fluw_palette.dart';
 import 'package:frontend/screens/product_detail_screen.dart';
@@ -10,44 +13,25 @@ import 'package:frontend/services/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-const String _barcode = '8934563138165';
-const Map<String, String> _jsonHeaders = {'content-type': 'application/json; charset=utf-8'};
-
-http.Response _json(String body, int status) => http.Response(body, status, headers: _jsonHeaders);
-
-String _productBody({Object? score = 82}) {
-  return jsonEncode({
-    'success': true,
-    'barcode': _barcode,
-    'product': {
-      'product_name': 'Sữa chua',
-      'brands': 'Thương hiệu mẫu',
-      'image_front_url': '',
-      'allergens': ['sữa'],
-      'nutriments': {'energy-kcal': 95, 'proteins': 3.5, 'fat': 3, 'carbohydrates': 12.4},
-    },
-    'aiAnalysis': {
-      'score': score,
-      'deepThink': 'Giàu canxi.',
-      'recommendation': 'Dùng vừa phải.',
-      'allergens': <String>[],
-      'alternatives': <String>[],
-    },
-  });
-}
+import '../helpers/api_fixtures.dart';
 
 Future<void> _pumpScreen(
   WidgetTester tester,
   ApiService apiService, {
   ThemeMode themeMode = ThemeMode.light,
-  String query = _barcode,
+  String query = sampleBarcode,
+  ProductOrigin origin = ProductOrigin.search,
+  SessionHistory? history,
 }) {
   return tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: themeMode,
-      home: ProductDetailScreen(query: query, apiService: apiService),
+    HistoryScope(
+      history: history ?? SessionHistory(),
+      child: MaterialApp(
+        theme: AppTheme.light(),
+        darkTheme: AppTheme.dark(),
+        themeMode: themeMode,
+        home: ProductDetailScreen(query: query, origin: origin, apiService: apiService),
+      ),
     ),
   );
 }
@@ -61,9 +45,9 @@ void main() {
     expect(find.text('Chi tiết sản phẩm'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
-    expect(find.textContaining('Mã $_barcode'), findsOneWidget);
+    expect(find.textContaining('Mã $sampleBarcode'), findsOneWidget);
 
-    pending.complete(_json(_productBody(), 200));
+    pending.complete(jsonResponse(productBody(), 200));
     await tester.pump(const Duration(milliseconds: 300));
   });
 
@@ -74,7 +58,7 @@ void main() {
 
     expect(find.textContaining('Từ khóa “mì hảo hảo”'), findsOneWidget);
 
-    pending.complete(_json(_productBody(), 200));
+    pending.complete(jsonResponse(productBody(), 200));
     await tester.pump(const Duration(milliseconds: 300));
   });
 
@@ -82,7 +66,7 @@ void main() {
     testWidgets('hiển thị sản phẩm sau khi tải xong (${mode.name})', (tester) async {
       await _pumpScreen(
         tester,
-        ApiService(client: MockClient((_) async => _json(_productBody(), 200))),
+        ApiService(client: MockClient((_) async => jsonResponse(productBody(), 200))),
         themeMode: mode,
       );
       await tester.pump();
@@ -109,7 +93,8 @@ void main() {
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: ProductDetailScreen(
-            query: _barcode,
+            query: sampleBarcode,
+            origin: ProductOrigin.search,
             apiService: ApiService(client: MockClient((_) => pending.future)),
           ),
         ),
@@ -120,7 +105,7 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
 
-    pending.complete(_json(_productBody(), 200));
+    pending.complete(jsonResponse(productBody(), 200));
     await tester.pump();
   });
 
@@ -131,7 +116,7 @@ void main() {
       client: MockClient((_) async {
         calls++;
         if (calls == 1) {
-          return _json(jsonEncode({'success': false, 'error': 'Không tìm thấy sản phẩm.'}), 404);
+          return jsonResponse(jsonEncode({'success': false, 'error': 'Không tìm thấy sản phẩm.'}), 404);
         }
         return second.future;
       }),
@@ -148,7 +133,7 @@ void main() {
     expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
     expect(find.text('Không tìm thấy sản phẩm.'), findsNothing);
 
-    second.complete(_json(_productBody(), 200));
+    second.complete(jsonResponse(productBody(), 200));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -163,7 +148,7 @@ void main() {
       client: MockClient((_) async {
         calls++;
         if (calls == 1) {
-          return _json(jsonEncode({'success': false, 'error': 'Mất kết nối.'}), 503);
+          return jsonResponse(jsonEncode({'success': false, 'error': 'Mất kết nối.'}), 503);
         }
         return retry.future;
       }),
@@ -180,7 +165,48 @@ void main() {
 
     expect(calls, 2);
 
-    retry.complete(_json(_productBody(), 200));
+    retry.complete(jsonResponse(productBody(), 200));
     await tester.pump();
+  });
+
+  group('lịch sử quét trong phiên', () {
+    testWidgets('mở từ màn quét và tải được thì thêm vào lịch sử quét', (tester) async {
+      final SessionHistory history = SessionHistory();
+      await _pumpScreen(
+        tester,
+        ApiService(client: MockClient((_) async => jsonResponse(productBody(), 200))),
+        origin: ProductOrigin.scan,
+        history: history,
+      );
+      await tester.pumpAndSettle();
+
+      expect(history.scans.map((product) => product.barcode), [sampleBarcode]);
+      expect(history.scans.single.score, 82);
+    });
+
+    testWidgets('mở từ ô tìm kiếm thì không thêm vào lịch sử quét', (tester) async {
+      final SessionHistory history = SessionHistory();
+      await _pumpScreen(
+        tester,
+        ApiService(client: MockClient((_) async => jsonResponse(productBody(), 200))),
+        history: history,
+      );
+      await tester.pumpAndSettle();
+
+      expect(history.scans, isEmpty);
+    });
+
+    testWidgets('tải lỗi thì không thêm gì vào lịch sử', (tester) async {
+      final SessionHistory history = SessionHistory();
+      await _pumpScreen(
+        tester,
+        ApiService(client: MockClient((_) async => jsonResponse('{"success":false,"error":"Không tìm thấy"}', 404))),
+        origin: ProductOrigin.scan,
+        history: history,
+      );
+      await tester.pumpAndSettle();
+
+      expect(history.scans, isEmpty);
+    });
   });
 }

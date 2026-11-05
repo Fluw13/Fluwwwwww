@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/history/session_history.dart';
 import 'package:frontend/core/settings/theme_mode_controller.dart';
 import 'package:frontend/core/settings/theme_mode_scope.dart';
 import 'package:frontend/core/settings/theme_mode_store.dart';
@@ -46,7 +47,7 @@ void main() {
 
     late BuildContext probe;
     await tester.pumpWidget(
-      FluwApp(themeModeController: controller, home: _Probe(onBuild: (context) => probe = context)),
+      FluwApp(themeModeController: controller, sessionHistory: SessionHistory(), home: _Probe(onBuild: (context) => probe = context)),
     );
 
     await ThemeModeScope.of(probe).setMode(ThemeMode.dark);
@@ -74,7 +75,7 @@ void main() {
     late BuildContext probe;
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
     await tester.pumpWidget(
-      FluwApp(themeModeController: controller, home: _Probe(onBuild: (context) => probe = context)),
+      FluwApp(themeModeController: controller, sessionHistory: SessionHistory(), home: _Probe(onBuild: (context) => probe = context)),
     );
     await tester.pumpAndSettle();
     expect(controller.mode, ThemeMode.system);

@@ -16,15 +16,17 @@ Fluw là ứng dụng tra cứu thông tin thực phẩm bằng mã vạch hoặ
 | Mã vạch hoặc tên sản phẩm bạn nhập | Tra cứu sản phẩm | Máy chủ Fluw, OpenFoodFacts |
 | Thông tin sản phẩm (tên, thương hiệu, thành phần, dinh dưỡng) | Tạo phân tích dinh dưỡng | Máy chủ Fluw, Google Gemini API |
 | Địa chỉ IP | Chống lạm dụng (giới hạn số lần tra cứu) | Máy chủ Fluw, chỉ lưu tạm trong bộ nhớ |
+| Lịch sử quét và tìm kiếm trong phiên (sản phẩm đã quét, từ khóa đã tìm; tối đa 20 mục mỗi loại) | Cho bạn mở lại nhanh trong lúc đang dùng | Chỉ nằm trong bộ nhớ khi ứng dụng đang mở. Không ghi xuống máy, không gửi đi, mất khi đóng ứng dụng. Bạn có thể xóa trong Tài khoản → Lịch sử. |
 | Lựa chọn giao diện (Theo máy / Sáng / Tối) | Giữ giao diện bạn đã chọn cho lần mở sau | Chỉ lưu trên thiết bị của bạn, không gửi đi đâu. Gỡ ứng dụng hoặc xóa dữ liệu ứng dụng sẽ xóa lựa chọn này. |
 
-Fluw **không** yêu cầu tài khoản và **không** thu thập tên, email, số điện thoại, vị trí hay danh bạ. Lịch sử tra cứu không được lưu lại.
+Fluw **không** yêu cầu tài khoản và **không** thu thập tên, email, số điện thoại, vị trí hay danh bạ. Lịch sử tra cứu không được lưu lại sau khi đóng ứng dụng.
 
 ## 3. Bên thứ ba
 
 - **OpenFoodFacts** nhận mã vạch hoặc tên sản phẩm để tra cứu. Xem chính sách của OpenFoodFacts tại https://world.openfoodfacts.org/privacy.
 - **Google (Gemini API)** nhận thông tin sản phẩm, không nhận dữ liệu cá nhân của bạn, để tạo phân tích. Việc xử lý tuân theo điều khoản sử dụng Gemini API của Google.
-- **Nhà cung cấp hosting** (`<Render>`) vận hành máy chủ và có thể ghi nhật ký kỹ thuật như địa chỉ IP và thời gian truy cập.
+- **Nhà cung cấp hosting** (`<Render>`) vận hành máy chủ và có thể ghi nhật ký kỹ thuật như địa chỉ IP, thời gian truy cập và đường dẫn yêu cầu (đường dẫn có thể chứa mã vạch hoặc từ khóa tra cứu).
+- **Bộ nhớ đệm của máy chủ Fluw:** kết quả tra cứu được giữ tạm theo mã vạch hoặc từ khóa, tối đa 24 giờ (mặc định `CACHE_TTL_HOURS`), chỉ trong bộ nhớ máy chủ và không gắn với địa chỉ IP hay người dùng.
 
 ## 4. Quyền truy cập trên thiết bị
 
