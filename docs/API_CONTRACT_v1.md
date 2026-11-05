@@ -35,7 +35,7 @@ Tìm sản phẩm theo tên hoặc thương hiệu. App chỉ gọi khi người
 
 - `q`: 2–100 ký tự sau khi chuẩn hóa Unicode NFC, bỏ khoảng trắng đầu cuối và gộp khoảng trắng liên tiếp (kể cả tab, xuống dòng) thành một dấu cách. Ký tự điều khiển khác bị từ chối. Phải có ít nhất một chữ cái hoặc chữ số.
 - `query` trong phản hồi là từ khóa của chính người gọi sau khi chuẩn hóa.
-- Nếu `q` là 8–14 chữ số, app nên mở thẳng `GET /api/v1/products/:barcode` thay vì tìm.
+- Nếu `q` gồm đúng 8, 12, 13 hoặc 14 chữ số, app mở thẳng `GET /api/v1/products/:barcode` thay vì tìm. Chuỗi toàn chữ số có độ dài khác không phải mã vạch hợp lệ; app có thể báo ngay hoặc gửi tìm theo tên.
 
 ```json
 {
