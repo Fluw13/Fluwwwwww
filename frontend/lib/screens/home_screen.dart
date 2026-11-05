@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../core/scanner/scanner_exit.dart';
 import '../core/theme/fluw_palette.dart';
 import '../services/api_service.dart';
 import 'product_detail_screen.dart';
@@ -18,8 +19,10 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   late final ApiService _apiService;
   late final bool _ownsApiService;
+  bool _isScannerOpen = false;
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     if (_ownsApiService) {
       _apiService.dispose();
     }
@@ -44,15 +48,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: query)),
+      MaterialPageRoute(builder: (_) => ProductDetailScreen(query: query, apiService: _apiService)),
     );
   }
 
-  void _openScanner() {
-    Navigator.push(
+  Future<void> _openScanner() async {
+    if (_isScannerOpen) return;
+    _isScannerOpen = true;
+
+    final ScannerExit? exit = await Navigator.push<ScannerExit>(
       context,
-      MaterialPageRoute(builder: (_) => const ScannerScreen()),
+      MaterialPageRoute(builder: (_) => ScannerScreen(apiService: _apiService)),
     );
+    _isScannerOpen = false;
+    if (exit == ScannerExit.manualEntry && mounted) {
+      _searchFocus.requestFocus();
+    }
   }
 
   @override
@@ -83,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 16),
                       _SearchField(
                         controller: _searchController,
+                        focusNode: _searchFocus,
                         onSubmit: _searchProduct,
                       ),
                       const SizedBox(height: 30),
@@ -119,15 +131,17 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller, required this.onSubmit});
+  const _SearchField({required this.controller, required this.focusNode, required this.onSubmit});
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final VoidCallback onSubmit;
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       textInputAction: TextInputAction.search,
       onSubmitted: (_) => onSubmit(),
       decoration: InputDecoration(

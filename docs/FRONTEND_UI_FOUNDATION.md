@@ -5,7 +5,7 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
 ## 1. Màu sắc và theme
 
 - Mọi màu lấy từ `FluwPalette` (`lib/core/theme/fluw_palette.dart`) qua `context.palette`. Không hardcode màu trong widget.
-  - Ngoại lệ duy nhất: thanh tiêu đề màn quét luôn đen trên nền camera.
+  - Ngoại lệ duy nhất: phần giao diện của màn quét luôn tối vì nằm trên hình camera (xem mục 8).
 - Có hai bộ màu, **bố cục giống nhau, chỉ khác màu**:
   - `FluwPalette.light` (hướng A — sáng tối giản);
   - `FluwPalette.dark` (hướng B — Zero, tông tối, vòng điểm phát sáng).
@@ -87,7 +87,29 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
 - **Ảnh:** chỉ tải ảnh https từ `*.openfoodfacts.org` (`isTrustedImageUrl`). Ảnh khác hoặc lỗi tải thì hiện ảnh giữ chỗ.
 - **Kiểm tra bố cục:** test chạy ở màn 320 px và cỡ chữ 200%, không được tràn.
 
-## 8. Kiểm thử
+## 8. Màn quét mã vạch
+
+- `ScannerScreen` (`lib/screens/scanner_screen.dart`) chỉ ghép các phần trong `lib/widgets/scanner/`:
+  - `ScannerViewfinder`: làm tối ngoài khung, 4 góc khung, vạch quét chạy.
+  - `ScannerTopBar`: nút Đóng, tiêu đề, nút đèn flash (bật/tắt, tự động trên iOS được coi là đang bật).
+  - `ScannerHint`: dòng hướng dẫn trên nền tối, đọc được trên cả hình camera sáng.
+  - `ScanDetectedBanner`: báo "Đã nhận mã …, đang mở Chi tiết sản phẩm".
+  - `ScannerErrorView`: lỗi camera (chưa cấp quyền, không hỗ trợ…) kèm nút "Thử lại" (ví dụ sau khi bật quyền trong Cài đặt), cuộn được khi chữ to.
+  - `ManualEntryButton`: luôn có, để còn đường đi tiếp khi không quét được.
+- **Khung quét:** `ScannerViewfinder.windowFor(size)` tính một lần ở màn hình, dùng cho cả phần vẽ lẫn `scanWindow` của camera, nên chỉ mã nằm trong khung mới được đọc.
+- **Chỉ nhận mã sản phẩm:** `firstProductBarcode` chỉ lấy GTIN 8, 12, 13 hoặc 14 chữ số; URL, chữ hay mã khác bị bỏ qua.
+- **Sau khi nhận mã:**
+  - Rung nhẹ, dừng camera, dừng vạch quét, hiện banner.
+  - Khóa Đóng, Nhập tay và nút Back cho tới khi màn chi tiết thay thế màn quét (`pushReplacement`), nên không có hai màn chi tiết hoặc quay nhầm về Home giữa chừng.
+  - Mã đọc được khi màn quét đang đóng thì bỏ qua. Nếu người dùng bấm Back đúng khung hình nhận mã, app về Home và không mở chi tiết, không bật lại camera.
+- **Vòng đời ứng dụng:** vào nền thì tắt camera, quay lại thì bật lại (chỉ khi đã có quyền và chưa nhận mã). `MobileScanner` không tự làm việc này khi màn hình tự giữ controller.
+  - Chưa có quyền thì quay lại app không tự hỏi lại (tránh hỏi quyền lặp trên Android); người dùng bấm "Thử lại".
+- **Bố cục:** phần dưới (banner + nút nhập tay) cao tối đa 60% màn hình và cuộn được khi chữ rất to. Khung quét thấp lại khi màn thấp (xoay ngang); khi không đủ chỗ, dòng hướng dẫn bị ẩn thay vì đè lên nút.
+- **Nhập tay:** đóng màn quét và trả `ScannerExit.manualEntry`; Home đưa con trỏ vào ô tìm kiếm.
+- Home chặn bấm nút quét hai lần liên tiếp.
+- **Kiểm thử:** `test/helpers/fake_mobile_scanner_platform.dart` thay plugin camera, để test được luồng nhận mã, lỗi quyền camera và vòng đời mà không cần điện thoại. Camera thật, quyền và độ nhạy quét vẫn phải thử trên máy thật.
+
+## 9. Kiểm thử
 
 - Chạy trong thư mục `frontend/`: `flutter analyze`, `flutter test`.
 - Mỗi phần ở trên có test tương ứng dưới `test/`, cùng cấu trúc thư mục với `lib/`.
