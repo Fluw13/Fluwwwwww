@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_routes.dart';
+import '../core/scanner/scanner_exit.dart';
 import '../core/search/search_input.dart';
 import '../core/theme/fluw_palette.dart';
 import '../data/api/fluw_api_scope.dart';
@@ -17,7 +18,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   bool _wakeUpSent = false;
+  bool _isScannerOpen = false;
   String? _inputError;
 
   @override
@@ -31,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -52,11 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _openScanner() {
-    Navigator.push(
+  Future<void> _openScanner() async {
+    if (_isScannerOpen) return;
+    _isScannerOpen = true;
+
+    final ScannerExit? exit = await Navigator.push<ScannerExit>(
       context,
       MaterialPageRoute(builder: (_) => const ScannerScreen()),
     );
+    _isScannerOpen = false;
+    if (exit == ScannerExit.manualEntry && mounted) {
+      _searchFocus.requestFocus();
+    }
   }
 
   @override
@@ -90,6 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 16),
                       _SearchField(
                         controller: _searchController,
+                        focusNode: _searchFocus,
                         errorText: _inputError,
                         onSubmit: _submitSearch,
                       ),
@@ -131,11 +143,13 @@ class _HomeScreenState extends State<HomeScreen> {
 class _SearchField extends StatelessWidget {
   const _SearchField({
     required this.controller,
+    required this.focusNode,
     required this.errorText,
     required this.onSubmit,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final String? errorText;
   final VoidCallback onSubmit;
 
@@ -143,6 +157,7 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       textInputAction: TextInputAction.search,
       onSubmitted: (_) => onSubmit(),
       decoration: InputDecoration(
