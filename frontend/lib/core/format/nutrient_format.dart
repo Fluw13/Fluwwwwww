@@ -1,31 +1,25 @@
-/// Vietnamese number style: "," for decimals, "." for thousands, at most one
-/// decimal and no trailing ",0". Values below zero are treated as zero.
+import 'vietnamese_number.dart';
+
+/// Nutrient values in Vietnamese number style. Precision follows the backend,
+/// which rounds before comparing with score thresholds (kJ to 0.1, grams to
+/// 0.01), so a value shown here never contradicts its threshold range.
+/// Values below zero are treated as zero.
 class NutrientFormat {
   const NutrientFormat._();
 
   static const String missing = '—';
 
-  static String grams(double? value) {
+  static String grams(double? value) => _format(value, 2);
+
+  static String kilojoules(double? value) => _format(value, 1);
+
+  static String kcal(double? value) => _format(value, 0);
+
+  static String _format(double? value, int maxFractionDigits) {
     if (value == null) return missing;
-    final String fixed = _nonNegative(value).toStringAsFixed(1);
-    final List<String> parts = fixed.split('.');
-    final String integer = _groupThousands(parts[0]);
-    return parts[1] == '0' ? integer : '$integer,${parts[1]}';
-  }
-
-  static String kcal(double? value) {
-    if (value == null) return missing;
-    return _groupThousands(_nonNegative(value).round().toString());
-  }
-
-  static double _nonNegative(double value) => value < 0 ? 0 : value;
-
-  static String _groupThousands(String digits) {
-    final StringBuffer buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
+    return formatVietnameseNumber(
+      value < 0 ? 0 : value,
+      maxFractionDigits: maxFractionDigits,
+    );
   }
 }

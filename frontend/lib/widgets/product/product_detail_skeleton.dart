@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../skeleton/shimmer_scope.dart';
-import '../zero_analysis_card.dart';
 import 'nutrition_grid.dart';
 import 'product_detail_layout.dart';
 import 'product_header.dart';
@@ -20,7 +19,6 @@ class ProductDetailSkeleton extends StatelessWidget {
         score: ScoreSummaryCard.loading(),
         header: ProductHeader.loading(),
         nutrition: NutritionGrid.loading(),
-        sections: [ZeroAnalysisCard.loading()],
       ),
     );
   }

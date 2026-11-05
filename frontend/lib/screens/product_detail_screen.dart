@@ -1,62 +1,62 @@
 import 'package:flutter/material.dart';
 
-import '../models/product_model.dart';
-import '../services/api_service.dart';
+import '../data/api/api_cancel_token.dart';
+import '../data/api/fluw_api_client.dart';
+import '../data/api/fluw_api_scope.dart';
+import '../models/product/product_details.dart';
+import '../widgets/async/api_error_view.dart';
 import '../widgets/async/async_content.dart';
-import '../widgets/async/error_retry_view.dart';
 import '../widgets/product/product_detail_loading_view.dart';
 import '../widgets/product/product_detail_view.dart';
 
+/// Product page for one barcode (API v1). The request is aborted when the
+/// screen closes and sent again only when the user taps retry.
 class ProductDetailScreen extends StatefulWidget {
-  const ProductDetailScreen({super.key, required this.query, this.apiService});
+  const ProductDetailScreen({super.key, required this.barcode});
 
-  final String query;
-  final ApiService? apiService;
+  final String barcode;
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  late final ApiService _apiService;
-  late final bool _ownsApiService;
-  late Future<ProductModel> _productFuture;
+  final ApiCancelToken _cancelToken = ApiCancelToken();
+  late FluwApiClient _client;
+  Future<ProductDetails>? _details;
 
   @override
-  void initState() {
-    super.initState();
-    _ownsApiService = widget.apiService == null;
-    _apiService = widget.apiService ?? ApiService();
-    _productFuture = _apiService.fetchProduct(widget.query);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _client = FluwApiScope.of(context);
+    _details ??= _load();
   }
 
   @override
   void dispose() {
-    if (_ownsApiService) {
-      _apiService.dispose();
-    }
+    _cancelToken.cancel();
     super.dispose();
   }
 
+  Future<ProductDetails> _load() =>
+      _client.product(widget.barcode, cancelToken: _cancelToken);
+
   void _retry() {
     setState(() {
-      _productFuture = _apiService.fetchProduct(widget.query);
+      _details = _load();
     });
-  }
-
-  static String _messageFor(Object error) {
-    return error is ApiException ? error.message : 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Chi tiết sản phẩm')),
-      body: AsyncContent<ProductModel>(
-        future: _productFuture,
-        loadingBuilder: (_) => ProductDetailLoadingView(query: widget.query),
-        errorBuilder: (_, error) => ErrorRetryView(message: _messageFor(error), onRetry: _retry),
-        dataBuilder: (_, product) => ProductDetailView(product: product),
+      body: AsyncContent<ProductDetails>(
+        future: _details!,
+        loadingBuilder: (_) =>
+            ProductDetailLoadingView(barcode: widget.barcode),
+        errorBuilder: (_, error) => ApiErrorView(error: error, onRetry: _retry),
+        dataBuilder: (_, details) => ProductDetailView(details: details),
       ),
     );
   }

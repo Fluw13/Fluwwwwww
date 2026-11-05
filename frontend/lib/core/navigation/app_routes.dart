@@ -14,7 +14,7 @@ class AppRoutes {
     bool replace = false,
   }) {
     final MaterialPageRoute<void> route = MaterialPageRoute(
-      builder: (_) => ProductDetailScreen(query: barcode),
+      builder: (_) => ProductDetailScreen(barcode: barcode),
     );
     return replace
         ? Navigator.pushReplacement(context, route)

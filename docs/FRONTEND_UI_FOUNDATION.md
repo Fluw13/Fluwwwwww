@@ -66,25 +66,27 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
   - Ở màn chi tiết, banner nằm ở đáy màn hình, đè lên skeleton, nên khi dữ liệu về nội dung không bị đẩy lên.
 - Khi bật giảm chuyển động, skeleton đứng yên.
 
-## 7. Khung sản phẩm dùng chung
+## 7. Khung sản phẩm dùng chung (API v1)
 
-- **Một khung cho mọi sản phẩm:** `ProductDetailView(product:)` (`lib/widgets/product/product_detail_view.dart`). Sản phẩm nào cũng dùng file này, chỉ dữ liệu thay đổi.
+- **Một khung cho mọi sản phẩm:** `ProductDetailView(details:)` (`lib/widgets/product/product_detail_view.dart`), nhận `ProductDetails` (sản phẩm + `score`) từ `GET /api/v1/products/:barcode`. Sản phẩm nào cũng dùng file này, chỉ dữ liệu thay đổi.
+- **Điểm do backend tính, app chỉ hiển thị:** không tự tính lại, không tự áp ngưỡng 70/40, nhãn mức là `score.total.label` backend gửi. AI (Zero) không có điểm. Quy tắc chi tiết: `docs/SCORING.md`.
 - Mỗi phần nằm ở một file riêng:
-  - `ScoreSummaryCard`: vòng điểm 160 ở giữa, nhãn mức, "Do AI tạo".
-  - `ProductHeader`: ảnh, tên, thương hiệu · mã vạch.
-  - `NutritionGrid` / `NutrientTile`: lưới 2×2, trên 100 g. Số không bị cắt; chữ to thì xuống dòng và cả hàng cao bằng nhau.
-  - `ZeroAnalysisCard`: ẩn hẳn khi AI không viết gì.
-  - `TagSection`: dị ứng theo nhãn, AI gợi ý, lựa chọn thay thế.
-  - `DataSourceFooter`
-- Tiêu đề các phần dùng `SectionTitle` (`lib/widgets/common/`), được trình đọc màn hình đọc là tiêu đề.
-- **Phần không có dữ liệu thì ẩn đi:**
-  - Không có AI: thay thẻ điểm bằng `AiUnavailableCard`, ẩn mọi nội dung do AI tạo.
-  - Thiếu chỉ số dinh dưỡng: hiện "—" kèm chú thích.
-  - Danh sách rỗng: ẩn cả mục, kể cả tiêu đề.
-- **Lỗi tải:** `ErrorRetryView` cuộn được khi chữ to hoặc màn thấp; thông báo lỗi được đọc ngay khi hiện.
-- **Định dạng số:** kiểu Việt Nam, xem `NutrientFormat`: "9,8 g", "1.250,3 g", "2.000 kcal". Số âm (dữ liệu lỗi) hiện là 0.
-- **Danh sách sản phẩm** (thẻ sản phẩm, lịch sử quét) thuộc PR màn chính, chưa có trong khung này.
-- **Ảnh:** chỉ tải ảnh https từ `*.openfoodfacts.org` (`isTrustedImageUrl`). Ảnh khác hoặc lỗi tải thì hiện ảnh giữ chỗ.
+  - `ScoreSummaryCard`: vòng điểm 160 + nhãn mức (màu + biểu tượng + chữ), điểm thành phần kèm trọng số, phép tính in từ `total.calculation`, phiên bản công thức, nút "Cách Fluw tính điểm". Khi `total.value` là null: không vẽ vòng, ghi "Chưa đủ dữ liệu để tính điểm tổng" và liệt kê `score.missing`.
+  - `ProductHeader`: ảnh (cỡ `small`/`display`, chạm để mở `ProductImageScreen`, chỉ ở đó mới tải `full`), tên, thương hiệu · khối lượng · mã vạch.
+  - `NutritionGrid` / `NutrientTile` / `NutrientRow`: lưới 2×2 (năng lượng kcal, đạm, béo, carbohydrate) + các dòng kJ, béo bão hòa, đường, chất xơ, muối; trên 100 g hoặc 100 ml theo `nutrition.basis`; thêm một bảng "sau khi pha" khi có.
+  - `IngredientsSection`, `TagSection` (dị ứng theo nhãn, "có thể chứa"), `AdditivesSection` (mã E + tên), `ProductInfoSection`, `ProductImagesSection`.
+  - `DataSourceFooter`: "Dữ liệu: Open Food Facts · ODbL · ảnh CC BY-SA", ngày cập nhật, nút sao chép link sản phẩm (dùng `Clipboard`).
+- Màn `ScoreExplanationScreen`: tổng + công thức, loại sản phẩm, điểm thô → dải → điểm dinh dưỡng, từng chỉ số (`IndicatorRow`, nhiều dòng ngắn để vừa 360 dp), phụ gia, mục thiếu, NOVA (không tính vào điểm), nguồn, lời miễn trừ.
+- Tiêu đề các phần dùng `SectionTitle` (`lib/widgets/common/`), được trình đọc màn hình đọc là tiêu đề. Điểm được đọc là "Điểm tổng 74 trên 100, mức Tốt".
+- **Thiếu dữ liệu thì ghi rõ, không đoán, không ẩn:**
+  - Trường văn bản thiếu: "Chưa có dữ liệu" (`LabeledValue.missing`).
+  - Thiếu chỉ số dinh dưỡng: hiện "—" kèm chú thích, trình đọc màn hình đọc "chưa có dữ liệu".
+  - Danh sách dị ứng / "có thể chứa" rỗng: vẫn hiện mục với "Chưa có dữ liệu" (danh sách rỗng trên Open Food Facts không có nghĩa là không có chất gây dị ứng).
+  - Phụ gia rỗng: chỉ ghi "Không có phụ gia" khi backend kiểm chứng được danh sách thành phần (`additives.status = computed`, `count = 0`).
+  - Ẩn hẳn chỉ áp dụng cho mục ảnh khi sản phẩm không có ảnh nào.
+- **Lỗi tải:** `ErrorRetryView` cuộn được khi chữ to hoặc màn thấp; thông báo lỗi được đọc ngay khi hiện. Có `Retry-After` thì nút bị khóa và đếm ngược, không tự gửi lại; lỗi không thể thử lại (mã vạch sai, không tìm thấy) thì không có nút. `ApiErrorView` chọn các thứ này từ `FluwApiException`.
+- **Định dạng số:** kiểu Việt Nam (`formatVietnameseNumber`, `NutrientFormat`): "3,5 g", "0,01 g", "1.715,4 kJ", "2.000 kcal". Gam tối đa 2 chữ số thập phân và kJ tối đa 1, đúng mức backend làm tròn trước khi so ngưỡng, để giá trị hiển thị không mâu thuẫn với khoảng ngưỡng. Số âm (dữ liệu lỗi) hiện là 0.
+- **Ảnh:** chỉ tải ảnh https từ `images.openfoodfacts.org` hoặc `static.openfoodfacts.org` (`isTrustedImageUrl`, đúng contract). Ảnh khác hoặc lỗi tải thì hiện ảnh giữ chỗ.
 - **Kiểm tra bố cục:** test chạy ở màn 320 px và cỡ chữ 200%, không được tràn.
 
 ## 8. Kiểm thử

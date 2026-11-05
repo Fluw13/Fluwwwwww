@@ -2,23 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/fluw_palette.dart';
 import '../core/theme/score_colors.dart';
-import '../models/score_level.dart';
 
+/// The total score as a ring. The ring colour comes from the level the backend
+/// chose; the app never derives a level from the number. Screen readers get
+/// the score from the card around it, so the ring itself is not announced.
 class CircularScoreRing extends StatelessWidget {
-  const CircularScoreRing({super.key, required this.score, this.size = 140.0});
+  const CircularScoreRing({
+    super.key,
+    required this.score,
+    required this.colors,
+    this.size = 140.0,
+  });
 
   final int score;
+  final ScoreColors colors;
   final double size;
 
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
-    final ScoreColors colors = palette.scoreColors(ScoreLevel.fromScore(score));
     final double stroke = size * 0.075;
 
-    return Semantics(
-      label: 'Điểm $score trên 100',
-      excludeSemantics: true,
+    return ExcludeSemantics(
       child: Container(
         width: size,
         height: size,
@@ -44,7 +49,7 @@ class CircularScoreRing extends StatelessWidget {
               padding: EdgeInsets.all(stroke / 2),
               child: SizedBox.expand(
                 child: CircularProgressIndicator(
-                  value: score / 100,
+                  value: score.clamp(0, 100) / 100,
                   strokeWidth: stroke,
                   strokeCap: StrokeCap.round,
                   backgroundColor: palette.surfaceMuted,
@@ -53,7 +58,7 @@ class CircularScoreRing extends StatelessWidget {
               ),
             ),
             // With large system text the number shrinks to fit inside the
-            // fixed ring; screen readers get the full label above.
+            // fixed ring.
             Padding(
               padding: EdgeInsets.all(stroke * 2),
               child: FittedBox(

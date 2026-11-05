@@ -1,177 +1,161 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/core/theme/app_theme.dart';
 import 'package:frontend/core/theme/fluw_palette.dart';
+import 'package:frontend/data/api/api_error_kind.dart';
 import 'package:frontend/screens/product_detail_screen.dart';
-import 'package:frontend/services/api_service.dart';
+import 'package:frontend/widgets/product/product_detail_skeleton.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 
-const String _barcode = '8934563138165';
-const Map<String, String> _jsonHeaders = {'content-type': 'application/json; charset=utf-8'};
+import '../helpers/fake_backend.dart';
+import '../helpers/test_app.dart';
 
-http.Response _json(String body, int status) => http.Response(body, status, headers: _jsonHeaders);
+const String _barcode = '8930000000019';
 
-String _productBody({Object? score = 82}) {
-  return jsonEncode({
-    'success': true,
-    'barcode': _barcode,
-    'product': {
-      'product_name': 'Sữa chua',
-      'brands': 'Thương hiệu mẫu',
-      'image_front_url': '',
-      'allergens': ['sữa'],
-      'nutriments': {'energy-kcal': 95, 'proteins': 3.5, 'fat': 3, 'carbohydrates': 12.4},
-    },
-    'aiAnalysis': {
-      'score': score,
-      'deepThink': 'Giàu canxi.',
-      'recommendation': 'Dùng vừa phải.',
-      'allergens': <String>[],
-      'alternatives': <String>[],
-    },
-  });
-}
-
-Future<void> _pumpScreen(
+Future<void> _open(
   WidgetTester tester,
-  ApiService apiService, {
+  FakeBackend backend, {
   ThemeMode themeMode = ThemeMode.light,
-  String query = _barcode,
 }) {
-  return tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
-      themeMode: themeMode,
-      home: ProductDetailScreen(query: query, apiService: apiService),
-    ),
+  return pumpScreen(
+    tester,
+    const ProductDetailScreen(barcode: _barcode),
+    client: backend.client,
+    themeMode: themeMode,
   );
 }
 
 void main() {
-  testWidgets('trong lúc tải hiện tiêu đề trang, thanh tiến trình và mã đang tra', (tester) async {
-    final Completer<http.Response> pending = Completer();
-    await _pumpScreen(tester, ApiService(client: MockClient((_) => pending.future)));
-    await tester.pump();
+  testWidgets(
+    'trong lúc tải: tiêu đề trang, thanh tiến trình, skeleton và mã đang tra',
+    (tester) async {
+      final Completer<http.Response> pending = Completer();
+      final FakeBackend backend = FakeBackend(product: (_) => pending.future);
+      await _open(tester, backend);
+      await tester.pump();
 
-    expect(find.text('Chi tiết sản phẩm'), findsOneWidget);
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
-    expect(find.textContaining('Mã $_barcode'), findsOneWidget);
+      expect(find.text('Chi tiết sản phẩm'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(ProductDetailSkeleton), findsOneWidget);
+      expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
+      expect(find.textContaining('Mã $_barcode'), findsOneWidget);
+      expect(
+        find.textContaining('Zero'),
+        findsNothing,
+        reason: 'Zero không chạy cùng lúc tải sản phẩm',
+      );
+      expect(backend.requests.single.path, '/api/v1/products/$_barcode');
 
-    pending.complete(_json(_productBody(), 200));
-    await tester.pump(const Duration(milliseconds: 300));
-  });
-
-  testWidgets('tìm theo tên thì ghi là từ khóa, không gọi là mã', (tester) async {
-    final Completer<http.Response> pending = Completer();
-    await _pumpScreen(tester, ApiService(client: MockClient((_) => pending.future)), query: 'mì hảo hảo');
-    await tester.pump();
-
-    expect(find.textContaining('Từ khóa “mì hảo hảo”'), findsOneWidget);
-
-    pending.complete(_json(_productBody(), 200));
-    await tester.pump(const Duration(milliseconds: 300));
-  });
+      pending.complete(FakeBackend.fixture('product-food-complete'));
+      await settleRequest(tester);
+      expect(find.text('Đang mở chi tiết sản phẩm'), findsNothing);
+    },
+  );
 
   for (final ThemeMode mode in [ThemeMode.light, ThemeMode.dark]) {
-    testWidgets('hiển thị sản phẩm sau khi tải xong (${mode.name})', (tester) async {
-      await _pumpScreen(
-        tester,
-        ApiService(client: MockClient((_) async => _json(_productBody(), 200))),
-        themeMode: mode,
+    testWidgets('hiển thị sản phẩm sau khi tải xong (${mode.name})', (
+      tester,
+    ) async {
+      final FakeBackend backend = FakeBackend(
+        product: (_) => FakeBackend.fixture('product-food-complete'),
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
+      await _open(tester, backend, themeMode: mode);
+      await settleRequest(tester);
 
-      expect(find.text('Sữa chua'), findsOneWidget);
-      expect(find.text('82'), findsOneWidget);
-      expect(find.text('Đang mở chi tiết sản phẩm'), findsNothing);
+      expect(find.text('Bánh quy bơ (dữ liệu thử)'), findsOneWidget);
+      expect(find.text('31'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      final FluwPalette expected = mode == ThemeMode.dark ? FluwPalette.dark : FluwPalette.light;
-      final Scaffold scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+      final FluwPalette expected = mode == ThemeMode.dark
+          ? FluwPalette.dark
+          : FluwPalette.light;
       final BuildContext context = tester.element(find.byType(Scaffold));
-      expect(scaffold.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor, expected.background);
-      expect(tester.widget<Text>(find.text('82')).style?.color, expected.textPrimary);
+      expect(Theme.of(context).scaffoldBackgroundColor, expected.background);
+      expect(
+        tester.widget<Text>(find.text('31')).style?.color,
+        expected.textPrimary,
+      );
     });
   }
 
-  testWidgets('giảm chuyển động thì ẩn thanh tiến trình chạy liên tục, vẫn giữ dòng trạng thái', (tester) async {
-    final Completer<http.Response> pending = Completer();
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.light(),
-        home: MediaQuery(
-          data: const MediaQueryData(disableAnimations: true),
-          child: ProductDetailScreen(
-            query: _barcode,
-            apiService: ApiService(client: MockClient((_) => pending.future)),
-          ),
+  testWidgets(
+    'giảm chuyển động thì ẩn thanh tiến trình chạy liên tục, vẫn giữ dòng trạng thái',
+    (tester) async {
+      final Completer<http.Response> pending = Completer();
+      final FakeBackend backend = FakeBackend(product: (_) => pending.future);
+      await pumpScreen(
+        tester,
+        const MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: ProductDetailScreen(barcode: _barcode),
         ),
-      ),
-    );
-    await tester.pump();
+        client: backend.client,
+      );
+      await tester.pump();
 
-    expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
 
-    pending.complete(_json(_productBody(), 200));
-    await tester.pump();
-  });
+      pending.complete(FakeBackend.fixture('product-food-complete'));
+      await tester.pump();
+    },
+  );
 
-  testWidgets('lỗi → bấm thử lại → hiện lại trạng thái tải → hiện sản phẩm', (tester) async {
+  testWidgets('lỗi → bấm thử lại → hiện lại trạng thái tải → hiện sản phẩm', (
+    tester,
+  ) async {
     int calls = 0;
     final Completer<http.Response> second = Completer();
-    final ApiService apiService = ApiService(
-      client: MockClient((_) async {
+    final FakeBackend backend = FakeBackend(
+      product: (_) {
         calls++;
-        if (calls == 1) {
-          return _json(jsonEncode({'success': false, 'error': 'Không tìm thấy sản phẩm.'}), 404);
-        }
-        return second.future;
-      }),
+        return calls == 1
+            ? FakeBackend.json({
+                'success': false,
+                'error': 'Mất kết nối Open Food Facts.',
+                'code': 'UPSTREAM_UNAVAILABLE',
+              }, 502)
+            : second.future;
+      },
     );
 
-    await _pumpScreen(tester, apiService);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('Không tìm thấy sản phẩm.'), findsOneWidget);
+    await _open(tester, backend);
+    await settleRequest(tester);
+    expect(find.text('Mất kết nối Open Food Facts.'), findsOneWidget);
 
     await tester.tap(find.text('Thử lại'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await settleRequest(tester);
     expect(find.text('Đang mở chi tiết sản phẩm'), findsOneWidget);
-    expect(find.text('Không tìm thấy sản phẩm.'), findsNothing);
+    expect(find.text('Mất kết nối Open Food Facts.'), findsNothing);
 
-    second.complete(_json(_productBody(), 200));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    second.complete(FakeBackend.fixture('product-food-complete'));
+    await settleRequest(tester);
 
     expect(calls, 2);
-    expect(find.text('Sữa chua'), findsOneWidget);
+    expect(find.text('Bánh quy bơ (dữ liệu thử)'), findsOneWidget);
   });
 
-  testWidgets('bấm "Thử lại" hai lần liên tiếp chỉ gọi lại API một lần', (tester) async {
+  testWidgets('bấm "Thử lại" hai lần liên tiếp chỉ gọi lại API một lần', (
+    tester,
+  ) async {
     int calls = 0;
     final Completer<http.Response> retry = Completer();
-    final ApiService apiService = ApiService(
-      client: MockClient((_) async {
+    final FakeBackend backend = FakeBackend(
+      product: (_) {
         calls++;
-        if (calls == 1) {
-          return _json(jsonEncode({'success': false, 'error': 'Mất kết nối.'}), 503);
-        }
-        return retry.future;
-      }),
+        return calls == 1
+            ? http.Response('<html>502</html>', 502)
+            : retry.future;
+      },
     );
 
-    await _pumpScreen(tester, apiService);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    await _open(tester, backend);
+    await settleRequest(tester);
+    expect(
+      find.text(ApiErrorKind.serverUnavailable.defaultMessage),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Thử lại'));
     await tester.pump(const Duration(milliseconds: 50));
@@ -180,7 +164,57 @@ void main() {
 
     expect(calls, 2);
 
-    retry.complete(_json(_productBody(), 200));
+    retry.complete(FakeBackend.fixture('product-food-complete'));
     await tester.pump();
   });
+
+  testWidgets(
+    'không tìm thấy sản phẩm: hiện thông điệp máy chủ, không có nút thử lại',
+    (tester) async {
+      final FakeBackend backend = FakeBackend(
+        product: (_) => FakeBackend.fixture('error-product-not-found'),
+      );
+      await _open(tester, backend);
+      await settleRequest(tester);
+
+      expect(find.textContaining('Không tìm thấy sản phẩm'), findsOneWidget);
+      expect(find.byType(FilledButton), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Open Food Facts đang giới hạn (503): khóa nút 12 giây, không tự gửi lại',
+    (tester) async {
+      int calls = 0;
+      final FakeBackend backend = FakeBackend(
+        product: (_) {
+          calls++;
+          return FakeBackend.fixture('error-upstream-rate-limited');
+        },
+      );
+      await _open(tester, backend);
+      await settleRequest(tester);
+
+      expect(find.text('Thử lại sau 12 giây'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 12));
+      expect(find.text('Thử lại'), findsOneWidget);
+      expect(calls, 1);
+    },
+  );
+
+  testWidgets(
+    'rời màn khi đang tải thì hủy request, không còn hẹn giờ chạy ngầm',
+    (tester) async {
+      final FakeBackend backend = FakeBackend(
+        product: (_) => Completer<http.Response>().future,
+      );
+      await _open(tester, backend);
+      await tester.pump();
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
