@@ -101,21 +101,33 @@ Xem `backend/.env.example` và README: `GEMINI_API_KEY` (bắt buộc), `GEMINI_
 
 ## 4. Frontend (`frontend/lib/`)
 
-| File | Vai trò |
+App chỉ gọi API v1 (`docs/API_CONTRACT_v1.md`). Điểm Fluw do backend tính (`docs/SCORING.md`); app chỉ hiển thị, không tự tính hay tự áp ngưỡng. Zero (AI) chỉ giải thích điểm, không có điểm. Quy ước giao diện: `docs/FRONTEND_UI_FOUNDATION.md`.
+
+| File / thư mục | Vai trò |
 | :--- | :--- |
-| `main.dart` | Theme Material 3, màn hình đầu |
-| `core/app_colors.dart` | Bảng màu dùng chung |
-| `models/product_model.dart` | Parse phản hồi API; `score` là `null` khi không có phân tích AI |
-| `models/score_level.dart` | Ngưỡng điểm, nhãn và màu |
-| `services/api_service.dart` | Gọi API (timeout 120 s để chờ Render khởi động, `ApiException`), đánh thức server qua `/health`, URL qua `--dart-define=API_BASE_URL` |
-| `screens/home_screen.dart` | Ô tìm kiếm, nút quét |
-| `screens/scanner_screen.dart` | Camera `mobile_scanner`, chỉ EAN/UPC |
-| `screens/product_detail_screen.dart` | Loading, lỗi + thử lại, kết quả |
-| `widgets/circular_score_ring.dart` | Vòng điểm |
-| `widgets/product/` | Khung chi tiết dùng chung (`ProductDetailView`, `ProductDetailLayout`) và skeleton cùng bố cục; xem `docs/FRONTEND_UI_FOUNDATION.md` |
-| `widgets/zero_analysis_card.dart` | Phân tích Zero và tuyên bố miễn trừ AI |
-| `widgets/tag_section.dart` | Danh sách thẻ (dị ứng, gợi ý thay thế) |
-| `widgets/ai_unavailable_card.dart` | Thẻ "Chưa có đánh giá AI" kèm lý do, hiện thay cho vòng điểm |
+| `main.dart` | Tạo `FluwApiClient` dùng chung cả phiên và `ThemeModeController`, dựng `FluwApp` |
+| `data/api/fluw_api_client.dart` | Gọi `/health`, `/api/v1/search`, `/api/v1/products/:barcode`, `/api/v1/products/:barcode/analysis`. Origin qua `--dart-define=API_ORIGIN` (`api_config.dart`, mặc định `https://fluw.onrender.com`). Timeout 70/70/90 s đến khi máy chủ trả lời, sau đó 20/20/35 s (`api_timeouts.dart`). Hủy request khi rời màn (`ApiCancelToken`, `AbortableRequest`). Không ghi log URL |
+| `data/api/fluw_api_exception.dart`, `api_error_kind.dart` | Lỗi có kiểu: mã server, HTTP status, `Retry-After` (số giây hoặc HTTP-date), mạng, timeout, đã hủy, phản hồi không hợp lệ |
+| `data/api/fluw_api_scope.dart` | Đưa client xuống cây widget (test thay bằng API giả) |
+| `models/search/`, `models/product/`, `models/score/`, `models/analysis/` | Model v1, đọc an toàn mọi trường có thể `null` |
+| `models/score_level.dart` | Mức `good` / `moderate` / `limit` theo mã backend; nhãn chữ lấy từ `score.total.label` |
+| `core/search/search_input.dart` | Phân loại ô tìm: 8/12/13/14 chữ số mở thẳng sản phẩm, từ khóa 2–100 ký tự có chữ/số mới tìm |
+| `core/navigation/app_routes.dart` | Nơi duy nhất mở sản phẩm / tìm kiếm (màn chính, kết quả, máy quét) |
+| `core/format/` | Số kiểu Việt, ngày, câu chữ của điểm (`score_format.dart`), câu lỗi AI |
+| `core/scanner/` | Chọn mã vạch hợp lệ từ camera, lý do thoát máy quét |
+| `screens/home_screen.dart` | Ô tìm kiếm (chỉ gửi khi bấm tìm), nút quét |
+| `screens/scanner_screen.dart` | Camera `mobile_scanner` (EAN/UPC), khung quét, đèn, nhập tay |
+| `screens/search_results_screen.dart` | Kết quả tìm, gần đúng, rỗng, lỗi, 429 đếm ngược |
+| `screens/product_detail_screen.dart` | Tải sản phẩm v1, lỗi + thử lại, dựng `ProductDetailView` |
+| `screens/score_explanation_screen.dart` | "Cách Fluw tính điểm": từng chỉ số, dải, phụ gia, mục thiếu, NOVA, nguồn |
+| `screens/product_image_screen.dart` | Xem ảnh lớn; chỉ ở đây mới tải ảnh gốc |
+| `widgets/product/` | Khung chi tiết dùng chung (`ProductDetailView`, `ProductDetailLayout`), skeleton cùng bố cục, thẻ điểm, dinh dưỡng, thành phần, phụ gia, nguồn dữ liệu, `ZeroAnalysisSection` |
+| `widgets/score/` | Phần dùng chung của thẻ điểm và màn giải thích |
+| `widgets/search/` | Thẻ kết quả tìm kiếm, danh sách, màn tải |
+| `widgets/zero_analysis_card.dart` | Thẻ Zero: "Hỏi Zero", đang viết, kết quả, lỗi; nhãn "Nội dung do AI tạo" |
+| `widgets/circular_score_ring.dart` | Vòng điểm, màu theo mức backend |
+| `widgets/tag_section.dart` | Danh sách thẻ (dị ứng, "có thể chứa") |
+| `widgets/async/` | `AsyncContent`, `ErrorRetryView`, `ApiErrorView`, nút thử lại đếm ngược, banner trạng thái tải |
 
 Thư mục `linux/`, `macos/`, `windows/` được giữ để có thể build bản desktop; `web/` dùng khi chạy `flutter run -d chrome`.
 

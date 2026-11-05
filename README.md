@@ -93,11 +93,13 @@ flutter run
 flutter test
 ```
 
-Mặc định ứng dụng gọi `https://fluw.onrender.com`. Để trỏ tới backend khác:
+Mặc định ứng dụng gọi API v1 tại `https://fluw.onrender.com`. Để trỏ tới backend khác, truyền **origin** (scheme, host, cổng; không kèm đường dẫn):
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/product
+flutter run --dart-define=API_ORIGIN=http://10.0.2.2:5000
 ```
+
+Tùy chọn: `--dart-define=ZERO_AUTO_LOAD=true` cho phần giải thích của Zero tự tải khi mở sản phẩm (mặc định tắt, người dùng bấm "Hỏi Zero").
 
 Build bản release cần tạo `frontend/android/key.properties` từ file `key.properties.example`. Không commit file này và file `.jks`.
 
