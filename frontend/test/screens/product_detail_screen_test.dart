@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/history/session_history.dart';
+import 'package:frontend/core/navigation/product_origin.dart';
 import 'package:frontend/core/theme/fluw_palette.dart';
 import 'package:frontend/data/api/api_error_kind.dart';
+import 'package:frontend/models/score_level.dart';
 import 'package:frontend/screens/product_detail_screen.dart';
 import 'package:frontend/widgets/product/product_detail_skeleton.dart';
 import 'package:frontend/widgets/zero_analysis_card.dart';
 import 'package:http/http.dart' as http;
 
 import '../helpers/fake_backend.dart';
+import '../helpers/fluw_app_harness.dart';
 import '../helpers/test_app.dart';
 
 const String _barcode = '8930000000019';
@@ -21,7 +25,7 @@ Future<void> _open(
 }) {
   return pumpScreen(
     tester,
-    const ProductDetailScreen(barcode: _barcode),
+    const ProductDetailScreen(barcode: _barcode, origin: ProductOrigin.scan),
     client: backend.client,
     themeMode: themeMode,
   );
@@ -90,7 +94,10 @@ void main() {
         tester,
         const MediaQuery(
           data: MediaQueryData(disableAnimations: true),
-          child: ProductDetailScreen(barcode: _barcode),
+          child: ProductDetailScreen(
+            barcode: _barcode,
+            origin: ProductOrigin.scan,
+          ),
         ),
         client: backend.client,
       );
@@ -293,4 +300,85 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  group('lịch sử quét trong phiên', () {
+    Future<SessionHistory> openWithHistory(
+      WidgetTester tester,
+      FakeBackend backend,
+      ProductOrigin origin,
+    ) async {
+      final SessionHistory history = SessionHistory();
+      await pumpFluwApp(
+        tester,
+        ProductDetailScreen(barcode: _barcode, origin: origin),
+        history: history,
+        client: backend.client,
+      );
+      await settleRequest(tester);
+      return history;
+    }
+
+    testWidgets(
+      'mở từ màn quét và tải được thì thêm vào lịch sử quét, điểm và nhãn lấy từ score',
+      (tester) async {
+        final SessionHistory history = await openWithHistory(
+          tester,
+          FakeBackend(
+            product: (_) => FakeBackend.fixture('product-food-complete'),
+          ),
+          ProductOrigin.scan,
+        );
+
+        expect(history.scans.map((product) => product.barcode), [_barcode]);
+        expect(history.scans.single.name, 'Bánh quy bơ (dữ liệu thử)');
+        expect(history.scans.single.score, 31);
+        expect(history.scans.single.level, ScoreLevel.limit);
+        expect(history.scans.single.levelLabel, 'Nên hạn chế');
+        expect(history.scans.single.calories, 478);
+      },
+    );
+
+    testWidgets(
+      'sản phẩm chưa đủ dữ liệu: vào lịch sử với điểm null, không đoán',
+      (tester) async {
+        final SessionHistory history = await openWithHistory(
+          tester,
+          FakeBackend(
+            product: (_) => FakeBackend.fixture('product-needs-prepared-data'),
+          ),
+          ProductOrigin.history,
+        );
+
+        expect(history.scans.single.score, isNull);
+        expect(history.scans.single.levelLabel, isNull);
+      },
+    );
+
+    testWidgets(
+      'mở từ ô tìm kiếm hoặc kết quả tìm thì không thêm vào lịch sử quét',
+      (tester) async {
+        final SessionHistory history = await openWithHistory(
+          tester,
+          FakeBackend(
+            product: (_) => FakeBackend.fixture('product-food-complete'),
+          ),
+          ProductOrigin.search,
+        );
+
+        expect(history.scans, isEmpty);
+      },
+    );
+
+    testWidgets('tải lỗi thì không thêm gì vào lịch sử', (tester) async {
+      final SessionHistory history = await openWithHistory(
+        tester,
+        FakeBackend(
+          product: (_) => FakeBackend.fixture('error-product-not-found'),
+        ),
+        ProductOrigin.scan,
+      );
+
+      expect(history.scans, isEmpty);
+    });
+  });
 }

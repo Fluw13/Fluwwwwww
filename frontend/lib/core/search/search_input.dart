@@ -9,8 +9,6 @@ sealed class SearchInput {
   /// GTIN-8, UPC-A (12), EAN-13 and GTIN-14.
   static const Set<int> barcodeLengths = {8, 12, 13, 14};
 
-  static const String barcodeLengthMessage =
-      'Mã vạch gồm 8, 12, 13 hoặc 14 chữ số. Vui lòng kiểm tra lại.';
   static const String tooShortMessage =
       'Nhập ít nhất $minQueryLength ký tự để tìm theo tên sản phẩm.';
   static const String tooLongMessage =
@@ -27,11 +25,12 @@ sealed class SearchInput {
     if (text.isEmpty) return const EmptySearchInput();
 
     // Spaces and dashes are common when a barcode is copied from a label.
+    // Digits of any other length are searched by name ("333" is a beer).
     if (_barcodeLike.hasMatch(text)) {
       final String digits = text.replaceAll(_separators, '');
-      return barcodeLengths.contains(digits.length)
-          ? BarcodeSearchInput(digits)
-          : const InvalidSearchInput(barcodeLengthMessage);
+      if (barcodeLengths.contains(digits.length)) {
+        return BarcodeSearchInput(digits);
+      }
     }
 
     // Counted in code points, so a Vietnamese letter counts once.

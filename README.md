@@ -95,7 +95,11 @@ Mặc định ứng dụng gọi API v1 tại `https://fluw.onrender.com`. Để
 flutter run --dart-define=API_ORIGIN=http://10.0.2.2:5000
 ```
 
-Tùy chọn: `--dart-define=ZERO_AUTO_LOAD=true` cho phần giải thích của Zero tự tải khi mở sản phẩm (mặc định tắt, người dùng bấm "Hỏi Zero").
+Tùy chọn: `--dart-define=ZERO_AUTO_LOAD=true` cho phần giải thích của Zero tự tải khi mở sản phẩm (mặc định tắt, người dùng bấm "Hỏi Zero"). Bật cờ này thì dữ liệu sản phẩm được gửi tới Gemini mà người dùng không cần bấm, nên phải sửa trang quyền riêng tư (`frontend/lib/content/legal_pages.dart`, `docs/PRIVACY_POLICY.md`) trước khi phát hành.
+
+Email hỗ trợ hiện trong màn Tài khoản đặt bằng `--dart-define=SUPPORT_EMAIL=...`. Nếu không đặt, app hiện một địa chỉ mẫu và ghi rõ đó là mẫu.
+
+Lịch sử quét và tìm kiếm chỉ giữ trong lúc app đang mở, không ghi xuống máy và không gửi đi. Muốn lưu lâu dài cần có đăng nhập, phần này chưa làm.
 
 Build bản release cần tạo `frontend/android/key.properties` từ file `key.properties.example`. Không commit file này và file `.jks`.
 
