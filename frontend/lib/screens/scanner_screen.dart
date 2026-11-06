@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../core/navigation/app_routes.dart';
+import '../core/navigation/product_origin.dart';
 import '../core/scanner/barcode_picker.dart';
 import '../core/scanner/scanner_exit.dart';
 import '../core/theme/app_spacing.dart';
@@ -107,7 +108,12 @@ class _ScannerScreenState extends State<ScannerScreen>
   void _openProduct(String barcode) {
     if (!_isOnTop) return;
 
-    AppRoutes.openProduct(context, barcode, replace: true);
+    AppRoutes.openProduct(
+      context,
+      barcode,
+      origin: ProductOrigin.scan,
+      replace: true,
+    );
   }
 
   void _close() {

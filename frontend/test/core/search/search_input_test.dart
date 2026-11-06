@@ -32,7 +32,7 @@ void main() {
     );
   });
 
-  test('toàn chữ số nhưng sai độ dài: báo ngay, không gửi đi', () {
+  test('toàn chữ số nhưng không dài 8/12/13/14 là từ khóa thường (ví dụ bia "333")', () {
     for (final String raw in [
       '333',
       '1234567',
@@ -41,11 +41,12 @@ void main() {
       '123456789012345',
     ]) {
       expect(
-        _invalidMessage(raw),
-        SearchInput.barcodeLengthMessage,
+        (SearchInput.parse(raw) as KeywordSearchInput).query,
+        raw,
         reason: raw,
       );
     }
+    expect(SearchInput.parse('9'), isA<InvalidSearchInput>());
   });
 
   test(

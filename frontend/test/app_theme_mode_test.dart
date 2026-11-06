@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/history/session_history.dart';
 import 'package:frontend/core/settings/theme_mode_controller.dart';
 import 'package:frontend/core/settings/theme_mode_scope.dart';
 import 'package:frontend/core/settings/theme_mode_store.dart';
@@ -56,6 +57,7 @@ void main() {
         FluwApp(
           themeModeController: controller,
           apiClient: FakeBackend().client,
+          sessionHistory: SessionHistory(),
           home: _Probe(onBuild: (context) => probe = context),
         ),
       );
@@ -91,6 +93,7 @@ void main() {
       FluwApp(
         themeModeController: controller,
         apiClient: FakeBackend().client,
+        sessionHistory: SessionHistory(),
         home: _Probe(onBuild: (context) => probe = context),
       ),
     );

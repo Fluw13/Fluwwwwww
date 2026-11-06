@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'core/history/history_scope.dart';
+import 'core/history/session_history.dart';
 import 'core/licenses/font_licenses.dart';
 import 'core/settings/shared_prefs_theme_mode_store.dart';
 import 'core/settings/theme_mode_controller.dart';
@@ -22,6 +24,7 @@ Future<void> main() async {
     FluwApp(
       themeModeController: themeModeController,
       apiClient: FluwApiClient(),
+      sessionHistory: SessionHistory(),
     ),
   );
 }
@@ -31,11 +34,13 @@ class FluwApp extends StatelessWidget {
     super.key,
     required this.themeModeController,
     required this.apiClient,
+    required this.sessionHistory,
     this.home,
   });
 
   final ThemeModeController themeModeController;
   final FluwApiClient apiClient;
+  final SessionHistory sessionHistory;
   final Widget? home;
 
   @override
@@ -44,15 +49,18 @@ class FluwApp extends StatelessWidget {
       client: apiClient,
       child: ThemeModeScope(
         controller: themeModeController,
-        child: ListenableBuilder(
-          listenable: themeModeController,
-          builder: (context, _) => MaterialApp(
-            title: 'Fluw',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light(),
-            darkTheme: AppTheme.dark(),
-            themeMode: themeModeController.mode,
-            home: home ?? const HomeScreen(),
+        child: HistoryScope(
+          history: sessionHistory,
+          child: ListenableBuilder(
+            listenable: themeModeController,
+            builder: (context, _) => MaterialApp(
+              title: 'Fluw',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light(),
+              darkTheme: AppTheme.dark(),
+              themeMode: themeModeController.mode,
+              home: home ?? const HomeScreen(),
+            ),
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/navigation/app_routes.dart';
+import '../core/navigation/product_origin.dart';
 import '../core/async/handled_future.dart';
 import '../data/api/api_cancel_token.dart';
 import '../data/api/fluw_api_client.dart';
@@ -60,7 +61,11 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         dataBuilder: (context, results) => SearchResultsList(
           query: widget.query,
           results: results,
-          onOpen: (item) => AppRoutes.openProduct(context, item.barcode),
+          onOpen: (item) => AppRoutes.openProduct(
+            context,
+            item.barcode,
+            origin: ProductOrigin.search,
+          ),
         ),
       ),
     );
