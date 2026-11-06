@@ -83,7 +83,7 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
   - Danh sách rỗng: ẩn cả mục, kể cả tiêu đề.
 - **Lỗi tải:** `ErrorRetryView` cuộn được khi chữ to hoặc màn thấp; thông báo lỗi được đọc ngay khi hiện.
 - **Định dạng số:** kiểu Việt Nam, xem `NutrientFormat`: "9,8 g", "1.250,3 g", "2.000 kcal". Số âm (dữ liệu lỗi) hiện là 0.
-- **Danh sách sản phẩm** (thẻ sản phẩm, lịch sử quét) thuộc PR màn chính, chưa có trong khung này.
+- **Danh sách sản phẩm:** dùng `ProductCard`, xem mục 9.
 - **Ảnh:** chỉ tải ảnh https từ `*.openfoodfacts.org` (`isTrustedImageUrl`). Ảnh khác hoặc lỗi tải thì hiện ảnh giữ chỗ.
 - **Kiểm tra bố cục:** test chạy ở màn 320 px và cỡ chữ 200%, không được tràn.
 
@@ -109,7 +109,34 @@ Tài liệu này mô tả các phần dùng chung của giao diện Flutter: the
 - Home chặn bấm nút quét hai lần liên tiếp.
 - **Kiểm thử:** `test/helpers/fake_mobile_scanner_platform.dart` thay plugin camera, để test được luồng nhận mã, lỗi quyền camera và vòng đời mà không cần điện thoại. Camera thật, quyền và độ nhạy quét vẫn phải thử trên máy thật.
 
-## 9. Kiểm thử
+## 9. Trang chủ, Tài khoản và lịch sử
+
+- **Trang chủ** (`HomeScreen`, phần con trong `lib/widgets/home/`):
+  - `HomeHeader`: chữ Fluw và nút Tài khoản ở góc phải trên.
+  - Lời chào, `ProductSearchField` và `RecentSearches` (tối đa 5 từ khóa gần nhất).
+  - Chưa quét gì thì hiện `ZeroIntroCard`; đã quét thì hiện `RecentScansSection` (3 sản phẩm mới nhất + "Xem tất cả").
+  - `ScanButton` dạng pill ở đáy.
+- **Thẻ sản phẩm cho mọi danh sách:** `ProductCard(product: ProductSummary)`.
+  - Điểm dùng `ScorePill` (chấm màu + số + chữ), để không chỉ dựa vào màu.
+  - Chữ hệ thống trên 130% thì điểm chuyển xuống dưới tên thay vì ép tên.
+  - Cả thẻ được trình đọc màn hình đọc là một nút.
+- **Lịch sử trong phiên:** `SessionHistory` (`lib/core/history/`), cấp qua `HistoryScope` ở `FluwApp`.
+  - Chỉ nằm trong bộ nhớ, không ghi xuống máy, không gửi đi, mất khi đóng app. Tối đa 20 mục mỗi loại; mục trùng được đưa lên đầu.
+  - Lịch sử quét: `ProductDetailScreen` thêm sản phẩm khi tải xong, nếu mở từ màn quét hoặc từ lịch sử (`ProductOrigin`). Tải lỗi thì không thêm.
+  - Lịch sử tìm kiếm: Home thêm từ khóa khi người dùng tìm.
+  - `HistoryScreen(kind:)` cho cả hai loại; nút "Xóa" có hộp thoại xác nhận.
+  - Lưu lâu dài cần đăng nhập, chưa làm (xem kế hoạch `feat/auth-ui`).
+- **Tài khoản** (`AccountScreen`, phần con trong `lib/widgets/account/`):
+  - `AccountHeaderCard`: nút "Đăng nhập · Sắp có" bị khóa. Không dựng luồng đăng nhập giả.
+  - `ThemeModeSelector`: Theo máy / Sáng / Tối, đổi ngay và lưu trên máy.
+  - Lịch sử (số mục trong phiên), Hỗ trợ, Pháp lý, Giấy phép mã nguồn mở (`showLicensePage`).
+- **Email hỗ trợ:** `SupportContact` đọc `--dart-define=SUPPORT_EMAIL=...`. Chưa đặt thì hiện địa chỉ mẫu `hotro@example.com` và ghi rõ là mẫu. Bấm vào thì chép email.
+- **Trang pháp lý trong app:** nội dung ở `lib/content/legal_pages.dart`, hiển thị bằng `InfoPageScreen`.
+  - Điều khoản sử dụng ghi "đang hoàn thiện".
+  - Chính sách quyền riêng tư là bản tóm tắt cách app đang xử lý dữ liệu, chưa phải bản chính thức.
+  - Đổi cách xử lý dữ liệu thì phải sửa cả trang này và `docs/PRIVACY_POLICY.md`.
+
+## 10. Kiểm thử
 
 - Chạy trong thư mục `frontend/`: `flutter analyze`, `flutter test`.
 - Mỗi phần ở trên có test tương ứng dưới `test/`, cùng cấu trúc thư mục với `lib/`.
