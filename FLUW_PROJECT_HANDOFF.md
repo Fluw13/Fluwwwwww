@@ -73,23 +73,28 @@ App chỉ gọi API v1 (`docs/API_CONTRACT_v1.md`). Điểm Fluw do backend tín
 
 | File / thư mục | Vai trò |
 | :--- | :--- |
-| `main.dart` | Tạo `FluwApiClient` dùng chung cả phiên và `ThemeModeController`, dựng `FluwApp` |
+| `main.dart` | Tạo `FluwApiClient` dùng chung cả phiên, `ThemeModeController` và `SessionHistory`, dựng `FluwApp` |
 | `data/api/fluw_api_client.dart` | Gọi `/health`, `/api/v1/search`, `/api/v1/products/:barcode`, `/api/v1/products/:barcode/analysis`. Origin qua `--dart-define=API_ORIGIN` (`api_config.dart`, mặc định `https://fluw.onrender.com`). Timeout 70/70/90 s đến khi máy chủ trả lời, sau đó 20/20/35 s (`api_timeouts.dart`). Hủy request khi rời màn (`ApiCancelToken`, `AbortableRequest`). Không ghi log URL |
 | `data/api/fluw_api_exception.dart`, `api_error_kind.dart` | Lỗi có kiểu: mã server, HTTP status, `Retry-After` (số giây hoặc HTTP-date), mạng, timeout, đã hủy, phản hồi không hợp lệ |
 | `data/api/fluw_api_scope.dart` | Đưa client xuống cây widget (test thay bằng API giả) |
 | `models/search/`, `models/product/`, `models/score/`, `models/analysis/` | Model v1, đọc an toàn mọi trường có thể `null` |
 | `models/score_level.dart` | Mức `good` / `moderate` / `limit` theo mã backend; nhãn chữ lấy từ `score.total.label` |
-| `core/search/search_input.dart` | Phân loại ô tìm: 8/12/13/14 chữ số mở thẳng sản phẩm, từ khóa 2–100 ký tự có chữ/số mới tìm |
-| `core/navigation/app_routes.dart` | Nơi duy nhất mở sản phẩm / tìm kiếm (màn chính, kết quả, máy quét) |
+| `core/search/search_input.dart` | Phân loại ô tìm: chuỗi toàn số dài 8/12/13/14 mở thẳng sản phẩm; còn lại (kể cả số độ dài khác như "333") tìm theo tên nếu dài 2–100 ký tự và có chữ/số |
+| `core/navigation/app_routes.dart`, `product_origin.dart` | Nơi duy nhất mở sản phẩm / tìm kiếm (trang chủ, lịch sử, kết quả, máy quét); `ProductOrigin` quyết định sản phẩm có vào lịch sử quét không |
+| `core/history/` | `SessionHistory` + `HistoryScope`: lịch sử quét và tìm kiếm chỉ trong bộ nhớ, tối đa 20 mục mỗi loại, mất khi đóng app |
+| `models/product_summary.dart` | Dữ liệu cho danh sách, dựng từ `ProductDetails` v1; điểm = `score.total.value` (có thể null) |
 | `core/format/` | Số kiểu Việt, ngày, câu chữ của điểm (`score_format.dart`), câu lỗi AI |
 | `core/scanner/` | Chọn mã vạch hợp lệ từ camera, lý do thoát máy quét |
-| `screens/home_screen.dart` | Ô tìm kiếm (chỉ gửi khi bấm tìm), nút quét |
+| `screens/home_screen.dart` | Trang chủ: ô tìm (chỉ gửi khi bấm tìm, lỗi hiện dưới ô), từ khóa gần đây, sản phẩm vừa quét, nút quét, nút Tài khoản; phần con trong `widgets/home/` |
+| `screens/account_screen.dart`, `history_screen.dart`, `info_page_screen.dart` | Tài khoản (giao diện, lịch sử, hỗ trợ, pháp lý), lịch sử quét / tìm kiếm, trang thông tin; phần con trong `widgets/account/` |
+| `content/legal_pages.dart` | Câu chữ Điều khoản, Quyền riêng tư, Nguồn dữ liệu, Về Zero. Đổi cách xử lý dữ liệu thì sửa cả file này và `docs/PRIVACY_POLICY.md` |
+| `core/support/support_contact.dart` | Email hỗ trợ qua `--dart-define=SUPPORT_EMAIL` (mặc định địa chỉ mẫu) |
 | `screens/scanner_screen.dart` | Camera `mobile_scanner` (EAN/UPC), khung quét, đèn, nhập tay |
 | `screens/search_results_screen.dart` | Kết quả tìm, gần đúng, rỗng, lỗi, 429 đếm ngược |
 | `screens/product_detail_screen.dart` | Tải sản phẩm v1, lỗi + thử lại, dựng `ProductDetailView` |
 | `screens/score_explanation_screen.dart` | "Cách Fluw tính điểm": từng chỉ số, dải, phụ gia, mục thiếu, NOVA, nguồn |
 | `screens/product_image_screen.dart` | Xem ảnh lớn; chỉ ở đây mới tải ảnh gốc |
-| `widgets/product/` | Khung chi tiết dùng chung (`ProductDetailView`, `ProductDetailLayout`), skeleton cùng bố cục, thẻ điểm, dinh dưỡng, thành phần, phụ gia, nguồn dữ liệu, `ZeroAnalysisSection` |
+| `widgets/product/` | Khung chi tiết dùng chung (`ProductDetailView`, `ProductDetailLayout`), skeleton cùng bố cục, thẻ điểm, dinh dưỡng, thành phần, phụ gia, nguồn dữ liệu, `ZeroAnalysisSection`; `ProductCard` + `ScorePill` cho mọi danh sách (nhãn mức backend gửi, "Chưa đủ dữ liệu" khi không có điểm) |
 | `widgets/score/` | Phần dùng chung của thẻ điểm và màn giải thích |
 | `widgets/search/` | Thẻ kết quả tìm kiếm, danh sách, màn tải |
 | `widgets/zero_analysis_card.dart` | Thẻ Zero: "Hỏi Zero", đang viết, kết quả, lỗi; nhãn "Nội dung do AI tạo" |
