@@ -106,7 +106,7 @@ cd backend && npm install && npm test && npm start
 4. Duyệt kế hoạch v1 (`/api/v1`, B0–B5 và F1, F3–F9). Các phần frontend phụ thuộc v1 chưa làm: danh sách kết quả tìm kiếm, giải thích điểm.
 5. Chọn `GEMINI_MODEL`: `gemini-3.5-flash-lite` (500 lượt/ngày) hay giữ `gemini-3.6-flash` (20 lượt/ngày), hoặc bật thanh toán.
 6. Cho phép xóa các branch đã merge trên GitHub.
-7. Duyệt 3 PR FNS xếp chồng: #11 → PR-B → PR-C (số PR ở mục 6). PR-B và PR-C nên merge cùng lúc.
+7. Duyệt 3 PR FNS xếp chồng: #11 → #13 → #14 (chi tiết ở mục 6). #13 và #14 nên merge cùng lúc.
 8. Đối chiếu HSR calculator chính thức cho 6 mục trong `RULES_REVIEW_ITEMS` (`scoringRules.js`). Còn mục nào thì engine chưa trả `VERIFIED`.
 
 ### Chưa làm, cần backend và pháp lý
@@ -129,7 +129,7 @@ cd backend && npm install && npm test && npm start
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
 
-### 07/11/2026 — PR-C `feat/fns-flutter`: Flutter hiển thị FNS 0–10
+### 07/11/2026 — PR #14 `feat/fns-flutter`: Flutter hiển thị FNS 0–10
 - **Thêm:**
   - `lib/models/fns_result.dart`: đọc object `fns`; điểm ngoài 0–10 hoặc trạng thái lạ thì không hiện điểm.
   - `lib/content/fns_copy.dart`: mọi câu chữ về FNS.
@@ -145,9 +145,13 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
 - **Lý do sửa theo test:**
   - Skeleton lệch 47 px ở cỡ chữ 200%, vì hai chip xuống dòng tùy dữ liệu. Đã sửa bố cục, không nới lỏng test.
   - "Nhóm so sánh" dài ngắn tùy dữ liệu nên chuyển sang thẻ giải thích.
-- **Test:** `flutter analyze` sạch, `flutter test` 200/200 (Flutter 3.47.9). Không xóa test cũ, chỉ đổi giá trị mong đợi sang thang 0–10.
+- **Sửa theo review độc lập:**
+  - Lý do `OUT_OF_SCOPE` liệt kê đủ trà, cà phê, gia vị, muối, giấm.
+  - Backend cũ không trả `fns` thì ghi "Chưa có kết quả chấm điểm".
+  - "Đã xác minh" đổi thành "Số liệu đã đối chiếu".
+- **Test:** `flutter analyze` sạch, `flutter test` 201/201 (Flutter 3.47.9). Không xóa test cũ, chỉ đổi giá trị mong đợi sang thang 0–10.
 
-### 07/11/2026 — PR-B `feat/fns-api-integration`: nối FNS vào API
+### 07/11/2026 — PR #13 `feat/fns-api-integration`: nối FNS vào API
 - **Thêm:**
   - `backend/src/services/openFoodFacts/categoryResolver.js`: từ `categories_tags` ra nhóm C1…C3D. Không chắc thì trả `null`; nhóm ngoài phạm vi trả `OUT_OF_SCOPE`.
   - `fnsInputMapper.js`: natri g → mg, basis theo đơn vị gói, FVNL ước tính.
@@ -160,7 +164,13 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - `README.md`.
   - Engine: thêm `OUT_OF_SCOPE`, `FVNL_ESTIMATED`, `baseline_components`.
 - **Lý do:** thiếu FVNL làm gần như mọi sản phẩm `RATING_AMBIGUOUS`. OFF có ước tính FVNL từ thành phần, nên dùng ước tính đó kèm cờ, thay vì điền 0.
-- **Test:** `npm test` 144/144. Đã có test cho các ca: Gemini lỗi thì điểm FNS không đổi; thiếu FVNL thì `NOT_SCORED`.
+- **Sửa theo review độc lập (lỗi nghiêm trọng, phát hiện trước khi push):**
+  - Bản đầu mặc định C2 cho mọi tag lạ, nên sản phẩm chỉ có tag `vi:` bị chấm theo nhóm sai: nước ngọt ra 6,7 thay vì 0.
+  - Nay C2 cần tag thuộc `FOOD_TAGS`.
+  - `en:butters` chỉ tính là bơ khi kèm `en:dairies`.
+  - Sữa chua uống không bị đoán nhóm.
+  - Dầu ăn bỏ ước tính FVNL dương.
+- **Test:** `npm test` 149/149. Đã có test cho các ca: Gemini lỗi thì điểm FNS không đổi; thiếu FVNL thì `NOT_SCORED`; tag lạ hoặc tag tiếng Việt thì không đoán nhóm.
 
 ### 07/11/2026 — PR #11 `feat/fns-engine-v1`: engine FNS v1
 - **Thêm:**
