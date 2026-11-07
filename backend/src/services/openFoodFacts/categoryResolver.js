@@ -5,17 +5,24 @@ const { OUT_OF_SCOPE_CATEGORY } = require('../scoring/fnsCodes');
 // a wrong score, while `null` only produces "not scored". Every category, C2 included, therefore needs a
 // positive match; unknown or non-English tags (common for Vietnamese products) resolve to null.
 
-// HSR v9 Section 2.3 exclusions, plus products FNS v1 does not score yet (water needs the automatic rule;
-// syrups and powders would need "as prepared" data).
-const OUT_OF_SCOPE_TAGS = [
+// HSR v9 Section 2.3 exclusions, plus products FNS v1 does not score yet (water needs the automatic rule).
+// These always win, whatever other tags the product carries.
+const EXCLUDED_TAGS = [
     'en:alcoholic-beverages', 'en:beers', 'en:wines', 'en:spirits', 'en:ciders', 'en:liqueurs',
     'en:non-alcoholic-beers', 'en:alcohol-free-beers', 'en:non-alcoholic-wines',
     'en:baby-foods', 'en:baby-milks', 'en:infant-formulas', 'en:follow-on-milks',
     'en:foods-for-special-medical-purposes', 'en:sports-nutrition',
     'en:dietary-supplements', 'en:food-supplements', 'en:bodybuilding-supplements',
-    'en:spices', 'en:salts', 'en:vinegars', 'en:teas', 'en:coffees',
-    'en:waters', 'en:syrups', 'en:instant-beverages', 'en:beverage-preparations',
-    'en:cocoa-and-chocolate-powders', 'en:powdered-drinks'
+    'en:spices', 'en:salts', 'en:vinegars', 'en:teas', 'en:coffees', 'en:waters'
+];
+
+// Syrups and powders would need "as prepared" data. Community tagging mixes them up with ready foods
+// (Nutella is tagged both as a spread and as a cocoa powder), so together with a food tag the data is
+// contradictory and the product stays unresolved instead of being declared out of scope.
+const AS_PREPARED_TAGS = [
+    'en:syrups', 'en:instant-beverages', 'en:beverage-preparations', 'en:powdered-drinks',
+    'en:cocoa-and-chocolate-powders', 'en:chocolate-powders', 'en:cocoa-powders',
+    'en:milk-powders', 'en:powdered-milks', 'en:dried-milks'
 ];
 
 // Plant-based dairy alternatives depend on calcium and protein criteria that tags cannot confirm.
@@ -74,8 +81,11 @@ const resolveCategory = (product) => {
     if (tags.size === 0) {
         return null;
     }
-    if (hasAny(tags, OUT_OF_SCOPE_TAGS)) {
+    if (hasAny(tags, EXCLUDED_TAGS)) {
         return OUT_OF_SCOPE_CATEGORY;
+    }
+    if (hasAny(tags, AS_PREPARED_TAGS)) {
+        return hasAny(tags, FOOD_TAGS) ? null : OUT_OF_SCOPE_CATEGORY;
     }
     if (hasAny(tags, DAIRY_ALTERNATIVE_TAGS)) {
         return null;
@@ -109,4 +119,4 @@ const resolveCategory = (product) => {
     return hasAny(tags, FOOD_TAGS) ? 'C2' : null;
 };
 
-module.exports = { resolveCategory, OUT_OF_SCOPE_TAGS };
+module.exports = { resolveCategory, EXCLUDED_TAGS, AS_PREPARED_TAGS };
