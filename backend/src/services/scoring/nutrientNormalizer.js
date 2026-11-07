@@ -1,9 +1,9 @@
+const { isAmount } = require('./dataValidator');
+
 const KILOJOULES_PER_KCAL = 4.184;
 const SODIUM_MG_PER_GRAM_OF_SALT = 400;
 const MG_PER_GRAM = 1000;
 const FLOAT_NOISE_SCALE = 1e9;
-
-const isAmount = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 // Removes binary floating-point artefacts (0.07 * 1000 = 70.00000000000001) that would otherwise push a
 // value over a ">" threshold. Label values never carry nine decimals, so no real precision is lost.
@@ -28,7 +28,7 @@ const perServingToPer100 = (valuePerServing, servingAmount) => {
 
 // HSR v9 Section 4.4: concentrated ingredients count twice when mixed with non-concentrated FVNL.
 const mixedFvnlPercent = (nonConcentratedPercent, concentratedPercent, nonFvnlPercent) => {
-    if (![nonConcentratedPercent, concentratedPercent, nonFvnlPercent].every(isAmount)) {
+    if (![nonConcentratedPercent, concentratedPercent, nonFvnlPercent].every((value) => isAmount(value))) {
         return null;
     }
     const weighted = nonConcentratedPercent + 2 * concentratedPercent;

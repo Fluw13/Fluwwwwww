@@ -16,6 +16,7 @@ const FNS_REASON_CODES = Object.freeze({
 
 // Caveats attached to a score that was produced.
 const FNS_LIMITATIONS = Object.freeze({
+    RULES_NEEDS_REVIEW: 'RULES_NEEDS_REVIEW',
     SOURCE_UNVERIFIED: 'SOURCE_UNVERIFIED',
     MODIFIER_DATA_MISSING: 'MODIFIER_DATA_MISSING',
     VALUE_CENSORED: 'VALUE_CENSORED'

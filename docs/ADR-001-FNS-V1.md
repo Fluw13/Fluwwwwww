@@ -51,11 +51,22 @@ FNS là thang điểm độc lập của Fluw:
 1. **Dữ liệu cộng đồng (OpenFoodFacts):**
    - Vẫn chấm điểm, trạng thái là `PROVISIONAL`.
    - Giao diện phải ghi rõ "dữ liệu cộng đồng, chưa xác minh".
-   - `VERIFIED` chỉ dành cho nguồn đã xác minh (`source_verified: true`).
+   - `VERIFIED` chỉ khi đủ cả ba điều kiện:
+     - điểm thô chính xác;
+     - nguồn đã xác minh (`source_verified: true`);
+     - bộ quy tắc đã đối chiếu xong (`RULES_REVIEW_ITEMS` rỗng).
+   - Khi bộ quy tắc còn `NEEDS_REVIEW`, mọi điểm đều là `PROVISIONAL` và có giới hạn `RULES_NEEDS_REVIEW`.
 2. **Dữ liệu thiếu:**
    - Không bao giờ điền 0.
    - Engine tính điểm thô tốt nhất và tệ nhất có thể. Nếu hai đầu cho cùng mức thì chấm (`PROVISIONAL`); nếu khác mức thì `NOT_SCORED` (`RATING_AMBIGUOUS`).
-   - Giá trị kiểu `"<1 g"` được giữ dưới dạng khoảng `[0, 1]`.
+   - Giá trị bị chặn trên:
+     - `{ value: 1, qualifier: 'lt' }` là khoảng mở `[0, 1)`;
+     - `'lte'` là khoảng đóng `[0, 1]`.
+   - Thiếu cờ `concentrated` của FVNL: engine xét cả hai cột Table 4 và ghi `fvnl.concentrated` vào `missing_fields`.
+   - Giá trị vượt giới hạn vật lý trên 100 g bị coi là không hợp lệ:
+     - năng lượng >3800 kJ;
+     - một chất >100 g;
+     - natri >40.000 mg.
 3. **Điểm Gemini cũ:** bỏ ở bước tích hợp (PR-B). Nên merge PR-B cùng PR-C (Flutter) để app không mất điểm.
 4. **Quy tắc tự động** (nước lọc, nước có hương vị không đường, rau quả tươi): chưa áp dụng trong v1.
    - Hệ quả: nhóm C1 tính bằng công thức tối đa đạt mức 4.0.
@@ -88,7 +99,7 @@ Kết quả (snake_case, không có timestamp để bảo đảm deterministic):
   "component_points": { "energy": 4, "saturated_fat": 1, "total_sugars": 2, "sodium": 3, "fvnl": 0, "protein": 5, "fiber": 8 },
   "modifier_eligibility": { "fvnl": true, "protein": true, "fiber": true },
   "calculation": { "baseline": 10, "modifiers": 13, "final_raw_score": -3 },
-  "missing_fields": [], "invalid_fields": [], "reason_codes": [], "limitations": []
+  "missing_fields": [], "invalid_fields": [], "reason_codes": [], "limitations": ["RULES_NEEDS_REVIEW"]
 }
 ```
 
@@ -97,7 +108,7 @@ Mã lý do và giới hạn nằm ở `fnsCodes.js`:
 | Loại | Mã |
 |---|---|
 | Mã lý do không chấm | `INPUT_INVALID`, `CATEGORY_UNRESOLVED`, `BASIS_MISMATCH`, `VALUE_INVALID`, `BASELINE_NUTRIENT_MISSING`, `RATING_AMBIGUOUS` |
-| Giới hạn khi vẫn chấm | `SOURCE_UNVERIFIED`, `MODIFIER_DATA_MISSING`, `VALUE_CENSORED` |
+| Giới hạn khi vẫn chấm | `RULES_NEEDS_REVIEW`, `SOURCE_UNVERIFIED`, `MODIFIER_DATA_MISSING`, `VALUE_CENSORED` |
 
 ## 6. Cấu trúc file (mỗi file một trách nhiệm)
 
@@ -142,7 +153,8 @@ Dữ liệu OpenFoodFacts đã xác minh từ [data-fields.txt](https://static.o
 | Lớp | Nội dung | File |
 |---|---|---|
 | Unit — nội dung bảng | Giá trị gõ độc lập từ Guide v9; phát hiện sửa nhầm bảng | `fnsRules.test.js` |
-| Unit — biên ngưỡng | Ngay dưới, đúng ngưỡng, ngay trên cho mọi bậc của mọi bảng; mọi biên Table 7 | `fnsRules.test.js` |
+| Unit — biên ngưỡng | Ngay dưới, đúng ngưỡng, ngay trên cho mọi bậc của mọi bảng; số điểm tăng đúng 1 bậc; hai đầu mọi khoảng Table 7 (gõ tay độc lập) | `fnsRules.test.js` |
+| Property | Cận của `rawScoreBounds` trùng min/max vét cạn (300 tổ hợp, seed cố định) | `fnsEngine.test.js` |
 | Unit — quy đổi đơn vị | kcal/kJ, muối/natri, g/mg, khẩu phần, FVNL hỗn hợp, sai số float | `fnsNormalizer.test.js` |
 | Golden | Test A–D trong Master Prompt mục 11 | `fnsEngine.test.js` |
 | Âm tính | Thiếu baseline, thiếu modifier, `<x`, sai basis, nhóm không rõ, giá trị không hợp lệ, điều kiện tính đạm, C1/C1D không có xơ, deterministic | `fnsEngine.test.js` |
@@ -159,6 +171,7 @@ Dữ liệu OpenFoodFacts đã xác minh từ [data-fields.txt](https://static.o
 | `TABLE_3_ENERGY_MIN_1_POINT` | C1: 0 điểm năng lượng chỉ khi "không có giá trị"; mọi đồ uống có số liệu bắt đầu từ 1 điểm. |
 | `TABLE_7_FIVE_AND_FOUR_HALF_STAR_ROWS` | Bố cục hai hàng này trong PDF bị lệch khi trích xuất. |
 | `BASIS_ALLOWED_PER_CATEGORY` | C1/C1D bắt buộc per_100ml; C2–C3D chấp nhận cả hai basis. |
+| `FVNL_MIXED_FORMULA` | Công thức FVNL hỗn hợp (cô đặc tính gấp đôi) lấy từ Master Prompt; phần trích Section 4.4 chưa có công thức để đối chiếu. |
 | `OFFICIAL_CALCULATOR_CROSS_CHECK` | Chạy Test A–D và các ca biên qua calculator chính thức. |
 
 ## 10. Rủi ro

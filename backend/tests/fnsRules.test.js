@@ -79,6 +79,11 @@ test('mọi ngưỡng: ngay dưới, đúng ngưỡng và ngay trên ngưỡng c
             const previousPoints = index === 0 ? table.basePoints : table.steps[index - 1].points;
             const label = `${name} ${step.op}${step.value}`;
 
+            assert.equal(step.points, previousPoints + 1, `${label}: số điểm phải tăng đúng 1 bậc`);
+            if (index > 0) {
+                assert.ok(step.value > table.steps[index - 1].value, `${label}: ngưỡng phải tăng dần`);
+            }
+
             assert.ok(pointsFor(step.value - EPSILON, table) <= previousPoints, `${label}: ngay dưới`);
             if (step.op === '>') {
                 assert.equal(pointsFor(step.value, table), previousPoints, `${label}: đúng ngưỡng chưa được điểm`);
@@ -90,13 +95,26 @@ test('mọi ngưỡng: ngay dưới, đúng ngưỡng và ngay trên ngưỡng c
     }
 });
 
-test('Table 7: từng biên của mỗi nhóm cho đúng mức, vượt 1 điểm xuống mức kế tiếp', () => {
-    for (const [category, bands] of Object.entries(rules.RATING_BANDS)) {
-        bands.forEach(([maxRawScore, rating], index) => {
-            assert.equal(referenceRatingFor(category, maxRawScore), rating, `${category} raw=${maxRawScore}`);
-            const nextRating = index + 1 < bands.length ? bands[index + 1][1] : rules.LOWEST_RATING;
-            assert.equal(referenceRatingFor(category, maxRawScore + 1), nextRating, `${category} raw=${maxRawScore + 1}`);
-        });
+// Both ends of every Table 7 band, typed from the guide rather than derived from RATING_BANDS.
+const TABLE_7_EDGES = {
+    C1: [[0, 4], [1, 3.5], [2, 3], [3, 3], [4, 2.5], [5, 2.5], [6, 2], [7, 2], [8, 1.5], [9, 1.5], [10, 1], [11, 1], [12, 0.5]],
+    C1D: [[-2, 5], [-1, 4.5], [0, 4], [1, 3.5], [2, 3], [3, 2.5], [4, 2], [5, 1.5], [6, 1], [7, 0.5]],
+    C2: [[-11, 5], [-10, 4.5], [-7, 4.5], [-6, 4], [-2, 4], [-1, 3.5], [2, 3.5], [3, 3], [6, 3], [7, 2.5], [11, 2.5],
+        [12, 2], [15, 2], [16, 1.5], [20, 1.5], [21, 1], [24, 1], [25, 0.5]],
+    C2D: [[-2, 5], [-1, 4.5], [0, 4.5], [1, 4], [2, 4], [3, 3.5], [4, 3], [5, 3], [6, 2.5], [7, 2.5], [8, 2],
+        [9, 1.5], [10, 1.5], [11, 1], [12, 1], [13, 0.5]],
+    C3: [[13, 5], [14, 4.5], [16, 4.5], [17, 4], [20, 4], [21, 3.5], [23, 3.5], [24, 3], [27, 3], [28, 2.5], [30, 2.5],
+        [31, 2], [34, 2], [35, 1.5], [37, 1.5], [38, 1], [41, 1], [42, 0.5]],
+    C3D: [[24, 5], [25, 4.5], [26, 4.5], [27, 4], [28, 4], [29, 3.5], [30, 3.5], [31, 3], [32, 2.5], [33, 2.5],
+        [34, 2], [35, 2], [36, 1.5], [37, 1.5], [38, 1], [39, 1], [40, 0.5]]
+};
+
+test('Table 7: hai đầu của mọi khoảng ở mỗi nhóm khớp HSR v9', () => {
+    assert.deepEqual(Object.keys(TABLE_7_EDGES), Object.keys(rules.RATING_BANDS));
+    for (const [category, edges] of Object.entries(TABLE_7_EDGES)) {
+        for (const [rawScore, rating] of edges) {
+            assert.equal(referenceRatingFor(category, rawScore), rating, `${category} raw=${rawScore}`);
+        }
     }
 });
 

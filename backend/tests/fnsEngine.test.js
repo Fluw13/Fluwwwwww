@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { evaluateFns } = require('../src/services/scoring/fnsEngine');
+const { evaluateFns, resolveStatus } = require('../src/services/scoring/fnsEngine');
+const { rawScoreBounds, isProteinEligible } = require('../src/services/scoring/modifierScorer');
 
 const NO_FVNL = { percent: 0, concentrated: false };
 
@@ -28,7 +29,8 @@ const without = (fixture, field) => {
 
 test('Test A: nước ngọt C1 -> raw 14, FNS 0.0', () => {
     const result = evaluateFns(SOFT_DRINK);
-    assert.equal(result.status, 'VERIFIED');
+    assert.equal(result.status, 'PROVISIONAL', 'bộ quy tắc còn NEEDS_REVIEW nên chưa được VERIFIED');
+    assert.deepEqual(result.limitations, ['RULES_NEEDS_REVIEW']);
     assert.equal(result.raw_score, 14);
     assert.equal(result.score, 0);
     assert.deepEqual(result.component_points, {
@@ -38,7 +40,7 @@ test('Test A: nước ngọt C1 -> raw 14, FNS 0.0', () => {
 
 test('Test B: ngũ cốc C2 -> raw -3, FNS 7.8', () => {
     const result = evaluateFns(CEREAL);
-    assert.equal(result.status, 'VERIFIED');
+    assert.equal(result.status, 'PROVISIONAL');
     assert.equal(result.raw_score, -3);
     assert.equal(result.reference_rating_band, 4);
     assert.equal(result.score, 7.8);
@@ -123,10 +125,107 @@ test('thiếu FVNL có thể đổi mức điểm -> NOT_SCORED kèm khoảng ra
     assert.deepEqual(result.raw_score_range, { min: -11, max: -3 });
 });
 
-test('thiếu cờ cô đặc của FVNL ngoài C1 được coi là thiếu dữ liệu', () => {
-    const result = evaluateFns({ ...CEREAL, fvnl: { percent: 50 } });
+test('thiếu cờ cô đặc của FVNL: xét cả hai cột Table 4, ghi nhận là thiếu dữ liệu', () => {
+    const notAffecting = evaluateFns({ ...CEREAL, fvnl: { percent: 0 } });
+    assert.equal(notAffecting.raw_score, -3);
+    assert.deepEqual(notAffecting.missing_fields, ['fvnl.concentrated']);
+
+    const sameBand = evaluateFns({ ...CEREAL, fvnl: { percent: 50 } });
+    assert.equal(sameBand.status, 'PROVISIONAL');
+    assert.equal(sameBand.raw_score, null);
+    assert.deepEqual(sameBand.raw_score_range, { min: -5, max: -4 });
+    assert.ok(sameBand.limitations.includes('MODIFIER_DATA_MISSING'));
+});
+
+test('cờ cô đặc không phải boolean -> VALUE_INVALID', () => {
+    const result = evaluateFns({ ...CEREAL, fvnl: { percent: 50, concentrated: 'yes' } });
+    assert.deepEqual(result.reason_codes, ['VALUE_INVALID']);
+    assert.deepEqual(result.invalid_fields, ['fvnl.concentrated']);
+});
+
+test('giá trị vượt giới hạn vật lý trên 100 g -> VALUE_INVALID', () => {
+    for (const [field, value] of [['total_sugars_g', 150], ['saturated_fat_g', 500], ['energy_kj', 5000], ['sodium_mg', 50000]]) {
+        const result = evaluateFns(withNutrients(CEREAL, { [field]: value }));
+        assert.deepEqual(result.invalid_fields, [field], field);
+    }
+});
+
+test('C3 (dầu): năng lượng tối đa 10 điểm theo Table 2', () => {
+    const oil = {
+        category: 'C3', basis: 'per_100g', fvnl: NO_FVNL, source_verified: true,
+        nutrients: { energy_kj: 3700, saturated_fat_g: 14, total_sugars_g: 0, sodium_mg: 0, protein_g: 0, fiber_g: 0 }
+    };
+    const result = evaluateFns(oil);
+    assert.equal(result.component_points.energy, 10);
+    assert.equal(result.component_points.saturated_fat, 13);
+    assert.equal(result.raw_score, 23);
+    assert.equal(result.score, 6.7);
+});
+
+test('C3D (phô mai): baseline >= 13 và FVNL < 5 nên không tính đạm', () => {
+    const cheese = {
+        category: 'C3D', basis: 'per_100g', fvnl: NO_FVNL, source_verified: true,
+        nutrients: { energy_kj: 1600, saturated_fat_g: 20, total_sugars_g: 0, sodium_mg: 700, protein_g: 25, fiber_g: 0 }
+    };
+    const result = evaluateFns(cheese);
+    assert.equal(result.calculation.baseline, 30);
+    assert.equal(result.modifier_eligibility.protein, false);
+    assert.equal(result.raw_score, 30);
+    assert.equal(result.score, 6.7);
+});
+
+test('C1 (nước ép 100%): FVNL theo Table 5 tối đa 10 điểm', () => {
+    const juice = { category: 'C1', basis: 'per_100ml', nutrients: { energy_kj: 180, total_sugars_g: 9 }, fvnl: { percent: 100 }, source_verified: true };
+    const result = evaluateFns(juice);
+    assert.equal(result.component_points.fvnl, 10);
+    assert.equal(result.raw_score, 2);
+    assert.equal(result.score, 5.6);
+});
+
+test('thiếu FVNL khi baseline >= 13: khoảng raw tính cả việc FVNL có thể mở điểm đạm', () => {
+    const result = evaluateFns({
+        category: 'C2', basis: 'per_100g', fvnl: null, source_verified: true,
+        nutrients: { energy_kj: 2400, saturated_fat_g: 3.5, total_sugars_g: 5, sodium_mg: 300, protein_g: 10, fiber_g: 0 }
+    });
+    assert.deepEqual(result.raw_score_range, { min: 13 - 8 - 6, max: 13 });
     assert.equal(result.status, 'NOT_SCORED');
-    assert.deepEqual(result.missing_fields, ['fvnl.concentrated']);
+});
+
+// Deterministic pseudo-random generator so the property test is reproducible.
+const seededRandom = (seed) => () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+};
+
+test('property: cận của rawScoreBounds trùng min/max vét cạn mọi tổ hợp điểm', () => {
+    const random = seededRandom(42);
+    const interval = (limit) => {
+        const a = Math.floor(random() * (limit + 1));
+        const b = Math.floor(random() * (limit + 1));
+        return { min: Math.min(a, b), max: Math.max(a, b) };
+    };
+    const values = ({ min, max }) => Array.from({ length: max - min + 1 }, (_, index) => min + index);
+
+    for (let iteration = 0; iteration < 300; iteration += 1) {
+        const baseline = interval(30);
+        const modifiers = { fvnl: interval(8), protein: interval(15), fiber: random() < 0.5 ? null : interval(15) };
+        let min = Infinity;
+        let max = -Infinity;
+        for (const b of values(baseline)) {
+            for (const v of values(modifiers.fvnl)) {
+                for (const p of values(modifiers.protein)) {
+                    for (const f of modifiers.fiber ? values(modifiers.fiber) : [0]) {
+                        const raw = b - v - (isProteinEligible(b, v) ? p : 0) - f;
+                        min = Math.min(min, raw);
+                        max = Math.max(max, raw);
+                    }
+                }
+            }
+        }
+        const bounds = rawScoreBounds(baseline, modifiers);
+        assert.equal(bounds.best, min, `iteration ${iteration}`);
+        assert.equal(bounds.worst, max, `iteration ${iteration}`);
+    }
 });
 
 test('thiếu modifier nhưng không thể đổi mức -> PROVISIONAL, raw_score null', () => {
@@ -151,8 +250,15 @@ test('thiếu đạm khi đạm đủ điều kiện -> không tự điền 0', 
 test('thiếu đạm khi đạm không đủ điều kiện -> vẫn chấm, có ghi chú thiếu', () => {
     const result = evaluateFns(without(CHIPS, 'protein_g'));
     assert.equal(result.raw_score, 17);
-    assert.equal(result.status, 'VERIFIED');
     assert.deepEqual(result.missing_fields, ['protein_g']);
+});
+
+test('trạng thái VERIFIED chỉ khi raw chính xác, nguồn đã xác minh và bộ quy tắc đã đối chiếu', () => {
+    const complete = { hasExactRawScore: true, sourceVerified: true, rulesReviewed: true };
+    assert.equal(resolveStatus(complete), 'VERIFIED');
+    for (const missing of ['hasExactRawScore', 'sourceVerified', 'rulesReviewed']) {
+        assert.equal(resolveStatus({ ...complete, [missing]: false }), 'PROVISIONAL', missing);
+    }
 });
 
 test('giá trị "<1 g" không bị đổi thành 0: chấm khi không đổi điểm, từ chối khi có thể đổi', () => {
@@ -163,6 +269,18 @@ test('giá trị "<1 g" không bị đổi thành 0: chấm khi không đổi đ
     const ambiguous = evaluateFns(withNutrients(YOGURT, { sodium_mg: { value: 100, qualifier: 'lt' } }));
     assert.equal(ambiguous.status, 'NOT_SCORED');
     assert.deepEqual(ambiguous.reason_codes, ['RATING_AMBIGUOUS']);
+});
+
+test('"<x" là khoảng mở, "≤x" là khoảng đóng ở đúng ngưỡng', () => {
+    const lessThan = evaluateFns(withNutrients(YOGURT, { protein_g: { value: 3.2, qualifier: 'lt' } }));
+    assert.deepEqual(lessThan.raw_score_range, { min: 4, max: 5 });
+    assert.equal(lessThan.score, 5.6);
+
+    const atMost = evaluateFns(withNutrients(YOGURT, { protein_g: { value: 3.2, qualifier: 'lte' } }));
+    assert.deepEqual(atMost.raw_score_range, { min: 3, max: 5 });
+    assert.equal(atMost.status, 'NOT_SCORED');
+
+    assert.deepEqual(evaluateFns(withNutrients(YOGURT, { protein_g: { value: 0, qualifier: 'lt' } })).invalid_fields, ['protein_g']);
 });
 
 test('sai basis (100 g cho đồ uống C1, hoặc theo khẩu phần) bị phát hiện', () => {
@@ -206,7 +324,7 @@ test('nguồn chưa xác minh (dữ liệu cộng đồng) -> PROVISIONAL, đi�
     const result = evaluateFns({ ...CEREAL, source_verified: false });
     assert.equal(result.status, 'PROVISIONAL');
     assert.equal(result.score, 7.8);
-    assert.deepEqual(result.limitations, ['SOURCE_UNVERIFIED']);
+    assert.deepEqual(result.limitations, ['RULES_NEEDS_REVIEW', 'SOURCE_UNVERIFIED']);
 });
 
 test('cùng đầu vào, cùng version -> cùng kết quả, không sửa đầu vào, không có timestamp', () => {

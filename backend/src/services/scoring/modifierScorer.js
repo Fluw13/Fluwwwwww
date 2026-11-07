@@ -3,7 +3,7 @@ const { PROTEIN_BASELINE_LIMIT, PROTEIN_FVNL_POINTS_OVERRIDE } = require('./scor
 
 const NOT_APPLICABLE = { min: 0, max: 0 };
 
-const rangeOf = (slot) => (slot ? pointsRange(slot.measure, slot.table) : null);
+const rangeOf = (slot) => (slot ? pointsRange(slot.measure, slot.tables) : null);
 
 const scoreModifiers = (modifierSlots) => ({
     fvnl: rangeOf(modifierSlots.fvnl),

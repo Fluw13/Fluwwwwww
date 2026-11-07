@@ -7,7 +7,7 @@ const scoreBaseline = (baselineSlots) => {
     let max = 0;
 
     for (const [component, slot] of Object.entries(baselineSlots)) {
-        const range = pointsRange(slot.measure, slot.table);
+        const range = pointsRange(slot.measure, slot.tables);
         components[component] = range;
         min += range.min;
         max += range.max;

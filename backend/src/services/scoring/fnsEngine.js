@@ -6,14 +6,20 @@ const { scoreModifiers, rawScoreBounds } = require('./modifierScorer');
 const { referenceRatingFor, toFnsScore } = require('./ratingConverter');
 
 const SCORING_SYSTEM = 'FLUW_NUTRITION_SCORE';
+const RULES_REVIEWED = RULES_REVIEW_ITEMS.length === 0;
 
 const exactOrNull = (range) => (range && range.min === range.max ? range.min : null);
+
+// VERIFIED needs an exact raw score, a verified data source and rules cross-checked against the
+// official calculator; anything less is PROVISIONAL.
+const resolveStatus = ({ hasExactRawScore, sourceVerified, rulesReviewed }) =>
+    (hasExactRawScore && sourceVerified && rulesReviewed ? FNS_STATUS.VERIFIED : FNS_STATUS.PROVISIONAL);
 
 const commonFields = (category, basis) => ({
     scoring_system: SCORING_SYSTEM,
     scoring_version: FNS_RULES_VERSION,
     rules_reference: RULES_REFERENCE,
-    rules_review_status: RULES_REVIEW_ITEMS.length > 0 ? 'NEEDS_REVIEW' : 'REVIEWED',
+    rules_review_status: RULES_REVIEWED ? 'REVIEWED' : 'NEEDS_REVIEW',
     category: CATEGORY_RULES[category] ? category : null,
     basis: SUPPORTED_BASES.includes(basis) ? basis : null
 });
@@ -35,6 +41,7 @@ const notScored = (category, basis, reasonCodes, details = {}) => ({
 });
 
 const listLimitations = (inputs, sourceVerified) => [
+    ...(RULES_REVIEWED ? [] : [FNS_LIMITATIONS.RULES_NEEDS_REVIEW]),
     ...(sourceVerified ? [] : [FNS_LIMITATIONS.SOURCE_UNVERIFIED]),
     ...(inputs.missingModifierFields.length > 0 ? [FNS_LIMITATIONS.MODIFIER_DATA_MISSING] : []),
     ...(inputs.hasCensoredValue ? [FNS_LIMITATIONS.VALUE_CENSORED] : [])
@@ -103,7 +110,7 @@ const evaluateFns = (input) => {
 
     return {
         ...commonFields(category, basis),
-        status: rawScore !== null && sourceVerified ? FNS_STATUS.VERIFIED : FNS_STATUS.PROVISIONAL,
+        status: resolveStatus({ hasExactRawScore: rawScore !== null, sourceVerified, rulesReviewed: RULES_REVIEWED }),
         score: toFnsScore(referenceRating),
         reference_rating_band: referenceRating,
         raw_score: rawScore,
@@ -118,4 +125,4 @@ const evaluateFns = (input) => {
     };
 };
 
-module.exports = { evaluateFns, SCORING_SYSTEM };
+module.exports = { evaluateFns, resolveStatus, SCORING_SYSTEM };

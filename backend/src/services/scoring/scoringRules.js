@@ -8,10 +8,22 @@ const RULES_REVIEW_ITEMS = [
     'TABLE_3_ENERGY_MIN_1_POINT',
     'TABLE_7_FIVE_AND_FOUR_HALF_STAR_ROWS',
     'BASIS_ALLOWED_PER_CATEGORY',
+    'FVNL_MIXED_FORMULA',
     'OFFICIAL_CALCULATOR_CROSS_CHECK'
 ];
 
 const SUPPORTED_BASES = ['per_100g', 'per_100ml'];
+
+// Physical upper bounds per 100 g: pure fat is ~3700 kJ, pure salt holds ~39.3 g sodium. Anything above
+// is a data-entry error and must not be scored.
+const NUTRIENT_LIMITS_PER_100G = {
+    energy_kj: 3800,
+    saturated_fat_g: 100,
+    total_sugars_g: 100,
+    sodium_mg: 40000,
+    protein_g: 100,
+    fiber_g: 100
+};
 const LOWEST_RATING = 0.5;
 const PROTEIN_BASELINE_LIMIT = 13;
 const PROTEIN_FVNL_POINTS_OVERRIDE = 5;
@@ -78,15 +90,13 @@ const FIBER = table(0, ascending('>', [0.9, 1.9, 2.8, 3.7, 4.7, 5.4, 6.3, 7.3, 8
 
 const GENERAL_FVNL = { concentrated: FVNL_CONCENTRATED, nonConcentrated: FVNL_NON_CONCENTRATED };
 
-const category = ({ baseline, fvnl, protein, fiber, bases }) => ({ baseline, fvnl, protein, fiber, bases });
-
 const CATEGORY_RULES = {
-    C1: category({ baseline: TABLE_3, fvnl: { single: FVNL_CATEGORY_1 }, protein: null, fiber: null, bases: ['per_100ml'] }),
-    C1D: category({ baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: null, bases: ['per_100ml'] }),
-    C2: category({ baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES }),
-    C2D: category({ baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES }),
-    C3: category({ baseline: TABLE_2, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES }),
-    C3D: category({ baseline: TABLE_2, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES })
+    C1: { baseline: TABLE_3, fvnl: { single: FVNL_CATEGORY_1 }, protein: null, fiber: null, bases: ['per_100ml'] },
+    C1D: { baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: null, bases: ['per_100ml'] },
+    C2: { baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES },
+    C2D: { baseline: TABLE_1, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES },
+    C3: { baseline: TABLE_2, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES },
+    C3D: { baseline: TABLE_2, fvnl: GENERAL_FVNL, protein: PROTEIN, fiber: FIBER, bases: SUPPORTED_BASES }
 };
 
 // Table 7 as [highest raw score in the band, reference rating], best band first. Category 1 reaches
@@ -113,6 +123,7 @@ module.exports = deepFreeze({
     RULES_REFERENCE,
     RULES_REVIEW_ITEMS,
     SUPPORTED_BASES,
+    NUTRIENT_LIMITS_PER_100G,
     LOWEST_RATING,
     PROTEIN_BASELINE_LIMIT,
     PROTEIN_FVNL_POINTS_OVERRIDE,
