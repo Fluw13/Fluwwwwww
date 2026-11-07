@@ -108,6 +108,7 @@ Kết quả (snake_case, không có timestamp để bảo đảm deterministic):
   "status": "VERIFIED | PROVISIONAL | NOT_SCORED",
   "score": 7.8, "category": "C2", "basis": "per_100g",
   "reference_rating_band": 4, "raw_score": -3, "raw_score_range": { "min": -3, "max": -3 },
+  "baseline_components": ["energy", "saturated_fat", "total_sugars", "sodium"],
   "component_points": { "energy": 4, "saturated_fat": 1, "total_sugars": 2, "sodium": 3, "fvnl": 0, "protein": 5, "fiber": 8 },
   "modifier_eligibility": { "fvnl": true, "protein": true, "fiber": true },
   "calculation": { "baseline": 10, "modifiers": 13, "final_raw_score": -3 },

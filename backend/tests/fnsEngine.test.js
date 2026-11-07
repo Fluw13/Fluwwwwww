@@ -82,6 +82,8 @@ test('thiếu chất bắt buộc của baseline -> NOT_SCORED, không phải 0'
 test('C1 không cần natri/béo bão hòa và bỏ qua đạm, xơ', () => {
     const result = evaluateFns(withNutrients(SOFT_DRINK, { sodium_mg: 5000, saturated_fat_g: 40, protein_g: 50, fiber_g: 30 }));
     assert.equal(result.raw_score, 14);
+    assert.deepEqual(result.baseline_components, ['energy', 'total_sugars']);
+    assert.deepEqual(evaluateFns(CEREAL).baseline_components, ['energy', 'saturated_fat', 'total_sugars', 'sodium']);
     assert.equal(result.modifier_eligibility.fiber, false);
     assert.equal(result.modifier_eligibility.protein, false);
 });
