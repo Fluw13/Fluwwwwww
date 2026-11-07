@@ -83,6 +83,17 @@ test('API: nước ngọt chỉ có tag tiếng Việt không bị chấm như t
     assert.deepEqual(body.fns.reason_codes, ['CATEGORY_UNRESOLVED']);
 });
 
+test('resolveCategory: tag "bột pha" mâu thuẫn với tag thực phẩm (Nutella trên OFF) thì không kết luận ngoài phạm vi', () => {
+    // Real categories_tags of 3017620422003 returned by production on 2026-11-07.
+    const nutellaTags = [
+        'en:breakfasts', 'en:snacks', 'en:spreads', 'en:sweet-spreads', 'en:cocoa-and-its-products',
+        'en:cocoa-and-chocolate-powders', 'en:cocoa-powders', 'en:confectionary-based-spreads'
+    ];
+    assert.equal(resolveCategory(withTags(nutellaTags)), null);
+    assert.equal(resolveCategory(withTags(['en:cocoa-and-its-products', 'en:cocoa-and-chocolate-powders'])), 'OUT_OF_SCOPE');
+    assert.equal(resolveCategory(withTags(['en:snacks', 'en:alcoholic-beverages'])), 'OUT_OF_SCOPE', 'loại trừ cứng luôn thắng');
+});
+
 test('resolveCategory: sản phẩm ngoài phạm vi FNS v1 trả OUT_OF_SCOPE', () => {
     for (const tag of [
         'en:alcoholic-beverages', 'en:baby-foods', 'en:dietary-supplements', 'en:waters', 'en:syrups',
