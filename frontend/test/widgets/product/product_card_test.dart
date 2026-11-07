@@ -14,7 +14,7 @@ void main() {
 
     expect(find.text('Bánh quy yến mạch'), findsOneWidget);
     expect(find.text('Thương hiệu mẫu · 412 kcal'), findsOneWidget);
-    expect(find.text('72 · Tốt'), findsOneWidget);
+    expect(find.text('7,8 · Cao'), findsOneWidget);
 
     await tester.tap(find.byType(ProductCard));
     expect(taps, 1);
@@ -44,7 +44,7 @@ void main() {
     expect(
       tester.getSemantics(find.byType(ProductCard)),
       matchesSemantics(
-        label: 'Bánh quy yến mạch\nThương hiệu mẫu · 412 kcal\nĐiểm 72, Tốt',
+        label: 'Bánh quy yến mạch\nThương hiệu mẫu · 412 kcal\nĐiểm 7,8 trên 10, Cao',
         isButton: true,
         hasTapAction: true,
         hasFocusAction: true,
@@ -63,7 +63,7 @@ void main() {
         tester,
         ProductCard(
           product: ProductSummary.fromProduct(
-            buildProduct(name: 'Sữa chua uống lên men tự nhiên vị dâu tây hộp 6 chai', score: 100),
+            buildProduct(name: 'Sữa chua uống lên men tự nhiên vị dâu tây hộp 6 chai', score: 10),
           ),
           onTap: () {},
         ),
