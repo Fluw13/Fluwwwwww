@@ -20,10 +20,10 @@ const EXCLUDED_TAGS = [
 // (Nutella is tagged both as a spread and as a cocoa powder), so together with a food tag the data is
 // contradictory and the product stays unresolved instead of being declared out of scope.
 const AS_PREPARED_TAGS = [
-    'en:syrups', 'en:instant-beverages', 'en:beverage-preparations', 'en:cocoa-and-chocolate-powders', 'en:powdered-drinks'
+    'en:syrups', 'en:instant-beverages', 'en:beverage-preparations', 'en:powdered-drinks',
+    'en:cocoa-and-chocolate-powders', 'en:chocolate-powders', 'en:cocoa-powders',
+    'en:milk-powders', 'en:powdered-milks', 'en:dried-milks'
 ];
-
-const OUT_OF_SCOPE_TAGS = [...EXCLUDED_TAGS, ...AS_PREPARED_TAGS];
 
 // Plant-based dairy alternatives depend on calcium and protein criteria that tags cannot confirm.
 const DAIRY_ALTERNATIVE_TAGS = ['en:dairy-substitutes', 'en:milk-substitutes', 'en:plant-milks'];
@@ -119,4 +119,4 @@ const resolveCategory = (product) => {
     return hasAny(tags, FOOD_TAGS) ? 'C2' : null;
 };
 
-module.exports = { resolveCategory, OUT_OF_SCOPE_TAGS };
+module.exports = { resolveCategory, EXCLUDED_TAGS, AS_PREPARED_TAGS };

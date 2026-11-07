@@ -5,7 +5,7 @@ const AppError = require('../src/errors/AppError');
 const foodApiService = require('../src/services/foodApiService');
 const aiService = require('../src/services/aiService');
 const productService = require('../src/services/productService');
-const { resolveCategory } = require('../src/services/openFoodFacts/categoryResolver');
+const { resolveCategory, AS_PREPARED_TAGS } = require('../src/services/openFoodFacts/categoryResolver');
 const { mapProductToFnsInput } = require('../src/services/openFoodFacts/fnsInputMapper');
 const { normalizeProduct } = require('../src/services/openFoodFacts/productNormalizer');
 
@@ -92,6 +92,18 @@ test('resolveCategory: tag "bột pha" mâu thuẫn với tag thực phẩm (Nut
     assert.equal(resolveCategory(withTags(nutellaTags)), null);
     assert.equal(resolveCategory(withTags(['en:cocoa-and-its-products', 'en:cocoa-and-chocolate-powders'])), 'OUT_OF_SCOPE');
     assert.equal(resolveCategory(withTags(['en:snacks', 'en:alcoholic-beverages'])), 'OUT_OF_SCOPE', 'loại trừ cứng luôn thắng');
+});
+
+test('resolveCategory: sản phẩm cần pha (bột, siro) không bao giờ bị gán nhóm chấm điểm', () => {
+    const ready = [[], ['en:snacks'], ['en:beverages'], ['en:dairies', 'en:milks'], ['en:plant-based-foods']];
+    for (const tag of AS_PREPARED_TAGS) {
+        for (const others of ready) {
+            const result = resolveCategory(withTags([...others, tag], { nutriments: { calcium: 0.9 }, serving_quantity: 25 }));
+            assert.ok(result === null || result === 'OUT_OF_SCOPE', `${tag} + [${others}] -> ${result}`);
+        }
+    }
+    assert.equal(resolveCategory(withTags(['en:beverages', 'en:chocolate-powders'])), 'OUT_OF_SCOPE');
+    assert.equal(resolveCategory(withTags(['en:dairies', 'en:milks', 'en:milk-powders'])), 'OUT_OF_SCOPE');
 });
 
 test('resolveCategory: sản phẩm ngoài phạm vi FNS v1 trả OUT_OF_SCOPE', () => {
