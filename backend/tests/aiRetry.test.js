@@ -52,7 +52,7 @@ test('Gemini lỗi tạm thời (503) được thử lại một lần rồi th�
 
     const analysis = await analyzeProduct(product);
 
-    assert.equal(analysis.score, 80);
+    assert.equal(analysis.deepThink, 'Tốt.');
     assert.equal(calls, 2);
 });
 

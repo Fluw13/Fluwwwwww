@@ -16,23 +16,8 @@ const toStringList = (value) => (Array.isArray(value)
         .map((item) => item.trim().slice(0, MAX_LIST_ITEM_LENGTH))
     : []);
 
-const DECIMAL_PATTERN = /^-?\d+(\.\d+)?$/;
-
-// `Number(null)`, `Number('')` and `Number('0x10')` all succeed, so only plain decimals count as a score.
-const readScore = (value) => {
-    if (typeof value === 'number') {
-        return Number.isFinite(value) ? value : null;
-    }
-
-    if (typeof value === 'string' && DECIMAL_PATTERN.test(value.trim())) {
-        return Number(value);
-    }
-
-    return null;
-};
-
-const clampScore = (score) => Math.min(100, Math.max(0, Math.round(score)));
-
+// The score comes only from the FNS engine: any score Gemini returns is dropped, and `alternatives` stays
+// empty (kept for older app versions) because the model must not invent products.
 const parseAnalysis = (responseText) => {
     let analysis;
 
@@ -46,17 +31,16 @@ const parseAnalysis = (responseText) => {
         throw invalidResponseError('Zero trả về dữ liệu phân tích không hợp lệ. Vui lòng thử lại.');
     }
 
-    const score = readScore(analysis.score);
-    if (score === null) {
-        throw invalidResponseError('Zero không trả về điểm sức khỏe hợp lệ. Vui lòng thử lại.');
+    const deepThink = toText(analysis.deepThink);
+    if (deepThink.length === 0) {
+        throw invalidResponseError('Zero không trả về nội dung giải thích hợp lệ. Vui lòng thử lại.');
     }
 
     return {
-        score: clampScore(score),
-        deepThink: toText(analysis.deepThink),
+        deepThink,
         recommendation: toText(analysis.recommendation),
         allergens: toStringList(analysis.allergens),
-        alternatives: toStringList(analysis.alternatives)
+        alternatives: []
     };
 };
 

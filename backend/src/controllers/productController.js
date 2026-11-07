@@ -7,6 +7,7 @@ const getProductInfo = async (request, response) => {
         success: true,
         barcode: result.product.barcode,
         product: result.product,
+        fns: result.fns,
         aiAnalysis: result.aiAnalysis,
         aiError: result.aiError ?? null
     });

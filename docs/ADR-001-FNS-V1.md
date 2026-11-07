@@ -67,7 +67,19 @@ FNS là thang điểm độc lập của Fluw:
      - năng lượng >3800 kJ;
      - một chất >100 g;
      - natri >40.000 mg.
-3. **Điểm Gemini cũ:** bỏ ở bước tích hợp (PR-B). Nên merge PR-B cùng PR-C (Flutter) để app không mất điểm.
+3. **Điểm Gemini cũ:** bỏ ở bước tích hợp (PR-B).
+   - Gemini nhận kết quả FNS và chỉ giải thích.
+   - `aiAnalysis` không còn trường `score`; `alternatives` luôn rỗng, vì AI không được tự đặt ra sản phẩm thay thế.
+   - Nên merge PR-B cùng PR-C (Flutter) để app không mất điểm.
+3b. **FVNL từ OpenFoodFacts** (quyết định ở PR-B):
+   - OFF không có FVNL theo định nghĩa HSR. Nếu coi là thiếu thì gần như mọi sản phẩm đều `RATING_AMBIGUOUS`; ví dụ snack khoai tây có raw nằm trong khoảng 5..17.
+   - OFF tự ước tính tỷ lệ rau/củ/quả/đậu (hoặc hạt) **từ danh sách thành phần**. Trang sản phẩm ghi "estimated from the list of ingredients" (VERIFIED). Tên field `fruits-vegetables-{legumes,nuts}-estimate-from-ingredients_100g` lấy từ nguồn thứ cấp (LIKELY).
+   - Cách dùng:
+     - lấy giá trị lớn nhất trong `fruits-vegetables-nuts`, ước tính theo đậu và ước tính theo hạt;
+     - gắn `estimated: true`, sinh giới hạn `FVNL_ESTIMATED` và không bao giờ cho `VERIFIED`;
+     - cờ cô đặc để trống, engine xét cả hai cột.
+   - Không có ước tính thì FVNL vẫn là thiếu, không điền 0.
+   - Rủi ro: ước tính của OFF có thể thấp hơn FVNL thật, vì không cộng cả đậu lẫn hạt và không tính hệ số cô đặc. Khi đó điểm có thể thấp hơn thực tế.
 4. **Quy tắc tự động** (nước lọc, nước có hương vị không đường, rau quả tươi): chưa áp dụng trong v1.
    - Hệ quả: nhóm C1 tính bằng công thức tối đa đạt mức 4.0.
 
@@ -96,6 +108,7 @@ Kết quả (snake_case, không có timestamp để bảo đảm deterministic):
   "status": "VERIFIED | PROVISIONAL | NOT_SCORED",
   "score": 7.8, "category": "C2", "basis": "per_100g",
   "reference_rating_band": 4, "raw_score": -3, "raw_score_range": { "min": -3, "max": -3 },
+  "baseline_components": ["energy", "saturated_fat", "total_sugars", "sodium"],
   "component_points": { "energy": 4, "saturated_fat": 1, "total_sugars": 2, "sodium": 3, "fvnl": 0, "protein": 5, "fiber": 8 },
   "modifier_eligibility": { "fvnl": true, "protein": true, "fiber": true },
   "calculation": { "baseline": 10, "modifiers": 13, "final_raw_score": -3 },
@@ -107,8 +120,10 @@ Mã lý do và giới hạn nằm ở `fnsCodes.js`:
 
 | Loại | Mã |
 |---|---|
-| Mã lý do không chấm | `INPUT_INVALID`, `CATEGORY_UNRESOLVED`, `BASIS_MISMATCH`, `VALUE_INVALID`, `BASELINE_NUTRIENT_MISSING`, `RATING_AMBIGUOUS` |
-| Giới hạn khi vẫn chấm | `RULES_NEEDS_REVIEW`, `SOURCE_UNVERIFIED`, `MODIFIER_DATA_MISSING`, `VALUE_CENSORED` |
+| Mã lý do không chấm | `INPUT_INVALID`, `OUT_OF_SCOPE`, `CATEGORY_UNRESOLVED`, `BASIS_MISMATCH`, `VALUE_INVALID`, `BASELINE_NUTRIENT_MISSING`, `RATING_AMBIGUOUS` |
+| Giới hạn khi vẫn chấm | `RULES_NEEDS_REVIEW`, `SOURCE_UNVERIFIED`, `MODIFIER_DATA_MISSING`, `FVNL_ESTIMATED`, `VALUE_CENSORED` |
+
+`category: 'OUT_OF_SCOPE'` là giá trị riêng mà bộ phân loại dùng cho nhóm FNS v1 không chấm. `fvnl.estimated: true` đánh dấu FVNL là ước tính.
 
 ## 6. Cấu trúc file (mỗi file một trách nhiệm)
 
@@ -124,9 +139,21 @@ Mã lý do và giới hạn nằm ở `fnsCodes.js`:
 | `fnsCodes.js` | Trạng thái, mã lý do, giới hạn |
 | `fnsEngine.js` | Điều phối và tạo kết quả |
 
-## 7. Phân loại nhóm (dành cho PR-B, chưa triển khai)
+## 7. Phân loại nhóm (`backend/src/services/openFoodFacts/categoryResolver.js`)
 
-Theo Guide v9, Section 4.3. Bộ phân loại chỉ gán nhóm khi chắc chắn; nếu không chắc thì `null`, và engine trả `CATEGORY_UNRESOLVED`.
+- Căn cứ: Guide v9, Section 4.3.
+- Bộ phân loại chỉ gán nhóm khi chắc chắn; nếu không chắc thì `null`, và engine trả `CATEGORY_UNRESOLVED`.
+- Tên tag OFF (`en:yogurts`, `en:cheeses`, …) là **LIKELY**, cần kiểm tra trên dữ liệu thật.
+- Mọi nhóm, kể cả C2, đều cần khớp tag dương. C2 chỉ được gán khi có tag thuộc danh sách thực phẩm cho phép (`FOOD_TAGS`).
+- Tag lạ hoặc chỉ có tag không phải tiếng Anh (thường gặp ở sản phẩm Việt Nam) trả `null`. Nhờ vậy, tên tag sai chỉ khiến sản phẩm "không chấm", không bị chấm theo nhóm sai.
+  - Lỗi do review phát hiện trước khi push: bản đầu mặc định C2 cho mọi tag lạ, nên nước ngọt chỉ có tag tiếng Việt bị chấm 6,7 thay vì 0.
+- Thứ tự kiểm tra và những ca giữ ở `null`:
+  - `en:butters` chỉ được xếp C3 khi kèm `en:dairies`.
+  - Sữa chua uống (sữa chua kèm `en:beverages`) trả `null`.
+  - Với C3 (dầu ăn), ước tính FVNL dương bị bỏ, vì Section 4.4 loại dầu khỏi FVNL.
+- Basis do `fnsInputMapper.js` suy ra từ đơn vị gói (`product_quantity_unit`/`quantity`):
+  - ml/cl/l → `per_100ml`;
+  - không rõ → `per_100g`. Khi đó nhóm đồ uống (C1/C1D) sẽ `BASIS_MISMATCH` thay vì bị đoán.
 
 | Nhóm | Điều kiện |
 |---|---|
@@ -178,7 +205,7 @@ Dữ liệu OpenFoodFacts đã xác minh từ [data-fields.txt](https://static.o
 
 | # | Rủi ro | Mức | Xử lý |
 |---|---|---|---|
-| 1 | Dữ liệu OpenFoodFacts thiếu FVNL nên nhiều sản phẩm sẽ `NOT_SCORED` | P0 | Đo tỷ lệ không chấm được sau PR-B; cân nhắc thêm nguồn nhãn đã xác minh |
+| 1 | Sản phẩm không có ước tính FVNL (thiếu danh sách thành phần) sẽ `NOT_SCORED`. Có thiên lệch: sản phẩm baseline cao (kém) vẫn chấm được, sản phẩm tốt dễ bị `RATING_AMBIGUOUS` hơn | P0 | Dùng ước tính FVNL của OFF (mục 4.3b); đo tỷ lệ không chấm được sau deploy; cân nhắc nguồn nhãn đã xác minh |
 | 2 | OpenFoodFacts không ghi rõ basis 100 g hay 100 ml | P1 | Suy ra từ đơn vị số lượng sản phẩm; nếu không rõ thì `NOT_SCORED` cho C1/C1D |
 | 3 | Đổi thang 0–100 sang 0–10 làm hỏng UI cũ | P1 | Merge PR-B cùng PR-C |
 | 4 | Quyền dùng hoặc chuyển thể thuật toán HSR, thương hiệu | P2 | A4 rà soát; luật sư xác nhận trước khi phát hành thương mại |
@@ -193,6 +220,7 @@ Dữ liệu OpenFoodFacts đã xác minh từ [data-fields.txt](https://static.o
 ## 12. Việc tiếp theo
 
 1. [x] PR-A: engine, bảng ngưỡng và test (file này).
-2. [ ] PR-B: lấy thêm field từ OpenFoodFacts; normalizer; bộ phân loại nhóm; thêm `fns` vào API; bỏ `score` khỏi Gemini; cập nhật README.
+2. [x] PR-B: lấy thêm field từ OpenFoodFacts; normalizer; bộ phân loại nhóm; ước tính FVNL; thêm `fns` vào API; bỏ `score` khỏi Gemini; cập nhật README.
+2b. [ ] Sau khi deploy: đo tỷ lệ `NOT_SCORED` theo `reason_codes` trên các sản phẩm quét thật; kiểm tra tên tag và field OFF trên response thật.
 3. [ ] PR-C: Flutter hiển thị FNS, trạng thái, phần giải thích điểm; test widget.
 4. [ ] A4: memo pháp lý và đối chiếu calculator; xóa từng mục khỏi `RULES_REVIEW_ITEMS` khi đã đối chiếu xong.

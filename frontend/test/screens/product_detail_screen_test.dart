@@ -73,7 +73,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Sữa chua'), findsOneWidget);
-      expect(find.text('82'), findsOneWidget);
+      expect(find.text('6,7'), findsOneWidget);
       expect(find.text('Đang mở chi tiết sản phẩm'), findsNothing);
       expect(tester.takeException(), isNull);
 
@@ -81,7 +81,7 @@ void main() {
       final Scaffold scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
       final BuildContext context = tester.element(find.byType(Scaffold));
       expect(scaffold.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor, expected.background);
-      expect(tester.widget<Text>(find.text('82')).style?.color, expected.textPrimary);
+      expect(tester.widget<Text>(find.text('6,7')).style?.color, expected.textPrimary);
     });
   }
 
@@ -181,7 +181,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(history.scans.map((product) => product.barcode), [sampleBarcode]);
-      expect(history.scans.single.score, 82);
+      expect(history.scans.single.score, 6.7);
     });
 
     testWidgets('mở từ ô tìm kiếm thì không thêm vào lịch sử quét', (tester) async {

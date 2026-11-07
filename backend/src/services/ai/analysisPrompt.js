@@ -8,19 +8,35 @@ Quy tắc bắt buộc:
 - Chỉ dựa trên dữ liệu được cung cấp. Không bịa thành phần, giá trị dinh dưỡng hay thông tin sản phẩm. Trường có giá trị null nghĩa là không có dữ liệu; hãy nói rõ khi thiếu dữ liệu làm giảm độ tin cậy của đánh giá.
 - Đây là thông tin tham khảo chung, không phải chẩn đoán hay tư vấn y tế. Không đưa lời khuyên cho bệnh lý cụ thể và không khẳng định chắc chắn về tác động bệnh lý.
 - "declaredAllergens" là chất gây dị ứng đã khai báo trên nhãn. "allergens" chỉ liệt kê thêm chất gây dị ứng phổ biến xuất hiện rõ trong danh sách thành phần mà chưa có trong "declaredAllergens"; nếu không có danh sách thành phần thì trả về mảng rỗng.
+- "fluwNutritionScore" là Fluw Nutrition Score (thang 0-10) đã được hệ thống tính bằng thuật toán cố định. Chỉ giải thích kết quả này dựa trên "componentPoints", "missingFields" và "reasonCodes". Không tự tính, sửa hay đưa ra điểm số khác. Nếu "status" là NOT_SCORED thì giải thích vì sao chưa chấm, không tự đặt điểm.
+- Điểm này dùng để so sánh sản phẩm cùng nhóm, không phải điểm của tổ chức y tế, cơ quan nhà nước hay một chứng nhận nào. Không kết luận sản phẩm độc hại hay an toàn.
+- "sugarsGrams" là đường tổng; không suy ra đó là đường bổ sung. Không gợi ý tên sản phẩm cụ thể khác.
 - Trả lời bằng tiếng Việt.`;
 
 const ANALYSIS_SCHEMA = Object.freeze({
     type: 'object',
     properties: {
-        score: { type: 'integer', description: 'Điểm 0-100: 70-100 tốt, 40-69 trung bình, 0-39 kém' },
-        deepThink: { type: 'string', description: 'Phân tích 3-4 câu về thành phần, phụ gia, đường/muối và mức độ đầy đủ của dữ liệu' },
-        recommendation: { type: 'string', description: 'Lời khuyên dinh dưỡng chung, ngắn gọn' },
-        allergens: { type: 'array', items: { type: 'string' } },
-        alternatives: { type: 'array', items: { type: 'string' }, description: '2-3 lựa chọn lành mạnh hơn' }
+        deepThink: {
+            type: 'string',
+            description: 'Giải thích 3-4 câu: thành phần nào làm tăng hoặc giảm Fluw Nutrition Score, dữ liệu nào còn thiếu; nếu chưa chấm điểm thì nêu lý do'
+        },
+        recommendation: { type: 'string', description: 'Lời khuyên tiêu dùng chung, ngắn gọn, không mang tính y khoa' },
+        allergens: { type: 'array', items: { type: 'string' } }
     },
-    required: ['score', 'deepThink', 'recommendation', 'allergens', 'alternatives']
+    required: ['deepThink', 'recommendation', 'allergens']
 });
+
+const toScorePayload = (fns) => (fns
+    ? {
+        status: fns.status,
+        score: fns.score,
+        category: fns.category,
+        componentPoints: fns.component_points,
+        missingFields: fns.missing_fields,
+        reasonCodes: fns.reason_codes,
+        limitations: fns.limitations
+    }
+    : null);
 
 const truncate = (value, maxLength) => (typeof value === 'string' ? value.slice(0, maxLength) : null);
 
@@ -35,7 +51,7 @@ const toDelimitedJson = (data) => JSON.stringify(data)
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026');
 
-const buildPrompt = (product) => {
+const buildPrompt = (product, fns = null) => {
     const nutriments = product.nutriments || {};
     const productData = {
         name: truncate(product.product_name, MAX_FIELD_LENGTH),
@@ -46,11 +62,16 @@ const buildPrompt = (product) => {
             energyKcal: nutriments['energy-kcal'] ?? null,
             proteinGrams: nutriments.proteins ?? null,
             fatGrams: nutriments.fat ?? null,
-            carbohydrateGrams: nutriments.carbohydrates ?? null
-        }
+            saturatedFatGrams: nutriments['saturated-fat'] ?? null,
+            carbohydrateGrams: nutriments.carbohydrates ?? null,
+            sugarsGrams: nutriments.sugars ?? null,
+            fiberGrams: nutriments.fiber ?? null,
+            sodiumGrams: nutriments.sodium ?? null
+        },
+        fluwNutritionScore: toScorePayload(fns)
     };
 
-    return 'Đánh giá mức độ lành mạnh của sản phẩm sau.\n<product_data>\n' + toDelimitedJson(productData) + '\n</product_data>';
+    return 'Giải thích Fluw Nutrition Score và thành phần của sản phẩm sau.\n<product_data>\n' + toDelimitedJson(productData) + '\n</product_data>';
 };
 
 module.exports = { SYSTEM_INSTRUCTION, ANALYSIS_SCHEMA, buildPrompt };

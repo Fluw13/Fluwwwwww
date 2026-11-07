@@ -26,6 +26,8 @@ class ProductSummary {
   final String name;
   final String brand;
   final String imageUrl;
-  final int? score;
+
+  /// Fluw Nutrition Score (0-10); null when the product is not scored.
+  final double? score;
   final double? calories;
 }

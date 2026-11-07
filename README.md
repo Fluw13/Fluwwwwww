@@ -47,7 +47,7 @@ npm test
 
 - Đầu vào giới hạn 100 ký tự, không chấp nhận ký tự điều khiển.
 - Dữ liệu OpenFoodFacts (do cộng đồng đóng góp) được đặt trong khối riêng trong prompt và cắt bớt độ dài, Gemini được dặn bỏ qua mọi chỉ dẫn nằm trong đó. Ký tự `<`, `>`, `&` được escape để dữ liệu không thể tự đóng khối `<product_data>`.
-- Đầu ra của Gemini được kiểm tra lại: điểm phải là số thật (không chấp nhận `null`), danh sách chỉ giữ chuỗi và bị giới hạn độ dài.
+- Đầu ra của Gemini được kiểm tra lại: phải có nội dung giải thích, danh sách chỉ giữ chuỗi và bị giới hạn độ dài. Gemini **không chấm điểm**: mọi điểm Gemini tự trả về đều bị bỏ, `alternatives` luôn rỗng (giữ trường cho app cũ).
 - Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
 - Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả dữ liệu sản phẩm với `aiAnalysis: null` và `aiError` cho biết lý do.
 - Gọi Gemini có timeout 40 giây (tự thử lại 1 lần khi gặp lỗi tạm thời 408, 500, 502-504 hoặc lỗi mạng, vẫn nằm trong 40 giây; lỗi 429 hết hạn mức không thử lại và trả `aiError: AI_RATE_LIMITED`), gọi OpenFoodFacts có timeout 10 giây (lần tìm thêm bản không dấu: 5 giây). Tổng tối đa 55 giây, còn dư cho cold start của Render (~50 giây) trong giới hạn 120 giây của app; app gọi `/health` khi mở để đánh thức server.
@@ -56,6 +56,19 @@ npm test
 - Tra cứu theo mã vạch chỉ lấy các trường cần dùng (`fields=`) thay vì cả tài liệu sản phẩm.
 - Server dừng êm khi nhận `SIGTERM`/`SIGINT` (ngừng nhận kết nối mới, chờ request đang chạy).
 - Chính sách quyền riêng tư (bản nháp): [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md).
+
+### Fluw Nutrition Score (FNS)
+
+- Điểm 0–10 do engine thuần ở `backend/src/services/scoring/` tính, không gọi mạng hay AI. Cấu trúc điểm theo HSR Implementation Guide v9. Chi tiết, contract và các mục cần đối chiếu: [`docs/ADR-001-FNS-V1.md`](docs/ADR-001-FNS-V1.md).
+- `GET /api/product/:query` trả thêm object `fns` (cùng cấp với `product`).
+- Ba trạng thái `status`:
+  - `VERIFIED`;
+  - `PROVISIONAL`: dữ liệu cộng đồng, FVNL ước tính, hoặc bộ quy tắc chưa đối chiếu xong;
+  - `NOT_SCORED`: `score: null`, kèm `reason_codes` và `missing_fields`.
+- Trạng thái `NOT_SCORED` không bao giờ hiển thị thành 0 điểm.
+- Nhóm sản phẩm suy ra từ `categories_tags` của OpenFoodFacts (`categoryResolver.js`). Không chắc thì không chấm.
+- Không chấm các nhóm sau (`OUT_OF_SCOPE`): đồ uống có cồn, thực phẩm trẻ em, thực phẩm bổ sung, nước lọc, siro/bột pha.
+- Gemini nhận kết quả FNS đã tính và chỉ giải thích. Gemini lỗi hay hết hạn mức không làm thay đổi điểm.
 
 ### Cache và tìm kiếm
 

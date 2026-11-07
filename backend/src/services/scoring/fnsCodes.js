@@ -4,9 +4,13 @@ const FNS_STATUS = Object.freeze({
     NOT_SCORED: 'NOT_SCORED'
 });
 
+// Category value for products FNS v1 never scores (alcohol, infant food, supplements, plain water, ...).
+const OUT_OF_SCOPE_CATEGORY = 'OUT_OF_SCOPE';
+
 // Why no score was produced.
 const FNS_REASON_CODES = Object.freeze({
     INPUT_INVALID: 'INPUT_INVALID',
+    OUT_OF_SCOPE: 'OUT_OF_SCOPE',
     CATEGORY_UNRESOLVED: 'CATEGORY_UNRESOLVED',
     BASIS_MISMATCH: 'BASIS_MISMATCH',
     VALUE_INVALID: 'VALUE_INVALID',
@@ -19,7 +23,8 @@ const FNS_LIMITATIONS = Object.freeze({
     RULES_NEEDS_REVIEW: 'RULES_NEEDS_REVIEW',
     SOURCE_UNVERIFIED: 'SOURCE_UNVERIFIED',
     MODIFIER_DATA_MISSING: 'MODIFIER_DATA_MISSING',
+    FVNL_ESTIMATED: 'FVNL_ESTIMATED',
     VALUE_CENSORED: 'VALUE_CENSORED'
 });
 
-module.exports = { FNS_STATUS, FNS_REASON_CODES, FNS_LIMITATIONS };
+module.exports = { FNS_STATUS, FNS_REASON_CODES, FNS_LIMITATIONS, OUT_OF_SCOPE_CATEGORY };

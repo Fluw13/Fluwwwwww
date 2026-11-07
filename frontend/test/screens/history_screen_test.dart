@@ -142,7 +142,7 @@ void main() {
             name: 'Bánh quy yến mạch nguyên hạt vị mật ong hộp lớn',
             brand: 'Hãng',
             imageUrl: '',
-            score: 100,
+            score: 10,
           ),
         );
       await pumpFluwApp(tester, HistoryScreen(kind: kind, apiService: _api()), history: history);
