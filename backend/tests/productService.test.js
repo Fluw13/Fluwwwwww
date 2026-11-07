@@ -22,7 +22,8 @@ test('lần tra cứu thứ hai dùng cache, không gọi lại OpenFoodFacts v�
 
     assert.equal(first.cacheStatus, 'MISS');
     assert.equal(second.cacheStatus, 'HIT');
-    assert.deepEqual(second.result, { product, aiAnalysis: analysis, aiError: null });
+    assert.deepEqual(second.result, { product, fns: first.result.fns, aiAnalysis: analysis, aiError: null });
+    assert.equal(first.result.fns.scoring_system, 'FLUW_NUTRITION_SCORE');
     assert.equal(getFoodData.mock.callCount(), 1);
     assert.equal(analyzeProduct.mock.callCount(), 1);
 });
@@ -90,12 +91,12 @@ test('AI lỗi vẫn trả dữ liệu sản phẩm, kèm aiError, và không l�
 
     const first = await productService.getProductInfo('8934563138165');
 
-    assert.deepEqual(first.result, { product, aiAnalysis: null, aiError: 'AI_UNAVAILABLE' });
+    assert.deepEqual(first.result, { product, fns: first.result.fns, aiAnalysis: null, aiError: 'AI_UNAVAILABLE' });
 
     const second = await productService.getProductInfo('8934563138165');
 
     assert.equal(second.cacheStatus, 'MISS');
-    assert.deepEqual(second.result, { product, aiAnalysis: analysis, aiError: null });
+    assert.deepEqual(second.result, { product, fns: first.result.fns, aiAnalysis: analysis, aiError: null });
     assert.equal(getFoodData.mock.callCount(), 2);
 });
 

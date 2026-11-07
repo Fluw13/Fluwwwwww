@@ -1,4 +1,5 @@
 const { NUTRIENT_FIELDS, NUTRIENT_LIMITS_PER_100G } = require('./scoringRules');
+const { pointsRange } = require('./pointsLookup');
 
 const MAX_PERCENT = 100;
 const FVNL_PERCENT_FIELD = 'fvnl.percent';
@@ -33,8 +34,13 @@ const readMeasure = (raw, maxValue) => {
 
 const slot = (field, tables, measure, unknownFields = []) => ({ field, tables, measure, unknownFields });
 
+const columnsDisagree = (measure, columns) => {
+    const [first, ...others] = columns.map((column) => pointsRange(measure, [column]));
+    return others.some((range) => range.min !== first.min || range.max !== first.max);
+};
+
 // Outside Category 1 the FVNL column depends on whether the ingredients are concentrated. Without the
-// flag both columns stay possible, and the flag is reported as missing data.
+// flag both columns stay possible; the flag is reported as missing only when the columns disagree.
 const readFvnl = (rule, rawFvnl) => {
     const generalColumns = [rule.fvnl.concentrated, rule.fvnl.nonConcentrated].filter(Boolean);
     const columns = rule.fvnl.single ? [rule.fvnl.single] : generalColumns;
@@ -57,7 +63,8 @@ const readFvnl = (rule, rawFvnl) => {
     if (concentrated !== undefined && concentrated !== null) {
         return slot(FVNL_FLAG_FIELD, columns, { state: 'invalid' });
     }
-    return slot(FVNL_PERCENT_FIELD, columns, measure, measure.state === 'ok' ? [FVNL_FLAG_FIELD] : []);
+    const flagMatters = measure.state === 'ok' && columnsDisagree(measure, columns);
+    return slot(FVNL_PERCENT_FIELD, columns, measure, flagMatters ? [FVNL_FLAG_FIELD] : []);
 };
 
 const nutrientSlot = (nutrients, component, scoringTable, basis) => {
@@ -95,7 +102,8 @@ const readScoringInputs = (rule, input) => {
             ...fieldsInState(modifierSlots, 'missing'),
             ...modifierSlots.flatMap((item) => item.unknownFields)
         ],
-        hasCensoredValue: allSlots.some((item) => item.measure.censored === true)
+        hasCensoredValue: allSlots.some((item) => item.measure.censored === true),
+        hasEstimatedFvnl: isPlainObject(input.fvnl) && input.fvnl.estimated === true && modifiers.fvnl.measure.state === 'ok'
     };
 };
 

@@ -128,7 +128,7 @@ test('thiếu FVNL có thể đổi mức điểm -> NOT_SCORED kèm khoảng ra
 test('thiếu cờ cô đặc của FVNL: xét cả hai cột Table 4, ghi nhận là thiếu dữ liệu', () => {
     const notAffecting = evaluateFns({ ...CEREAL, fvnl: { percent: 0 } });
     assert.equal(notAffecting.raw_score, -3);
-    assert.deepEqual(notAffecting.missing_fields, ['fvnl.concentrated']);
+    assert.deepEqual(notAffecting.missing_fields, [], 'hai cột cùng cho 0 điểm nên cờ không ảnh hưởng');
 
     const sameBand = evaluateFns({ ...CEREAL, fvnl: { percent: 50 } });
     assert.equal(sameBand.status, 'PROVISIONAL');
@@ -259,6 +259,14 @@ test('trạng thái VERIFIED chỉ khi raw chính xác, nguồn đã xác minh v
     for (const missing of ['hasExactRawScore', 'sourceVerified', 'rulesReviewed']) {
         assert.equal(resolveStatus({ ...complete, [missing]: false }), 'PROVISIONAL', missing);
     }
+    assert.equal(resolveStatus({ ...complete, hasEstimatedInput: true }), 'PROVISIONAL');
+});
+
+test('FVNL ước tính được ghi giới hạn FVNL_ESTIMATED', () => {
+    const result = evaluateFns({ ...CHIPS, fvnl: { percent: 0, estimated: true } });
+    assert.equal(result.raw_score, 17);
+    assert.ok(result.limitations.includes('FVNL_ESTIMATED'));
+    assert.equal(evaluateFns(CHIPS).limitations.includes('FVNL_ESTIMATED'), false);
 });
 
 test('giá trị "<1 g" không bị đổi thành 0: chấm khi không đổi điểm, từ chối khi có thể đổi', () => {

@@ -1,5 +1,5 @@
 const { CATEGORY_RULES, FNS_RULES_VERSION, RULES_REFERENCE, RULES_REVIEW_ITEMS, SUPPORTED_BASES } = require('./scoringRules');
-const { FNS_STATUS, FNS_REASON_CODES, FNS_LIMITATIONS } = require('./fnsCodes');
+const { FNS_STATUS, FNS_REASON_CODES, FNS_LIMITATIONS, OUT_OF_SCOPE_CATEGORY } = require('./fnsCodes');
 const { readScoringInputs, isPlainObject } = require('./dataValidator');
 const { scoreBaseline } = require('./baselineScorer');
 const { scoreModifiers, rawScoreBounds } = require('./modifierScorer');
@@ -10,10 +10,10 @@ const RULES_REVIEWED = RULES_REVIEW_ITEMS.length === 0;
 
 const exactOrNull = (range) => (range && range.min === range.max ? range.min : null);
 
-// VERIFIED needs an exact raw score, a verified data source and rules cross-checked against the
-// official calculator; anything less is PROVISIONAL.
-const resolveStatus = ({ hasExactRawScore, sourceVerified, rulesReviewed }) =>
-    (hasExactRawScore && sourceVerified && rulesReviewed ? FNS_STATUS.VERIFIED : FNS_STATUS.PROVISIONAL);
+// VERIFIED needs an exact raw score from measured (not estimated) values, a verified data source and
+// rules cross-checked against the official calculator; anything less is PROVISIONAL.
+const resolveStatus = ({ hasExactRawScore, sourceVerified, rulesReviewed, hasEstimatedInput = false }) =>
+    (hasExactRawScore && sourceVerified && rulesReviewed && !hasEstimatedInput ? FNS_STATUS.VERIFIED : FNS_STATUS.PROVISIONAL);
 
 const commonFields = (category, basis) => ({
     scoring_system: SCORING_SYSTEM,
@@ -44,6 +44,7 @@ const listLimitations = (inputs, sourceVerified) => [
     ...(RULES_REVIEWED ? [] : [FNS_LIMITATIONS.RULES_NEEDS_REVIEW]),
     ...(sourceVerified ? [] : [FNS_LIMITATIONS.SOURCE_UNVERIFIED]),
     ...(inputs.missingModifierFields.length > 0 ? [FNS_LIMITATIONS.MODIFIER_DATA_MISSING] : []),
+    ...(inputs.hasEstimatedFvnl ? [FNS_LIMITATIONS.FVNL_ESTIMATED] : []),
     ...(inputs.hasCensoredValue ? [FNS_LIMITATIONS.VALUE_CENSORED] : [])
 ];
 
@@ -73,6 +74,10 @@ const evaluateFns = (input) => {
     }
 
     const { category, basis } = input;
+    if (category === OUT_OF_SCOPE_CATEGORY) {
+        return notScored(null, basis, [FNS_REASON_CODES.OUT_OF_SCOPE]);
+    }
+
     const rule = CATEGORY_RULES[category];
     if (!rule) {
         return notScored(category, basis, [FNS_REASON_CODES.CATEGORY_UNRESOLVED]);
@@ -110,7 +115,12 @@ const evaluateFns = (input) => {
 
     return {
         ...commonFields(category, basis),
-        status: resolveStatus({ hasExactRawScore: rawScore !== null, sourceVerified, rulesReviewed: RULES_REVIEWED }),
+        status: resolveStatus({
+            hasExactRawScore: rawScore !== null,
+            sourceVerified,
+            rulesReviewed: RULES_REVIEWED,
+            hasEstimatedInput: inputs.hasEstimatedFvnl
+        }),
         score: toFnsScore(referenceRating),
         reference_rating_band: referenceRating,
         raw_score: rawScore,
