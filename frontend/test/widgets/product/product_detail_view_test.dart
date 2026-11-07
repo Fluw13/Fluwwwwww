@@ -80,6 +80,14 @@ void main() {
     expect(find.textContaining('đồ uống có cồn'), findsOneWidget);
   });
 
+  testWidgets('backend cũ không trả kết quả chấm điểm: không nói là thiếu dữ liệu', (tester) async {
+    await pumpOnPhone(tester, ProductDetailView(product: buildProduct(fns: const FnsResult.unavailable())));
+
+    expect(find.text('Chưa có kết quả chấm điểm'), findsOneWidget);
+    expect(find.text('Chưa đủ dữ liệu để chấm điểm'), findsNothing);
+    expect(find.byType(CircularScoreRing), findsNothing);
+  });
+
   testWidgets('thẻ "Cách Fluw tính điểm" hiện điểm cộng, điểm trừ, tổng và giới hạn dữ liệu', (tester) async {
     await pumpOnPhone(tester, ProductDetailView(product: buildProduct()));
 

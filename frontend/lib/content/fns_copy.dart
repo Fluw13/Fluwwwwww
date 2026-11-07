@@ -12,6 +12,7 @@ class FnsCopy {
       'Tổng càng thấp thì Fluw Nutrition Score càng cao.';
   static const String outOfScopeTitle = 'Fluw chưa chấm điểm nhóm sản phẩm này';
   static const String missingDataTitle = 'Chưa đủ dữ liệu để chấm điểm';
+  static const String unavailableTitle = 'Chưa có kết quả chấm điểm';
   static const String unknownPoints = 'Chưa rõ';
   static const String notCounted = 'Không tính';
 
@@ -46,7 +47,9 @@ class FnsCopy {
   };
 
   static const Map<String, String> _reasons = {
-    'OUT_OF_SCOPE': 'Phiên bản hiện tại không chấm đồ uống có cồn, thực phẩm cho trẻ nhỏ, thực phẩm bổ sung, nước lọc và các loại bột hoặc siro pha.',
+    'OUT_OF_SCOPE':
+        'Phiên bản hiện tại không chấm đồ uống có cồn, thực phẩm cho trẻ nhỏ, thực phẩm bổ sung, nước lọc, '
+        'bột hoặc siro pha, trà, cà phê, gia vị, muối và giấm.',
     'CATEGORY_UNRESOLVED': 'Chưa xác định được nhóm sản phẩm để so sánh.',
     'BASIS_MISMATCH': 'Chưa rõ số liệu dinh dưỡng được ghi trên 100 g hay 100 ml.',
     'VALUE_INVALID': 'Một số số liệu dinh dưỡng có giá trị không hợp lệ.',
@@ -71,7 +74,7 @@ class FnsCopy {
   static String statusLabel(FnsStatus status) {
     switch (status) {
       case FnsStatus.verified:
-        return 'Đã xác minh';
+        return 'Số liệu đã đối chiếu';
       case FnsStatus.provisional:
         return 'Tạm tính';
       case FnsStatus.notScored:
@@ -87,7 +90,11 @@ class FnsCopy {
 
   static bool isOutOfScope(FnsResult fns) => fns.reasonCodes.contains('OUT_OF_SCOPE');
 
-  static String notScoredTitle(FnsResult fns) => isOutOfScope(fns) ? outOfScopeTitle : missingDataTitle;
+  static String notScoredTitle(FnsResult fns) {
+    if (isOutOfScope(fns)) return outOfScopeTitle;
+    if (fns.reasonCodes.contains(FnsResult.unavailableReason)) return unavailableTitle;
+    return missingDataTitle;
+  }
 
   static String notScoredReason(FnsResult fns) {
     for (final String code in fns.reasonCodes) {
