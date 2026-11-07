@@ -21,7 +21,11 @@ const SHARED_FIELDS = [
     'ingredients_text',
     'ingredients_text_vi',
     'allergens',
-    'nutriments'
+    'nutriments',
+    'categories_tags',
+    'quantity',
+    'product_quantity_unit',
+    'serving_quantity'
 ];
 // The product API returns the full document (often hundreds of KB) unless fields are listed.
 const BARCODE_FIELDS = [...SHARED_FIELDS, 'allergens_tags'].join(',');

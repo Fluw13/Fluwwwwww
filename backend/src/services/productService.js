@@ -1,5 +1,7 @@
 const foodApiService = require('./foodApiService');
 const aiService = require('./aiService');
+const { evaluateFns } = require('./scoring/fnsEngine');
+const { mapProductToFnsInput } = require('./openFoodFacts/fnsInputMapper');
 const TtlCache = require('../cache/TtlCache');
 const { barcodeKey, productCacheKey } = require('../cache/productCacheKey');
 const { readPositiveInteger } = require('../config/env');
@@ -16,10 +18,10 @@ const cache = new TtlCache({
 
 const inFlightLookups = new Map();
 
-// AI analysis is optional: when Gemini fails, the OpenFoodFacts data is still returned.
-const analyzeSafely = async (product) => {
+// AI analysis is optional: when Gemini fails, the OpenFoodFacts data and the FNS score are still returned.
+const analyzeSafely = async (product, fns) => {
     try {
-        return { aiAnalysis: await aiService.analyzeProduct(product), aiError: null };
+        return { aiAnalysis: await aiService.analyzeProduct(product, fns), aiError: null };
     } catch (error) {
         console.error('[AI Analysis Skipped]', error.code || error.name, error.message);
         return { aiAnalysis: null, aiError: error.code || AI_ERROR_CODES.UNAVAILABLE };
@@ -28,8 +30,9 @@ const analyzeSafely = async (product) => {
 
 const lookUpProduct = async (query) => {
     const product = await foodApiService.getFoodData(query);
-    const { aiAnalysis, aiError } = await analyzeSafely(product);
-    return { product, aiAnalysis, aiError };
+    const fns = evaluateFns(mapProductToFnsInput(product));
+    const { aiAnalysis, aiError } = await analyzeSafely(product, fns);
+    return { product, fns, aiAnalysis, aiError };
 };
 
 const storeResult = (query, result) => {

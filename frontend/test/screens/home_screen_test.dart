@@ -30,7 +30,7 @@ ApiService _api() {
 }
 
 ProductSummary _scan(String barcode, String name) {
-  return ProductSummary(barcode: barcode, name: name, brand: 'Hãng', imageUrl: '', score: 64, calories: 120);
+  return ProductSummary(barcode: barcode, name: name, brand: 'Hãng', imageUrl: '', score: 5.6, calories: 120);
 }
 
 Future<void> _pumpHome(WidgetTester tester, {SessionHistory? history, ThemeMode themeMode = ThemeMode.light}) {

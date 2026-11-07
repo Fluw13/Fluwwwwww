@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../core/format/score_format.dart';
 import '../core/theme/fluw_palette.dart';
 import '../core/theme/score_colors.dart';
+import '../models/fns_result.dart';
 import '../models/score_level.dart';
 
 class CircularScoreRing extends StatelessWidget {
   const CircularScoreRing({super.key, required this.score, this.size = 140.0});
 
-  final int score;
+  /// Fluw Nutrition Score, 0-10.
+  final double score;
   final double size;
 
   @override
@@ -15,9 +18,10 @@ class CircularScoreRing extends StatelessWidget {
     final FluwPalette palette = context.palette;
     final ScoreColors colors = palette.scoreColors(ScoreLevel.fromScore(score));
     final double stroke = size * 0.075;
+    final String formatted = ScoreFormat.fns(score);
 
     return Semantics(
-      label: 'Điểm $score trên 100',
+      label: 'Điểm $formatted trên 10',
       excludeSemantics: true,
       child: Container(
         width: size,
@@ -25,7 +29,7 @@ class CircularScoreRing extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           // An opaque fill keeps the glow outside the ring, so the number and
-          // "/100" stay on the plain card colour.
+          // "/10" stay on the plain card colour.
           color: palette.surface,
           boxShadow: [
             if (palette.ringGlowOpacity > 0)
@@ -44,7 +48,7 @@ class CircularScoreRing extends StatelessWidget {
               padding: EdgeInsets.all(stroke / 2),
               child: SizedBox.expand(
                 child: CircularProgressIndicator(
-                  value: score / 100,
+                  value: score / FnsResult.maxScore,
                   strokeWidth: stroke,
                   strokeCap: StrokeCap.round,
                   backgroundColor: palette.surfaceMuted,
@@ -62,7 +66,7 @@ class CircularScoreRing extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '$score',
+                      formatted,
                       style: TextStyle(
                         fontSize: size * 0.3,
                         height: 1,
@@ -72,7 +76,7 @@ class CircularScoreRing extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '/100',
+                      '/10',
                       style: TextStyle(
                         fontSize: size * 0.085,
                         color: palette.textSecondary,

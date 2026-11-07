@@ -39,28 +39,29 @@ test('prompt hệ thống không tự nhận dựa trên chuẩn WHO và có mi�
     assert.ok(SYSTEM_INSTRUCTION.includes('không phải chẩn đoán hay tư vấn y tế'));
 });
 
-test('parseAnalysis từ chối điểm null hoặc rỗng thay vì chấm 0 điểm', () => {
-    for (const raw of ['{"score": null}', '{"score": ""}', '{"score": "0x10"}', '{"score": "1e2"}', '{"score": true}', '{}', 'null', '[]']) {
+test('parseAnalysis từ chối phản hồi thiếu nội dung giải thích', () => {
+    for (const raw of ['{"deepThink": null}', '{"deepThink": "   "}', '{"score": 72}', '{}', 'null', '[]']) {
         assert.throws(() => parseAnalysis(raw), (error) => error.code === 'AI_INVALID_RESPONSE', raw);
     }
+});
 
-    assert.equal(parseAnalysis('{"score": "72"}').score, 72);
-    assert.equal(parseAnalysis('{"score": -5}').score, 0);
+test('AI không thể đưa điểm số hay sản phẩm thay thế vào kết quả', () => {
+    const analysis = parseAnalysis(JSON.stringify({ score: 99, deepThink: 'a', alternatives: ['Sản phẩm X'] }));
+    assert.equal('score' in analysis, false);
+    assert.deepEqual(analysis.alternatives, []);
 });
 
 test('parseAnalysis chỉ giữ chuỗi trong danh sách và giới hạn độ dài', () => {
     const analysis = parseAnalysis(JSON.stringify({
-        score: 50,
         deepThink: '  Ổn.  ',
         recommendation: 42,
-        allergens: [{ name: 'sữa' }, 'gluten', '  ', null],
-        alternatives: Array.from({ length: 30 }, (_, index) => 'Lựa chọn ' + index)
+        allergens: [{ name: 'sữa' }, 'gluten', '  ', null, ...Array.from({ length: 30 }, (_, index) => 'Dị ứng ' + index)]
     }));
 
     assert.equal(analysis.deepThink, 'Ổn.');
     assert.equal(analysis.recommendation, '');
-    assert.deepEqual(analysis.allergens, ['gluten']);
-    assert.equal(analysis.alternatives.length, 10);
+    assert.equal(analysis.allergens[0], 'gluten');
+    assert.equal(analysis.allergens.length, 10);
 });
 
 test('toGeminiError phân biệt timeout với lỗi khác', () => {
@@ -71,12 +72,17 @@ test('toGeminiError phân biệt timeout với lỗi khác', () => {
 });
 
 test('analyzeProduct gửi prompt và schema rồi kiểm tra đầu ra', async () => {
-    const generateJson = mock.method(geminiClient, 'generateJson', async () => '{"score": 65, "deepThink": "a", "recommendation": "b", "allergens": [], "alternatives": []}');
+    const generateJson = mock.method(geminiClient, 'generateJson', async () => '{"deepThink": "a", "recommendation": "b", "allergens": []}');
+    const fns = { status: 'PROVISIONAL', score: 2.2, category: 'C2', component_points: { energy: 6 }, missing_fields: [], reason_codes: [], limitations: [] };
 
-    const analysis = await aiService.analyzeProduct(product);
+    const analysis = await aiService.analyzeProduct(product, fns);
 
-    assert.equal(analysis.score, 65);
+    assert.equal(analysis.deepThink, 'a');
     const request = generateJson.mock.calls[0].arguments[0];
-    assert.equal(request.schema.required.includes('score'), true);
-    assert.ok(request.prompt.includes('<product_data>'));
+    assert.equal('score' in request.schema.properties, false);
+    assert.equal(request.schema.required.includes('score'), false);
+    const sentScore = JSON.parse(extractProductData(request.prompt)).fluwNutritionScore;
+    assert.deepEqual(sentScore, {
+        status: 'PROVISIONAL', score: 2.2, category: 'C2', componentPoints: { energy: 6 }, missingFields: [], reasonCodes: [], limitations: []
+    });
 });

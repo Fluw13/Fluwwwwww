@@ -103,11 +103,11 @@ test('buildPrompt đặt dữ liệu sản phẩm trong khối riêng và cắt 
     assert.deepEqual(data.declaredAllergens, ['sữa']);
 });
 
-test('parseAnalysis giới hạn điểm và từ chối phản hồi không hợp lệ', () => {
-    assert.equal(parseAnalysis('{"score": 140}').score, 100);
-    assert.deepEqual(parseAnalysis('{"score": 50, "allergens": "sữa"}').allergens, []);
+test('parseAnalysis bỏ điểm do AI tự đưa ra và từ chối phản hồi không hợp lệ', () => {
+    assert.equal('score' in parseAnalysis('{"score": 140, "deepThink": "a"}'), false);
+    assert.deepEqual(parseAnalysis('{"deepThink": "a", "allergens": "sữa"}').allergens, []);
     assert.throws(() => parseAnalysis('không phải JSON'), (error) => error.statusCode === 502);
-    assert.throws(() => parseAnalysis('{"score": "cao"}'), (error) => error.statusCode === 502);
+    assert.throws(() => parseAnalysis('{"score": 50}'), (error) => error.statusCode === 502);
 });
 
 test('normalizeProduct không dùng giá trị theo khẩu phần khi thiếu giá trị trên 100g', () => {

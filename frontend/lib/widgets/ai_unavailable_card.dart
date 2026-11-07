@@ -50,7 +50,7 @@ class AiUnavailableCard extends StatelessWidget {
           Text(reasonFor(aiError), style: TextStyle(color: palette.textPrimary, fontSize: 14, height: 1.5)),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Thông tin sản phẩm và dinh dưỡng bên dưới vẫn lấy từ Open Food Facts.',
+            'Fluw Nutrition Score không phụ thuộc vào Zero. Thông tin sản phẩm vẫn lấy từ Open Food Facts.',
             style: TextStyle(color: palette.textSecondary, fontSize: 12),
           ),
         ],
