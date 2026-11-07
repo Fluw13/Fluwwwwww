@@ -28,17 +28,24 @@ const FVNL_SOURCES = [
 // OpenFoodFacts estimates fruit/vegetable/legume or nut content from the ingredient list; none of these
 // match HSR FVNL exactly (HSR counts all four groups), so the largest available value is used, flagged as
 // an estimate, and the concentrated column stays unknown. No estimate means FVNL is missing, never 0.
-const readFvnl = (nutriments) => {
+// HSR v9 Section 4.4 excludes oils (olive, peanut, ...) from FVNL, so for oils and spreads a positive
+// estimate most likely counts the oil itself and is discarded.
+const readFvnl = (nutriments, category) => {
     const values = FVNL_SOURCES.map((key) => nutriments[key]).filter((value) => typeof value === 'number');
-    return values.length === 0 ? null : { percent: Math.max(...values), estimated: true };
+    if (values.length === 0) {
+        return null;
+    }
+    const percent = Math.max(...values);
+    return category === 'C3' && percent > 0 ? null : { percent, estimated: true };
 };
 
 // OpenFoodFacts is community data, so the source is never verified.
 const mapProductToFnsInput = (product) => {
     const nutriments = product?.nutriments ?? {};
+    const category = resolveCategory(product);
 
     return {
-        category: resolveCategory(product),
+        category,
         basis: readBasis(product ?? {}),
         nutrients: {
             energy_kj: nutriments['energy-kj'] ?? null,
@@ -48,7 +55,7 @@ const mapProductToFnsInput = (product) => {
             protein_g: nutriments.proteins ?? null,
             fiber_g: nutriments.fiber ?? null
         },
-        fvnl: readFvnl(nutriments),
+        fvnl: readFvnl(nutriments, category),
         source_verified: false
     };
 };

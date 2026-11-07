@@ -39,8 +39,55 @@ test('resolveCategory: nhóm rõ ràng được gán, nhóm không chắc trả 
     assert.equal(resolveCategory({}), null);
 });
 
+test('resolveCategory: tag lạ hoặc chỉ có tag tiếng Việt thì không đoán nhóm (không mặc định C2)', () => {
+    for (const tags of [['vi:nuoc-ngot-co-ga'], ['en:null'], ['en:something-unknown'], ['vi:sua-bot', 'fr:lait']]) {
+        assert.equal(resolveCategory(withTags(tags)), null, tags.join(','));
+    }
+});
+
+test('resolveCategory: "butters" không phải bơ sữa (mứt táo, bơ ca cao) không bị xếp vào nhóm dầu C3', () => {
+    assert.equal(resolveCategory(withTags(['en:spreads', 'en:butters', 'en:apple-butters'])), 'C2');
+    assert.equal(resolveCategory(withTags(['en:butters', 'en:cocoa-butters'])), null);
+    assert.equal(resolveCategory(withTags(['en:dairies', 'en:butters'])), 'C3');
+});
+
+test('resolveCategory: sữa chua uống (sữa chua + đồ uống) không bị đoán là C2D', () => {
+    assert.equal(resolveCategory(withTags(['en:beverages', 'en:dairies', 'en:yogurts', 'en:drinkable-yogurts'])), null);
+});
+
+test('mapProductToFnsInput: dầu ăn bỏ ước tính FVNL dương vì HSR không tính dầu là rau củ quả', () => {
+    const oil = (estimate) => mapProductToFnsInput({
+        ...chips,
+        categories_tags: ['en:fats', 'en:vegetable-oils', 'en:olive-oils'],
+        nutriments: { ...chips.nutriments, 'fruits-vegetables-legumes-estimate-from-ingredients': estimate }
+    }).fvnl;
+    assert.equal(oil(100), null);
+    assert.deepEqual(oil(0), { percent: 0, estimated: true });
+});
+
+test('API: nước ngọt chỉ có tag tiếng Việt không bị chấm như thực phẩm', async () => {
+    const soda = {
+        ...chips,
+        categories_tags: ['vi:nuoc-ngot-co-ga'],
+        quantity: '330 ml',
+        product_quantity_unit: 'ml',
+        nutriments: { ...chips.nutriments, 'energy-kj': 180, sugars: 10.6, 'saturated-fat': 0, sodium: 0.01, proteins: 0, fiber: 0 }
+    };
+    mock.method(foodApiService, 'getFoodData', async () => soda);
+    mock.method(aiService, 'analyzeProduct', async () => ({ deepThink: 'a', recommendation: '', allergens: [], alternatives: [] }));
+
+    const body = await (await fetch(baseUrl + '/api/product/8934563138165')).json();
+
+    assert.equal(body.fns.status, 'NOT_SCORED');
+    assert.equal(body.fns.score, null);
+    assert.deepEqual(body.fns.reason_codes, ['CATEGORY_UNRESOLVED']);
+});
+
 test('resolveCategory: sản phẩm ngoài phạm vi FNS v1 trả OUT_OF_SCOPE', () => {
-    for (const tag of ['en:alcoholic-beverages', 'en:baby-foods', 'en:dietary-supplements', 'en:waters', 'en:syrups']) {
+    for (const tag of [
+        'en:alcoholic-beverages', 'en:baby-foods', 'en:dietary-supplements', 'en:waters', 'en:syrups',
+        'en:foods-for-special-medical-purposes', 'en:cocoa-and-chocolate-powders'
+    ]) {
         assert.equal(resolveCategory(withTags(['en:beverages', tag])), 'OUT_OF_SCOPE', tag);
     }
 });

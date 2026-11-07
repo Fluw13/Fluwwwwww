@@ -144,7 +144,13 @@ Mã lý do và giới hạn nằm ở `fnsCodes.js`:
 - Căn cứ: Guide v9, Section 4.3.
 - Bộ phân loại chỉ gán nhóm khi chắc chắn; nếu không chắc thì `null`, và engine trả `CATEGORY_UNRESOLVED`.
 - Tên tag OFF (`en:yogurts`, `en:cheeses`, …) là **LIKELY**, cần kiểm tra trên dữ liệu thật.
-- Gán nhầm tag thì sản phẩm chỉ bị "không chấm", không bị chấm sai.
+- Mọi nhóm, kể cả C2, đều cần khớp tag dương. C2 chỉ được gán khi có tag thuộc danh sách thực phẩm cho phép (`FOOD_TAGS`).
+- Tag lạ hoặc chỉ có tag không phải tiếng Anh (thường gặp ở sản phẩm Việt Nam) trả `null`. Nhờ vậy, tên tag sai chỉ khiến sản phẩm "không chấm", không bị chấm theo nhóm sai.
+  - Lỗi do review phát hiện trước khi push: bản đầu mặc định C2 cho mọi tag lạ, nên nước ngọt chỉ có tag tiếng Việt bị chấm 6,7 thay vì 0.
+- Thứ tự kiểm tra và những ca giữ ở `null`:
+  - `en:butters` chỉ được xếp C3 khi kèm `en:dairies`.
+  - Sữa chua uống (sữa chua kèm `en:beverages`) trả `null`.
+  - Với C3 (dầu ăn), ước tính FVNL dương bị bỏ, vì Section 4.4 loại dầu khỏi FVNL.
 - Basis do `fnsInputMapper.js` suy ra từ đơn vị gói (`product_quantity_unit`/`quantity`):
   - ml/cl/l → `per_100ml`;
   - không rõ → `per_100g`. Khi đó nhóm đồ uống (C1/C1D) sẽ `BASIS_MISMATCH` thay vì bị đoán.
