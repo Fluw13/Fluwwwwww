@@ -43,7 +43,7 @@ Luồng dữ liệu: Flutter → backend Fluw → Open Food Facts + Gemini → b
 | Thành phần | Thực tế |
 |---|---|
 | Repository | `https://github.com/Fluw13/Fluwwwwww`, branch chính `main` |
-| Trạng thái | `main@e6670b8`, không còn PR nào mở, CI backend và frontend xanh |
+| Trạng thái | `main@3b760d4` (07/11/2026): FNS v1 đã merge (#10–#14) và Render đã deploy. PR #15 (sửa phân loại Nutella) đang chờ duyệt. |
 | Frontend | Flutter 3.47.8 / Dart 3.13.7, thư mục `frontend/` |
 | Backend | Node.js + Express, entry `backend/src/index.js`, thư mục `backend/` |
 | Hosting backend | Render: `https://fluw.onrender.com` |
@@ -106,7 +106,7 @@ cd backend && npm install && npm test && npm start
 4. Duyệt kế hoạch v1 (`/api/v1`, B0–B5 và F1, F3–F9). Các phần frontend phụ thuộc v1 chưa làm: danh sách kết quả tìm kiếm, giải thích điểm.
 5. Chọn `GEMINI_MODEL`: `gemini-3.5-flash-lite` (500 lượt/ngày) hay giữ `gemini-3.6-flash` (20 lượt/ngày), hoặc bật thanh toán.
 6. Cho phép xóa các branch đã merge trên GitHub.
-7. Duyệt 3 PR FNS xếp chồng: #11 → #13 → #14 (chi tiết ở mục 6). #13 và #14 nên merge cùng lúc.
+7. Duyệt PR #15: Nutella bị báo "ngoài phạm vi" do tag bột ca cao trên OFF (chi tiết ở mục 6).
 8. Đối chiếu HSR calculator chính thức cho 6 mục trong `RULES_REVIEW_ITEMS` (`scoringRules.js`). Còn mục nào thì engine chưa trả `VERIFIED`.
 
 ### Chưa làm, cần backend và pháp lý
@@ -128,6 +128,24 @@ cd backend && npm install && npm test && npm start
 ## 6. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 07/11/2026 — Merge FNS v1 và kiểm chứng trên production
+- **Merge** (FLuw cho phép): #12 → #10 vào `main` (`514d505`); #14 → #13 → #11 vào `main` (`3b760d4`). Trước khi merge #11 đã kiểm tra hai điều: cây code giống hệt commit đã test `931411a` (0 file khác), và CI xanh.
+- **Deploy:** Render tự deploy khoảng 90 giây sau merge. Response thật có `fns`; `aiAnalysis` không còn `score`.
+- **Kết quả production (VERIFIED, 07/11/2026):**
+
+| Mã vạch | Sản phẩm | `fns` | Ghi chú |
+|---|---|---|---|
+| `5449000000996` | Coca-Cola | `PROVISIONAL`, 0,0, C1 | Đúng, khớp Test A |
+| `8934840000130` | Vĩnh Hảo | `OUT_OF_SCOPE` | Đúng, nước chưa chấm trong v1 |
+| `8934563635138`, `8934673607827` | Hảo Hảo, Vinamilk sữa chua | `CATEGORY_UNRESOLVED` | Trên OFF các sản phẩm này không có `categories_tags`. Đúng thiết kế, nhưng nhiều sản phẩm Việt Nam sẽ chưa có điểm. |
+| `3017620422003` | Nutella | `OUT_OF_SCOPE` | **Sai**, sửa ở PR #15 |
+
+- **PR #15 `fix/fns-category-conflict`** (đang chờ duyệt):
+  - Nguyên nhân: OFF gắn Nutella vừa là kem phết, vừa là `en:cocoa-and-chocolate-powders`.
+  - Cách sửa: tách loại trừ cứng (`EXCLUDED_TAGS`, luôn `OUT_OF_SCOPE`) khỏi nhóm cần pha (`AS_PREPARED_TAGS`). Nhóm cần pha mà đi kèm tag thực phẩm thì trả `null`.
+  - Test: `npm test` 150/150.
+- **Việc tiếp theo quan trọng nhất:** sản phẩm Việt Nam thường thiếu `categories_tags` trên OFF. Muốn có điểm cho nhóm này cần thêm nguồn phân loại; đây là quyết định sản phẩm, chờ FLuw.
 
 ### 07/11/2026 — PR #14 `feat/fns-flutter`: Flutter hiển thị FNS 0–10
 - **Thêm:**
