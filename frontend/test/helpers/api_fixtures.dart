@@ -9,8 +9,46 @@ const Map<String, String> jsonHeaders = {'content-type': 'application/json; char
 
 http.Response jsonResponse(String body, int status) => http.Response(body, status, headers: jsonHeaders);
 
+/// The `fns` object as the backend FNS engine sends it; `score: null` is a NOT_SCORED result.
+Map<String, Object?> fnsJson({double? score = 6.7}) {
+  if (score == null) {
+    return {
+      'scoring_system': 'FLUW_NUTRITION_SCORE',
+      'status': 'NOT_SCORED',
+      'score': null,
+      'category': 'C2D',
+      'missing_fields': ['sodium_mg'],
+      'reason_codes': ['BASELINE_NUTRIENT_MISSING'],
+      'limitations': <String>[],
+    };
+  }
+  return {
+    'scoring_system': 'FLUW_NUTRITION_SCORE',
+    'scoring_version': '1.0.0',
+    'status': 'PROVISIONAL',
+    'score': score,
+    'category': 'C2D',
+    'basis': 'per_100g',
+    'raw_score': 3,
+    'baseline_components': ['energy', 'saturated_fat', 'total_sugars', 'sodium'],
+    'component_points': {
+      'energy': 1,
+      'saturated_fat': 2,
+      'total_sugars': 1,
+      'sodium': 1,
+      'fvnl': 0,
+      'protein': 2,
+      'fiber': 0,
+    },
+    'modifier_eligibility': {'fvnl': true, 'protein': true, 'fiber': true},
+    'missing_fields': <String>[],
+    'reason_codes': <String>[],
+    'limitations': ['RULES_NEEDS_REVIEW', 'SOURCE_UNVERIFIED', 'FVNL_ESTIMATED'],
+  };
+}
+
 /// A successful `/api/product/:query` body as the backend sends it.
-String productBody({Object? score = 82, String barcode = sampleBarcode, String name = 'Sữa chua'}) {
+String productBody({double? score = 6.7, String barcode = sampleBarcode, String name = 'Sữa chua'}) {
   return jsonEncode({
     'success': true,
     'barcode': barcode,
@@ -21,8 +59,8 @@ String productBody({Object? score = 82, String barcode = sampleBarcode, String n
       'allergens': ['sữa'],
       'nutriments': {'energy-kcal': 95, 'proteins': 3.5, 'fat': 3, 'carbohydrates': 12.4},
     },
+    'fns': fnsJson(score: score),
     'aiAnalysis': {
-      'score': score,
       'deepThink': 'Giàu canxi.',
       'recommendation': 'Dùng vừa phải.',
       'allergens': <String>[],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/format/score_format.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/fluw_palette.dart';
 import '../../core/theme/score_colors.dart';
@@ -10,20 +11,23 @@ import '../../models/score_level.dart';
 class ScorePill extends StatelessWidget {
   const ScorePill({super.key, required this.score});
 
-  final int? score;
+  /// Fluw Nutrition Score (0-10); null when the product is not scored.
+  final double? score;
 
-  static String spokenLabelFor(int? score) {
-    return score == null ? 'Chưa chấm điểm' : 'Điểm $score, ${ScoreLevel.fromScore(score).label}';
+  static String spokenLabelFor(double? score) {
+    return score == null
+        ? 'Chưa chấm điểm'
+        : 'Điểm ${ScoreFormat.fns(score)} trên 10, ${ScoreLevel.fromScore(score).label}';
   }
 
-  static String labelFor(int? score) {
-    return score == null ? 'Chưa chấm' : '$score · ${ScoreLevel.fromScore(score).label}';
+  static String labelFor(double? score) {
+    return score == null ? 'Chưa chấm' : '${ScoreFormat.fns(score)} · ${ScoreLevel.fromScore(score).label}';
   }
 
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
-    final int? score = this.score;
+    final double? score = this.score;
     final ScoreColors? colors = score == null ? null : palette.scoreColors(ScoreLevel.fromScore(score));
 
     return Container(

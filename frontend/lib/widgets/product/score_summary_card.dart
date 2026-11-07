@@ -4,24 +4,29 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/fluw_palette.dart';
 import '../../core/theme/score_colors.dart';
+import '../../content/fns_copy.dart';
+import '../../models/fns_result.dart';
 import '../../models/score_level.dart';
 import '../circular_score_ring.dart';
 import '../common/info_chip.dart';
 import '../skeleton/skeleton_box.dart';
 import 'product_detail_metrics.dart';
 
+/// Hero card of a scored product. Products without a score use FnsNotScoredCard instead, so no ring is
+/// ever drawn for a missing score.
 class ScoreSummaryCard extends StatelessWidget {
-  const ScoreSummaryCard({super.key, required int this.score});
+  const ScoreSummaryCard({super.key, required FnsResult this.fns});
 
   /// Same card while the score is loading: ring and level are placeholders.
-  const ScoreSummaryCard.loading({super.key}) : score = null;
+  const ScoreSummaryCard.loading({super.key}) : fns = null;
 
-  final int? score;
+  final FnsResult? fns;
 
   @override
   Widget build(BuildContext context) {
     final FluwPalette palette = context.palette;
-    final int? score = this.score;
+    final FnsResult? fns = this.fns;
+    final double? score = fns?.score;
 
     return Container(
       width: double.infinity,
@@ -38,19 +43,26 @@ class ScoreSummaryCard extends StatelessWidget {
           else
             CircularScoreRing(score: score, size: ProductDetailMetrics.scoreRingSize),
           const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (score == null) const _LevelChipPlaceholder() else _LevelChip(score: score),
-              InfoChip(label: 'Do AI tạo', foreground: palette.textSecondary, background: palette.surfaceMuted),
-            ],
-          ),
+          if (score == null) const _ChipPlaceholder() else _LevelChip(score: score),
           const SizedBox(height: AppSpacing.md),
+          // Every line below has the same height loading or loaded, so nothing jumps when the result
+          // arrives; the data-dependent comparison group lives in FnsBreakdownCard.
           Text(
-            'Zero chấm theo thành phần và dinh dưỡng trên 100 g. Chỉ mang tính tham khảo.',
+            FnsCopy.name,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: palette.textPrimary),
+          ),
+          Opacity(
+            opacity: fns == null ? 0 : 1,
+            child: Text(
+              FnsCopy.statusLabel(fns?.status ?? FnsStatus.provisional),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, height: 1.45, fontWeight: FontWeight.w600, color: palette.textSecondary),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            FnsCopy.disclaimer(fns?.basis),
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, height: 1.45, color: palette.textSecondary),
           ),
@@ -63,7 +75,7 @@ class ScoreSummaryCard extends StatelessWidget {
 class _LevelChip extends StatelessWidget {
   const _LevelChip({required this.score});
 
-  final int score;
+  final double score;
 
   @override
   Widget build(BuildContext context) {
@@ -73,8 +85,8 @@ class _LevelChip extends StatelessWidget {
   }
 }
 
-class _LevelChipPlaceholder extends StatelessWidget {
-  const _LevelChipPlaceholder();
+class _ChipPlaceholder extends StatelessWidget {
+  const _ChipPlaceholder();
 
   @override
   Widget build(BuildContext context) {
