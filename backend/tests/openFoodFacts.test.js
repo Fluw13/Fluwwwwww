@@ -105,3 +105,50 @@ test('normalizeProduct bỏ qua tên rỗng và thương hiệu không phải ch
     assert.equal(product.brands, 'A, B');
     assert.equal(normalizeProduct({ brands: '' }, '12345678').brands, 'Chưa rõ thương hiệu');
 });
+
+test('normalizeProduct chép NOVA, Nutri-Score, phụ gia, nhãn và thành phần từ OFF, bỏ giá trị không hợp lệ', () => {
+    const product = normalizeProduct({
+        nova_group: '1',
+        nutriscore_grade: 'A',
+        additives_tags: ['en:e330', 'en:e150d', 'en:e330', 'fr:e100', 'en:something', 7],
+        labels_tags: ['en:organic', 'en:organic', '', 'x'.repeat(101), 3],
+        ingredients: [
+            { text: ' Sữa tươi ', percent: 96.5, percent_estimate: 96.5 },
+            { text: 'Đường', percent_estimate: '2.5' },
+            { text: 'Men', percent: 140, percent_estimate: -1 },
+            { text: '   ' },
+            null,
+            { percent: 10 }
+        ]
+    }, '12345678');
+
+    assert.equal(product.nova_group, 1);
+    assert.equal(product.nutriscore_grade, 'a');
+    assert.deepEqual(product.additives, ['E330', 'E150D']);
+    assert.deepEqual(product.labels_tags, ['en:organic']);
+    assert.deepEqual(product.ingredients, [
+        { text: 'Sữa tươi', percent: 96.5, percent_estimate: 96.5 },
+        { text: 'Đường', percent: null, percent_estimate: 2.5 },
+        { text: 'Men', percent: null, percent_estimate: null }
+    ]);
+});
+
+test('normalizeProduct trả null hoặc mảng rỗng khi OFF thiếu hoặc ghi giá trị không phải hạng thật', () => {
+    for (const raw of [{}, { nova_group: 0, nutriscore_grade: 'unknown' }, { nova_group: 5, nutriscore_grade: 'not-applicable' },
+        { nova_group: '', nutriscore_grade: null, additives_tags: 'en:e330', labels_tags: {}, ingredients: 'sữa' }]) {
+        const product = normalizeProduct(raw, '12345678');
+        assert.equal(product.nova_group, null);
+        assert.equal(product.nutriscore_grade, null);
+        assert.deepEqual(product.additives, []);
+        assert.deepEqual(product.labels_tags, []);
+        assert.deepEqual(product.ingredients, []);
+    }
+});
+
+test('normalizeProduct giới hạn số thành phần và độ dài chữ', () => {
+    const ingredients = Array.from({ length: 40 }, (_, index) => ({ text: String(index) + 'y'.repeat(200) }));
+    const product = normalizeProduct({ ingredients }, '12345678');
+
+    assert.equal(product.ingredients.length, 25);
+    assert.ok(product.ingredients.every((item) => item.text.length === 120));
+});
