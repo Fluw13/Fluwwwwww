@@ -88,6 +88,7 @@ npm test
 - Tìm theo tên thì bỏ mục không có tên; tìm theo mã vạch thì giữ cả sản phẩm chưa có tên (như API chi tiết). Bỏ mục trùng mã vạch.
 - Cache riêng: thời hạn theo `CACHE_TTL_HOURS` (mặc định 24 giờ), tối đa 200 mục cố định (không theo `CACHE_MAX_ENTRIES`, vì mỗi mục chứa tới 20 sản phẩm). Lỗi và danh sách rỗng không được cache. Chung bộ giới hạn lượt gọi với `/api/product/:query`.
 - `ingredients` có tối đa 25 thành phần, mỗi tên tối đa 120 ký tự (bị cắt thì có "…"); `ingredients_truncated: true` khi OpenFoodFacts có nhiều hơn 25.
+- Đã thử request thật (09/11/2026): chỉ mục tìm kiếm `search.openfoodfacts.org` trả `nova_group`, `nutriscore_grade`, `labels_tags`, `categories_tags`, `nutriments`, nhưng **không trả `additives_tags` và `ingredients`** (0/20 kết quả, kể cả Nutella). API sản phẩm theo mã vạch thì trả đủ. Vì vậy mục trong danh sách có `additives: []`, `ingredients: []`; app mở chi tiết bằng mã vạch để có đủ dữ liệu.
 
 ## Chạy frontend
 
