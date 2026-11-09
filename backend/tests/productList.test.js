@@ -103,14 +103,38 @@ test('danh sách: điểm của một mục trùng với điểm engine tính ch
     assert.deepEqual(results[0].fns, evaluateFns(mapProductToFnsInput(normalizeProduct(cola, 'coca'))));
 });
 
-test('danh sách: tối đa 20 mục', async () => {
+test('danh sách: xin OFF đúng 20 kết quả và trả tối đa 20 mục', async () => {
     const many = Array.from({ length: 30 }, (_, index) => ({ code: String(10000000 + index), product_name: 'Bánh ' + index }));
-    stubSearch({ 'bánh': many });
+    const fetchSearchHits = stubSearch({ 'bánh': many });
 
     const { results } = await productListService.searchProducts('bánh');
 
-    assert.equal(results.length, productListService.LIST_PAGE_SIZE);
-    assert.equal(productListService.LIST_PAGE_SIZE, 20);
+    assert.equal(results.length, 20);
+    assert.deepEqual(fetchSearchHits.mock.calls[0].arguments[1], { pageSize: 20 });
+});
+
+test('danh sách rỗng không được cache: sản phẩm vừa thêm lên OFF hiện ngay ở lần tìm sau', async () => {
+    let calls = 0;
+    mock.method(openFoodFactsClient, 'fetchSearchHits', async () => {
+        calls += 1;
+        return calls === 1 ? [] : [cola];
+    });
+
+    assert.deepEqual((await productListService.searchProducts('coca')).results, []);
+    const second = await productListService.searchProducts('coca');
+
+    assert.equal(second.cacheStatus, 'MISS');
+    assert.equal(second.results.length, 1);
+});
+
+test('mã vạch có trên OFF nhưng chưa có tên vẫn có trong danh sách, như trang chi tiết', async () => {
+    mock.method(openFoodFactsClient, 'fetchByBarcode', async () => ({ code: cola.code, nutriments: cola.nutriments }));
+
+    const { results } = await productListService.searchProducts(cola.code);
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].product.barcode, cola.code);
+    assert.equal(results[0].product.product_name, normalizeProduct({}, 'x').product_name);
 });
 
 test('danh sách theo mã vạch: có thì 1 mục, không có trên OFF thì rỗng, OFF lỗi thì báo lỗi', async () => {
@@ -181,18 +205,22 @@ for (const [label, path] of [
     ['thiếu q', '/api/product'],
     ['q rỗng', '/api/product?q=%20%20'],
     ['q lặp lại', '/api/product?q=a&q=b'],
+    ['q dạng object', '/api/product?q[a]=b'],
     ['q quá dài', '/api/product?q=' + 'a'.repeat(101)],
     ['mã vạch sai số kiểm tra', '/api/product?q=8934563138166']
 ]) {
     test('GET /api/product?q= ' + label + ' thì 400, không gọi OFF', async () => {
         const fetchSearchHits = stubSearch({});
+        const fetchByBarcode = mock.method(openFoodFactsClient, 'fetchByBarcode', async () => cola);
 
         const response = await fetch(baseUrl + path);
         const body = await response.json();
 
         assert.equal(response.status, 400);
         assert.equal(body.success, false);
+        assert.ok(['INVALID_QUERY', 'INVALID_BARCODE'].includes(body.code), body.code);
         assert.equal(fetchSearchHits.mock.callCount(), 0);
+        assert.equal(fetchByBarcode.mock.callCount(), 0);
     });
 }
 
@@ -206,4 +234,11 @@ test('GET /api/product?q= khi OFF giới hạn lượt thì 503 kèm Retry-After
     assert.equal(response.status, 503);
     assert.equal(response.headers.get('retry-after'), '60');
     assert.equal((await response.json()).code, 'UPSTREAM_RATE_LIMITED');
+});
+
+test('GET /api/product?q=a&q=b báo rõ chỉ được gửi một từ khóa', async () => {
+    const response = await fetch(baseUrl + '/api/product?q=a&q=b');
+
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, 'Chỉ gửi một từ khóa tìm kiếm mỗi lần.');
 });

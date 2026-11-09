@@ -82,10 +82,12 @@ npm test
 ### Danh sách kết quả tìm kiếm
 
 - `GET /api/product?q=<từ khóa hoặc mã vạch>` trả `{ success, query, count, results: [{ product, fns }] }`, tối đa 20 mục, mục khớp nhất đứng đầu (cùng tiêu chí với `pickBestSearchHit`, `rankSearchHits`).
-- `product` cùng dạng với API chi tiết; `fns` do cùng engine tính nên trùng với điểm ở trang chi tiết. **Không gọi Gemini** cho danh sách: phân tích AI chỉ có khi mở chi tiết.
+- `product` cùng dạng với API chi tiết; `fns` do cùng engine tính. Dữ liệu danh sách lấy từ chỉ mục tìm kiếm của OpenFoodFacts, có thể cập nhật chậm hơn API sản phẩm, nên điểm có thể lệch với trang chi tiết; app mở chi tiết bằng mã vạch. **Không gọi Gemini** cho danh sách: phân tích AI chỉ có khi mở chi tiết.
 - Không có kết quả là `200` với `results: []`, không phải 404. Mã vạch không có trên OpenFoodFacts cũng vậy. Lỗi/giới hạn từ OpenFoodFacts vẫn trả `502/503/504` như API chi tiết.
 - `q` thiếu, rỗng, lặp lại (`?q=a&q=b`), quá 100 ký tự hoặc mã vạch sai số kiểm tra thì `400`.
-- Bỏ mục không có tên; bỏ mục trùng mã vạch. Cache riêng (mặc định 24 giờ, tối đa 200 mục), lỗi không được cache. Chung bộ giới hạn lượt gọi với `/api/product/:query`.
+- Tìm theo tên thì bỏ mục không có tên; tìm theo mã vạch thì giữ cả sản phẩm chưa có tên (như API chi tiết). Bỏ mục trùng mã vạch.
+- Cache riêng: thời hạn theo `CACHE_TTL_HOURS` (mặc định 24 giờ), tối đa 200 mục cố định (không theo `CACHE_MAX_ENTRIES`, vì mỗi mục chứa tới 20 sản phẩm). Lỗi và danh sách rỗng không được cache. Chung bộ giới hạn lượt gọi với `/api/product/:query`.
+- `ingredients` có tối đa 25 thành phần, mỗi tên tối đa 120 ký tự (bị cắt thì có "…"); `ingredients_truncated: true` khi OpenFoodFacts có nhiều hơn 25.
 
 ## Chạy frontend
 

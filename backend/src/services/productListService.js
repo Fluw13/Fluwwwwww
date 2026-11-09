@@ -11,11 +11,12 @@ const { isBarcode, validateProductQuery } = require('../validators/productQueryV
 
 const LIST_PAGE_SIZE = 20;
 const DEFAULT_CACHE_TTL_HOURS = 24;
-const DEFAULT_CACHE_MAX_ENTRIES = 200;
+// Not CACHE_MAX_ENTRIES: one list entry holds up to 20 products, so it gets its own, smaller limit.
+const CACHE_MAX_ENTRIES = 200;
 
 const cache = new TtlCache({
     ttlMs: readPositiveInteger(process.env.CACHE_TTL_HOURS, DEFAULT_CACHE_TTL_HOURS) * 60 * 60 * 1000,
-    maxEntries: readPositiveInteger(process.env.CACHE_MAX_ENTRIES, DEFAULT_CACHE_MAX_ENTRIES)
+    maxEntries: CACHE_MAX_ENTRIES
 });
 
 const inFlightSearches = new Map();
@@ -46,16 +47,18 @@ const uniqueByBarcode = (products) => {
     });
 };
 
-// No AI here: a list of up to 20 Gemini calls per search would be slow and costly. The FNS score is the
-// pure engine, so every item carries the same score its detail page will show.
+// No AI here: a list of up to 20 Gemini calls per search would be slow and costly. The score comes from the
+// same pure engine as the detail page; it can still differ when OFF's search index lags its product API.
 const toResult = (product) => ({ product, fns: evaluateFns(mapProductToFnsInput(product)) });
 
+// A barcode match is kept even without a name (it shows as "Sản phẩm chưa có tên", as on the detail page);
+// a nameless hit of a text search is dropped because nothing tells the user why it matched.
 const searchOpenFoodFacts = async (query) => {
     const hits = isBarcode(query)
         ? await fetchBarcodeHits(query)
-        : await productSearch.searchManyByName(query, { pageSize: LIST_PAGE_SIZE });
+        : (await productSearch.searchManyByName(query, { pageSize: LIST_PAGE_SIZE })).filter(hasName);
 
-    const products = hits.filter(hasName).map((hit) => normalizeProduct(hit, query));
+    const products = hits.map((hit) => normalizeProduct(hit, query));
     return uniqueByBarcode(products).slice(0, LIST_PAGE_SIZE).map(toResult);
 };
 
@@ -69,9 +72,12 @@ const searchProducts = async (rawQuery) => {
     }
 
     if (!inFlightSearches.has(key)) {
+        // An empty list is not cached: a product added to OFF a minute later must show up on the next search.
         const search = searchOpenFoodFacts(query)
             .then((results) => {
-                cache.set(key, results);
+                if (results.length > 0) {
+                    cache.set(key, results);
+                }
                 return results;
             })
             .finally(() => inFlightSearches.delete(key));
