@@ -25,7 +25,12 @@ const SHARED_FIELDS = [
     'categories_tags',
     'quantity',
     'product_quantity_unit',
-    'serving_quantity'
+    'serving_quantity',
+    'nova_group',
+    'nutriscore_grade',
+    'additives_tags',
+    'labels_tags',
+    'ingredients'
 ];
 // The product API returns the full document (often hundreds of KB) unless fields are listed.
 const BARCODE_FIELDS = [...SHARED_FIELDS, 'allergens_tags'].join(',');
@@ -107,8 +112,9 @@ const readBarcodeResponse = (response, barcode) => {
 const readSearchHits = (response) => {
     assertUsableStatus(response.status);
 
+    // A null or non-object hit would crash the ranking further down.
     const hits = response.data?.hits;
-    return Array.isArray(hits) ? hits : [];
+    return Array.isArray(hits) ? hits.filter((hit) => hit !== null && typeof hit === 'object' && !Array.isArray(hit)) : [];
 };
 
 const nameNotFoundError = (name) => notFoundError('có tên "' + name + '"');

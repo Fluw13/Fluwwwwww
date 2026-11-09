@@ -1,6 +1,14 @@
 const { readAllergens } = require('./allergenMapper');
 const { isBarcode } = require('../../validators/productQueryValidator');
 const { kcalToKj } = require('../scoring/nutrientNormalizer');
+const {
+    readNovaGroup,
+    readNutriScoreGrade,
+    readTags,
+    readAdditiveCodes,
+    readIngredients,
+    hasMoreIngredients
+} = require('./productFacts');
 
 const KILOJOULES_PER_KCAL = 4.184;
 const UNKNOWN_NAME = 'Sản phẩm chưa có tên';
@@ -91,6 +99,12 @@ const normalizeProduct = (raw, requestedQuery) => {
         quantity: readText(raw.quantity),
         product_quantity_unit: readText(raw.product_quantity_unit),
         serving_quantity: readPositiveNumber(raw.serving_quantity),
+        nova_group: readNovaGroup(raw.nova_group),
+        nutriscore_grade: readNutriScoreGrade(raw.nutriscore_grade),
+        additives: readAdditiveCodes(raw.additives_tags),
+        labels_tags: readTags(raw.labels_tags),
+        ingredients: readIngredients(raw.ingredients),
+        ingredients_truncated: hasMoreIngredients(raw.ingredients),
         // Per 100 g or 100 ml in OpenFoodFacts units: grams, except energy (kcal / kJ).
         nutriments: {
             'energy-kcal': readEnergyKcal(nutriments),
