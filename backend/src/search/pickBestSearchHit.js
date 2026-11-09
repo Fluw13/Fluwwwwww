@@ -70,6 +70,20 @@ const pickBestSearchHit = (hits, query) => {
     return bestHit;
 };
 
+// Best match first by the same criteria as pickBestSearchHit; ties keep the search engine's order (sort is stable).
+const rankSearchHits = (hits, query) => {
+    const queryCounts = countTokens(tokenize(query));
+    const usePrecision = queryCounts.size > 1;
+    const scored = hits.map((hit) => ({ hit, score: scoreHit(queryCounts, hit, usePrecision) }));
+    const compare = (left, right) => {
+        if (isBetter(left.score, right.score, usePrecision)) return -1;
+        if (isBetter(right.score, left.score, usePrecision)) return 1;
+        return 0;
+    };
+
+    return scored.sort(compare).map((entry) => entry.hit);
+};
+
 const matchesEveryQueryWord = (hit, query) => {
     const queryCounts = countTokens(tokenize(query));
     let totalQueryWords = 0;
@@ -81,4 +95,4 @@ const matchesEveryQueryWord = (hit, query) => {
     return totalQueryWords > 0 && scoreHit(queryCounts, hit, false).overlap === totalQueryWords;
 };
 
-module.exports = { pickBestSearchHit, matchesEveryQueryWord };
+module.exports = { pickBestSearchHit, rankSearchHits, matchesEveryQueryWord };
