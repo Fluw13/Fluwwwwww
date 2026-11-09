@@ -112,8 +112,9 @@ const readBarcodeResponse = (response, barcode) => {
 const readSearchHits = (response) => {
     assertUsableStatus(response.status);
 
+    // A null or non-object hit would crash the ranking further down.
     const hits = response.data?.hits;
-    return Array.isArray(hits) ? hits : [];
+    return Array.isArray(hits) ? hits.filter((hit) => hit !== null && typeof hit === 'object' && !Array.isArray(hit)) : [];
 };
 
 const nameNotFoundError = (name) => notFoundError('có tên "' + name + '"');

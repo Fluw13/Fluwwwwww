@@ -6,10 +6,18 @@ const MAX_INGREDIENTS = 25;
 const MAX_INGREDIENT_TEXT_LENGTH = 120;
 const NUTRISCORE_GRADES = new Set(['a', 'b', 'c', 'd', 'e']);
 const ADDITIVE_TAG = /^en:(e\d{3,4}[a-z]*)$/;
+const NUMERIC_TEXT = /^\d+(\.\d+)?$/;
+const ELLIPSIS = '…';
+
+// Only a number or a plain numeric string counts: Number(true) is 1 and Number([2]) is 2.
+const readNumber = (value) => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    return typeof value === 'string' && NUMERIC_TEXT.test(value.trim()) ? Number(value) : null;
+};
 
 const readNovaGroup = (value) => {
-    const group = Number(value);
-    return value !== null && value !== '' && Number.isInteger(group) && group >= 1 && group <= 4 ? group : null;
+    const group = readNumber(value);
+    return Number.isInteger(group) && group >= 1 && group <= 4 ? group : null;
 };
 
 // OFF also uses "unknown" and "not-applicable"; only a real grade is passed on.
@@ -32,25 +40,41 @@ const readAdditiveCodes = (tags) => {
 };
 
 const readPercent = (value) => {
-    const amount = Number(value);
-    return value !== null && value !== '' && Number.isFinite(amount) && amount >= 0 && amount <= 100 ? amount : null;
+    const amount = readNumber(value);
+    return amount !== null && amount >= 0 && amount <= 100 ? amount : null;
 };
 
-// `percent` is declared on the label; `percent_estimate` is OFF's own estimate and must be shown as such.
-const readIngredients = (ingredients) => {
-    if (!Array.isArray(ingredients)) {
-        return [];
-    }
+// Cuts by code point so an emoji or other surrogate pair is never split, and marks the cut.
+const shorten = (text) => {
+    const characters = Array.from(text);
+    return characters.length <= MAX_INGREDIENT_TEXT_LENGTH
+        ? text
+        : characters.slice(0, MAX_INGREDIENT_TEXT_LENGTH - 1).join('') + ELLIPSIS;
+};
 
-    return ingredients
+const readIngredientEntries = (ingredients) => (Array.isArray(ingredients)
+    ? ingredients
         .filter((item) => item !== null && typeof item === 'object' && typeof item.text === 'string')
         .map((item) => ({
-            text: item.text.trim().slice(0, MAX_INGREDIENT_TEXT_LENGTH),
+            text: shorten(item.text.trim()),
             percent: readPercent(item.percent),
             percent_estimate: readPercent(item.percent_estimate)
         }))
         .filter((item) => item.text.length > 0)
-        .slice(0, MAX_INGREDIENTS);
-};
+    : []);
 
-module.exports = { readNovaGroup, readNutriScoreGrade, readTags, readAdditiveCodes, readIngredients };
+// `percent` is declared on the label; `percent_estimate` is OFF's own estimate and must be shown as such.
+const readIngredients = (ingredients) => readIngredientEntries(ingredients).slice(0, MAX_INGREDIENTS);
+
+// True when OFF lists more ingredients than are passed on, so the app can say the list is incomplete.
+const hasMoreIngredients = (ingredients) => readIngredientEntries(ingredients).length > MAX_INGREDIENTS;
+
+module.exports = {
+    readNovaGroup,
+    readNutriScoreGrade,
+    readTags,
+    readAdditiveCodes,
+    readIngredients,
+    hasMoreIngredients,
+    MAX_INGREDIENTS
+};

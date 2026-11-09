@@ -2,6 +2,7 @@ const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const AppError = require('../src/errors/AppError');
 const {
+    buildSearchRequest,
     buildUserAgent,
     readBarcodeResponse,
     readSearchHits,
@@ -69,6 +70,7 @@ test('readSearchHits trả danh sách kết quả, rỗng khi không có hoặc 
     assert.deepEqual(readSearchHits({ status: 200, data: { hits: [{ code: '1' }] } }), [{ code: '1' }]);
     assert.deepEqual(readSearchHits({ status: 200, data: { hits: [] } }), []);
     assert.deepEqual(readSearchHits({ status: 200, data: 'html' }), []);
+    assert.deepEqual(readSearchHits({ status: 200, data: { hits: [null, 'x', [1], { code: '2' }] } }), [{ code: '2' }]);
 });
 
 test('lỗi mạng phân biệt timeout (504) với mất kết nối (502)', () => {
@@ -150,5 +152,35 @@ test('normalizeProduct giới hạn số thành phần và độ dài chữ', ()
     const product = normalizeProduct({ ingredients }, '12345678');
 
     assert.equal(product.ingredients.length, 25);
-    assert.ok(product.ingredients.every((item) => item.text.length === 120));
+    assert.equal(product.ingredients_truncated, true);
+    assert.ok(product.ingredients.every((item) => Array.from(item.text).length === 120 && item.text.endsWith('…')));
+});
+
+test('normalizeProduct: đủ 25 thành phần thì không báo bị cắt; cắt chữ không làm vỡ emoji', () => {
+    const exact = normalizeProduct({ ingredients: Array.from({ length: 25 }, (_, index) => ({ text: 'x' + index })) }, '12345678');
+    assert.equal(exact.ingredients.length, 25);
+    assert.equal(exact.ingredients_truncated, false);
+
+    const emoji = normalizeProduct({ ingredients: [{ text: '🍓'.repeat(130) }] }, '12345678');
+    assert.equal(Array.from(emoji.ingredients[0].text).length, 120);
+    assert.ok(emoji.ingredients[0].text.startsWith('🍓'.repeat(119)));
+    assert.equal(emoji.ingredients[0].text.at(-1), '…');
+});
+
+test('NOVA và tỷ lệ chỉ nhận số hoặc chuỗi số, không nhận true, mảng hay chuỗi lạ', () => {
+    for (const nova of [true, [2], '2a', ' ', {}, 2.5, Number.NaN]) {
+        assert.equal(normalizeProduct({ nova_group: nova }, '12345678').nova_group, null, String(nova));
+    }
+    assert.equal(normalizeProduct({ nova_group: ' 3 ' }, '12345678').nova_group, 3);
+
+    const product = normalizeProduct({ ingredients: [{ text: 'a', percent: true, percent_estimate: [50] }, { text: 'b', percent: '12.5' }] }, '12345678');
+    assert.deepEqual(product.ingredients.map((item) => [item.percent, item.percent_estimate]), [[null, null], [12.5, null]]);
+});
+
+test('tìm theo tên xin OFF đủ các trường mới (NOVA, Nutri-Score, phụ gia, nhãn, thành phần)', () => {
+    const { fields } = buildSearchRequest('sữa');
+
+    for (const field of ['nova_group', 'nutriscore_grade', 'additives_tags', 'labels_tags', 'ingredients', 'categories_tags']) {
+        assert.ok(fields.includes(field), field);
+    }
 });
