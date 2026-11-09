@@ -1,4 +1,5 @@
 const productService = require('../services/productService');
+const productListService = require('../services/productListService');
 
 const getProductInfo = async (request, response) => {
     const { result, cacheStatus } = await productService.getProductInfo(request.params.query);
@@ -13,4 +14,17 @@ const getProductInfo = async (request, response) => {
     });
 };
 
-module.exports = { getProductInfo };
+// `?q=a&q=b` arrives as an array; only a single text value is a valid query.
+const searchProducts = async (request, response) => {
+    const rawQuery = typeof request.query.q === 'string' ? request.query.q : '';
+    const { query, results, cacheStatus } = await productListService.searchProducts(rawQuery);
+
+    response.set('X-Cache', cacheStatus).status(200).json({
+        success: true,
+        query,
+        count: results.length,
+        results
+    });
+};
+
+module.exports = { getProductInfo, searchProducts };

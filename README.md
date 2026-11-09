@@ -8,7 +8,7 @@ Luồng chính: quét mã vạch hoặc nhập tên sản phẩm → tra cứu O
 
 | Thư mục | Công nghệ | Vai trò |
 | :--- | :--- | :--- |
-| `backend/` | Node.js, Express 5 | API `GET /api/product/:query`, `GET /health` |
+| `backend/` | Node.js, Express 5 | API `GET /api/product/:query`, `GET /api/product?q=`, `GET /health` |
 | `frontend/` | Flutter | Ứng dụng di động (Android là mục tiêu chính) |
 
 Backend theo từng lớp: `routes` → `controllers` → `services` (`productService` điều phối cache, `foodApiService`, `aiService`), lỗi được xử lý tập trung ở `middlewares/errorHandler.js` với `AppError`.
@@ -78,6 +78,14 @@ npm test
 - Tìm theo tên ưu tiên tiếng Việt (`langs: vi, en`) và dùng `product_name_vi`, `ingredients_text_vi` khi có.
 - Lấy 10 kết quả rồi chọn sản phẩm có tên/thương hiệu khớp nhiều từ nhất với từ khóa (không phân biệt dấu và chữ hoa, có đếm từ lặp lại, từ có cả ở tên và thương hiệu chỉ tính một lần, `src/search/pickBestSearchHit.js`). Bằng điểm thì ưu tiên sản phẩm có tên; với từ khóa từ 2 từ trở lên thì tiếp theo ưu tiên tên ít từ thừa; vẫn bằng thì giữ thứ tự của máy tìm kiếm.
 - Nếu từ khóa có dấu mà không kết quả nào khớp đủ các từ, tìm thêm một lần bằng bản không dấu ("mì hảo hảo" → "mi hao hao"), gộp kết quả (bỏ trùng mã vạch) rồi chọn lại (`src/services/openFoodFacts/productSearch.js`). Lần tìm thêm có timeout 5 giây; nếu nó lỗi mà lần đầu đã có kết quả thì vẫn dùng kết quả lần đầu. Mỗi lần tìm thêm được ghi log `[Search Fallback]` để theo dõi tỉ lệ.
+
+### Danh sách kết quả tìm kiếm
+
+- `GET /api/product?q=<từ khóa hoặc mã vạch>` trả `{ success, query, count, results: [{ product, fns }] }`, tối đa 20 mục, mục khớp nhất đứng đầu (cùng tiêu chí với `pickBestSearchHit`, `rankSearchHits`).
+- `product` cùng dạng với API chi tiết; `fns` do cùng engine tính nên trùng với điểm ở trang chi tiết. **Không gọi Gemini** cho danh sách: phân tích AI chỉ có khi mở chi tiết.
+- Không có kết quả là `200` với `results: []`, không phải 404. Mã vạch không có trên OpenFoodFacts cũng vậy. Lỗi/giới hạn từ OpenFoodFacts vẫn trả `502/503/504` như API chi tiết.
+- `q` thiếu, rỗng, lặp lại (`?q=a&q=b`), quá 100 ký tự hoặc mã vạch sai số kiểm tra thì `400`.
+- Bỏ mục không có tên; bỏ mục trùng mã vạch. Cache riêng (mặc định 24 giờ, tối đa 200 mục), lỗi không được cache. Chung bộ giới hạn lượt gọi với `/api/product/:query`.
 
 ## Chạy frontend
 

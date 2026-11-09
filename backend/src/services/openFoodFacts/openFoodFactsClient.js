@@ -127,7 +127,12 @@ const send = async (request) => {
     }
 };
 
-const buildSearchRequest = (name) => ({ q: name, page_size: SEARCH_PAGE_SIZE, fields: SEARCH_FIELDS, langs: SEARCH_LANGUAGES });
+const buildSearchRequest = (name, pageSize = SEARCH_PAGE_SIZE) => ({
+    q: name,
+    page_size: pageSize,
+    fields: SEARCH_FIELDS,
+    langs: SEARCH_LANGUAGES
+});
 
 const fetchByBarcode = async (barcode) => {
     const response = await send(() => httpClient.get(BARCODE_PRODUCT_URL + encodeURIComponent(barcode) + '.json', {
@@ -137,8 +142,8 @@ const fetchByBarcode = async (barcode) => {
     return readBarcodeResponse(response, barcode);
 };
 
-const fetchSearchHits = async (text, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) => {
-    const response = await send(() => httpClient.post(SEARCH_URL, buildSearchRequest(text), {
+const fetchSearchHits = async (text, { timeoutMs = REQUEST_TIMEOUT_MS, pageSize = SEARCH_PAGE_SIZE } = {}) => {
+    const response = await send(() => httpClient.post(SEARCH_URL, buildSearchRequest(text, pageSize), {
         headers: { 'Content-Type': 'application/json' },
         timeout: timeoutMs
     }));
