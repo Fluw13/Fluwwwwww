@@ -2,7 +2,7 @@
 
 Ứng dụng di động giúp bạn tra cứu dinh dưỡng của thực phẩm, ghi lại những gì đã ăn trong ngày và biết mình cần nạp bao nhiêu calo, protein theo chiều cao, cân nặng và mục tiêu. Trợ lý AI của app tên là **Zero**.
 
-> Đã xong khung dự án, công thức tính nhu cầu và cách xếp món vào Nhật ký. Đã có thiết kế; đang dựng giao diện, các màn vẫn ghi "Đang xây dựng".
+> Đã xong khung dự án, công thức BMR/TDEE/calo/protein và cách xếp món vào Nhật ký. Đã có thiết kế; đang dựng giao diện, các màn vẫn ghi "Đang xây dựng".
 
 ## Tính năng
 
@@ -11,8 +11,8 @@
 | Tra cứu | Tìm calo, protein (đạm), đường, chất béo của đồ đóng gói, trái cây, đồ tươi, món nấu chín, bánh kẹo | Chưa làm |
 | Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm tươi (cà chua, hành...) | Chưa làm |
 | Thông tin sản phẩm | Tên, ảnh, nhà cung cấp, Nutri-Score, các chỉ số dinh dưỡng, thành phần, đánh giá theo hồ sơ của bạn | Chưa làm |
-| Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Phần tính toán xong |
-| Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, chế độ ăn | Phần tính toán xong |
+| Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong phần xếp món và tính tổng |
+| Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong công thức BMR, TDEE, calo, protein |
 | Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Chưa làm |
 | Nước uống | Mục tiêu nước mỗi ngày, thêm nhanh 200/350/500 ml, lịch nhắc uống nước | Chưa làm |
 | Báo cáo | Biểu đồ calo theo tuần/tháng, tỉ lệ macro, cảnh báo đường/natri, cân nặng | Chưa làm |
@@ -67,7 +67,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 
 ## Quyền riêng tư (thiết kế dự kiến)
 
-- Hồ sơ sức khỏe, Nhật ký, lịch sử tra cứu, nước uống và cân nặng sẽ **chỉ lưu trên điện thoại**, không gửi lên máy chủ.
+- Hồ sơ sức khỏe, Nhật ký, lịch sử tra cứu, đã lưu, món nhập thủ công, sở thích, nước uống và cân nặng sẽ **chỉ lưu trên điện thoại**, không gửi lên máy chủ.
 - Tài khoản chỉ dùng để chấm sao cho sản phẩm. Dữ liệu sức khỏe không gắn với tài khoản.
 - Ảnh chụp để nhận diện sẽ đi qua máy chủ Fluw tới Google Gemini để nhận ra tên thực phẩm. Máy chủ Fluw không lưu ảnh; Google xử lý ảnh theo điều khoản Gemini API (với gói miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm).
 - Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL) và [USDA FoodData Central](https://fdc.nal.usda.gov) (phạm vi công cộng); món Việt từ bảng dữ liệu do Fluw tự xây.
@@ -76,7 +76,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 
 ```
 Điện thoại (Flutter)
-  ├─ Hồ sơ, Nhật ký, lịch sử, nước, cân nặng: SQLite trên máy
+  ├─ Hồ sơ, Nhật ký, lịch sử, đã lưu, sở thích, nước, cân nặng: SQLite trên máy
   ├─ Công thức BMR / TDEE / protein: tính trên máy
   └─ Tra cứu, quét, nhận diện ảnh, đánh giá ──► Backend Fluw (Node.js, Render)
                                                   ├─ Open Food Facts (đồ đóng gói, mã vạch)
@@ -89,8 +89,8 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 ```
 frontend/   app Flutter (Android, iOS)
   lib/app/        ghép app: router, thanh điều hướng
-  lib/core/       theme, widget dùng chung
-  lib/features/   mỗi tính năng một thư mục; hiện có presentation/, sẽ thêm data/ và domain/
+  lib/core/       theme, widget dùng chung, ngày tháng, dinh dưỡng
+  lib/features/   mỗi tính năng một thư mục: data/ (sẽ thêm), domain/ (công thức), presentation/ (màn hình)
 backend/    API Node.js + Express
   src/            app.js, middlewares/; sẽ thêm routes/, controllers/, services/, providers/
   tests/
@@ -163,7 +163,7 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
 | M0 | Khung dự án, CI build và ký APK *(xong)* |
 | **UI0** | Hệ thống giao diện theo thiết kế: màu, phông, thanh 5 tab *(tiếp theo)* |
 | M1 | API tra cứu, mã vạch, nhận diện ảnh; deploy Render |
-| M2 | Hồ sơ sức khỏe *(công thức xong)* |
+| M2 | Hồ sơ sức khỏe *(xong công thức BMR, TDEE, calo, protein)* |
 | M3 | Tra cứu, chi tiết sản phẩm, lịch sử & đã lưu |
 | M4 | Nhật ký theo ngày và khung giờ *(phần tính toán xong)* |
 | M5 | Quét mã vạch và nhận diện ảnh |

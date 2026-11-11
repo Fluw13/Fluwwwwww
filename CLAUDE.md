@@ -88,7 +88,7 @@ features/<tên>/
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
   presentation/           màn hình và widget riêng của tính năng
 ```
-- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`.
+- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`. Nhãn tab trong code (`AppTab`) đổi sang tên thiết kế ở UI0.
 - Chỉ `app/` được import `features/`. `core/` không import `features/`. Feature không import thẳng feature khác; phần dùng chung đưa vào `core/`.
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
@@ -112,21 +112,22 @@ features/<tên>/
   - `NutritionFacts`: số liệu cho mỗi 100 g hoặc 100 ml kèm `QuantityUnit`, nên lượng ăn luôn cùng đơn vị với số liệu.
   - `NutrientTotals`: tổng các giá trị đã biết kèm số món thiếu dữ liệu. Món nào cũng thiếu thì `knownSum` là `null`; không có món nào thì là 0.
 - `features/note/domain/` (M4):
-  - `MealSlot` (Đêm, Sáng, Chiều, Tối, xếp theo thứ tự trong ngày).
+  - `MealSlot` (`night`, `morning`, `afternoon`, `evening`, xếp theo giờ trong ngày). Màn Nhật ký hiện theo thứ tự thiết kế: Sáng, Trưa/Chiều, Tối, Khuya/Đêm, nên thứ tự hiển thị khác thứ tự enum. Tiêu đề mỗi khung luôn in giờ (vd "00:01 - 05:59") để không hiểu nhầm Khuya là sau Tối.
   - `placeInNote`: đổi giờ về giờ địa phương trước khi xếp, bỏ giây; 00:00 thuộc Tối hôm trước.
   - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
-### Thiết kế (`design/figma/`, 11 ảnh PNG 2x xuất từ Figma)
+### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
+- Chiều rộng ảnh khác nhau (780–1027 px) vì frame rộng khác nhau. Đo kích thước theo tỉ lệ với khung màn (390 dp), không chia 2 cho mọi ảnh.
 - **Bảng màu sáng** (Material 3, lấy mẫu từ ảnh):
 
   | Vai trò | Màu |
   |---|---|
   | primary | `#006C49` |
-  | xanh sáng (vòng tiến độ, thanh, nhãn) | `#10B981` |
+  | xanh sáng (vòng tiến độ, thanh) | `#10B981` |
   | primaryContainer | `#6FFBBE` |
   | secondary (protein, nước) | `#006398` |
   | secondaryContainer | `#CCE5FF` |
@@ -142,6 +143,7 @@ features/<tên>/
   | onSurfaceVariant | `#3C4A42` |
 
 - **Nút chính và nút Quét dùng `#006C49`** (FLuw chọn 11/11). Lý do: `#10B981` với chữ trắng chỉ đạt độ tương phản 2,5:1, dưới chuẩn WCAG AA.
+- **`#10B981` không dùng làm màu chữ**, vì trên nền sáng cũng chỉ đạt khoảng 2,5:1. Vòng tiến độ và thanh màu này luôn có số đi kèm, để thông tin không chỉ dựa vào màu.
 - Thiết kế chỉ có giao diện sáng; giao diện tối sinh từ cùng seed.
 - **Phông** (nhìn từ ảnh; FLuw chưa chắc, tạm dùng): tiêu đề Plus Jakarta Sans, nội dung Inter. Đóng gói file phông trong app, không tải lúc chạy.
 - **Bỏ hoặc sửa chữ sai sự thật trong thiết kế:**
@@ -209,7 +211,7 @@ flutter test
   - Hỏi ngày sinh đầy đủ (thiết kế chỉ hỏi năm).
   - Giới tính "Khác" thì hỏi thêm tính BMR theo công thức Nam hay Nữ.
   - BMI theo thang châu Á; natri dưới 2.000 mg/ngày (WHO).
-- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Nhật ký, lịch sử tra cứu, sở thích, nước uống, cân nặng. Không gửi chiều cao, cân nặng, bệnh lên server.
+- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Nhật ký, lịch sử tra cứu, đã lưu, món nhập thủ công, sở thích và chế độ ăn, nước uống, cân nặng. Không gửi chiều cao, cân nặng, bệnh lên server.
 - **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7 với Firebase Authentication (Google/email) + PostgreSQL trên Neon + backend Node kiểm ID token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 - **Nguồn dữ liệu dinh dưỡng:**
   - Đồ đóng gói và mã vạch: Open Food Facts.
@@ -271,21 +273,23 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 - Béo bão hòa < 10% kcal ÷ 9; có mỡ máu cao thì < 7%.
 - Đường < 10% kcal ÷ 4; bật "giảm ngọt" hoặc có tiểu đường thì < 5%.
   - Theo WHO là đường tự do; dữ liệu OFF/USDA chỉ có đường tổng, nên ghi rõ là đường tổng.
-- Tinh bột = (kcal mục tiêu − protein × 4 − chất béo × 9) ÷ 4.
+- Tinh bột = (kcal mục tiêu − protein cận dưới × 4 − chất béo × 9) ÷ 4.
+  - Ra số âm (hồ sơ cực đoan, vd nặng 300 kg, tập gym, giảm cân) thì không đặt mục tiêu tinh bột, ghi "Chưa tính được"; không kẹp về 0.
 - Dưới 18 tuổi không có kcal mục tiêu nên không tính các mục này.
 
 **Nước:** 35 ml × cân nặng (kg) mỗi ngày, người dùng chỉnh được. Không dùng thời tiết.
 
 **BMI** = cân nặng ÷ chiều cao(m)², thang châu Á:
-- dưới 18,5: thiếu cân;
-- 18,5–22,9: bình thường;
-- 23–24,9: thừa cân;
-- từ 25: béo phì.
+- `BMI < 18,5`: thiếu cân;
+- `18,5 ≤ BMI < 23`: bình thường;
+- `23 ≤ BMI < 25`: thừa cân;
+- `BMI ≥ 25`: béo phì.
 
 Chỉ áp dụng khi `tuổi ≥ 18`.
 
 **Khung giờ trang Nhật ký** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
+- Tên hiển thị theo thiết kế: Sáng, Trưa/Chiều, Tối, Khuya/Đêm; tên trong code giữ nguyên.
 - **Đêm thuộc ngày mới** (ngày theo lịch). Riêng 00:00 là "24:00", thuộc khung Tối của ngày hôm trước.
 - Ngoài cùng là nhóm theo ngày; mỗi khung và mỗi ngày có tổng calo, protein, đường...
 - "Đạm" và "protein" là một chỉ số, hiển thị là "Protein (đạm)".
@@ -311,9 +315,9 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
-| UI0 | Hệ thống giao diện theo thiết kế (màu, phông, header, thanh 5 tab có nút Quét nổi) | Tiếp theo |
+| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Đang làm |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, ghi cân nặng, chế độ ăn, dị ứng có mức độ | Domain công thức xong (#20) |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | #20 xong BMR/TDEE/calo/protein; còn BMI, macro %, nước |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
@@ -355,6 +359,13 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - Chưa làm trợ lý AI chat.
   - Các đề xuất về chỗ lệch giữa thiết kế và spec: không phản đối.
   - Nút chính dùng `#006C49` cho đủ độ tương phản; phông tạm dùng Plus Jakarta Sans + Inter.
+- **Sửa theo review độc lập:**
+  - Thang BMI hở khoảng (22,95 không thuộc mức nào) → viết bằng `<`/`≤`.
+  - Tinh bột có thể âm với hồ sơ cực đoan → dùng cận dưới protein, âm thì "Chưa tính được".
+  - `#10B981` không làm màu chữ.
+  - Ghi rõ thứ tự khung hiển thị khác enum, tên khung hiển thị, nhãn tab đổi ở UI0.
+  - Danh sách dữ liệu lưu trên máy thiếu đã lưu, món nhập tay, sở thích.
+  - README còn sơ đồ thư mục cũ; "công thức xong" thành "xong BMR/TDEE/calo/protein".
 - **Test:** không có code thay đổi.
 
 ### 11/11/2026 — M4 (phần domain): khung giờ Note, gom món theo ngày, tổng dinh dưỡng
