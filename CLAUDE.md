@@ -65,8 +65,15 @@
 - **Health check path chưa đặt.**
 - Gói free ngủ sau 15 phút không có request; request đầu tiên sau đó chậm khoảng 50 giây. App phải hiện trạng thái chờ và đặt timeout đủ dài.
 
-### Các trang
-Trang chủ, Tìm kiếm, Quét (mã vạch và nhận diện ảnh), **Note** (nhật ký ăn uống), Cá nhân (hồ sơ sức khỏe), Lịch sử tra cứu, Thông tin sản phẩm, Chi tiết sản phẩm.
+### Các trang (theo thiết kế Figma, ảnh ở `design/figma/`)
+- **5 tab:** Trang Chủ, Tra Cứu, **Quét Món** (nút tròn nổi ở giữa), **Nhật Ký**, Hồ Sơ.
+- **Màn mở từ tab:**
+  - Chi tiết sản phẩm.
+  - Lịch sử & Đã lưu.
+  - Thiết lập hồ sơ.
+  - Báo cáo tuần/tháng.
+  - Nước uống.
+  - Cài đặt nhắc uống nước.
 
 ---
 
@@ -95,11 +102,11 @@ features/<tên>/
     - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120;
     - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân.
 - **Ngày tháng:**
-  - Ngày sinh và ngày trong Note dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
+  - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
 - **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
-- `core/nutrition/` (dùng chung cho tra cứu, Note, gợi ý):
+- `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
   - `NutritionFacts`: số liệu cho mỗi 100 g hoặc 100 ml kèm `QuantityUnit`, nên lượng ăn luôn cùng đơn vị với số liệu.
@@ -111,6 +118,36 @@ features/<tên>/
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
+
+### Thiết kế (`design/figma/`, 11 ảnh PNG 2x xuất từ Figma)
+- Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
+- **Bảng màu sáng** (Material 3, lấy mẫu từ ảnh):
+
+  | Vai trò | Màu |
+  |---|---|
+  | primary | `#006C49` |
+  | nút chính | `#10B981` |
+  | primaryContainer | `#6FFBBE` |
+  | secondary (protein, nước) | `#006398` |
+  | secondaryContainer | `#CCE5FF` |
+  | tertiary | `#855300` |
+  | đường | `#FEA619` |
+  | béo | `#FFB95F` |
+  | error | `#BA1A1A` |
+  | errorContainer | `#FFF0EF` |
+  | surface | `#FAF8FF` |
+  | surfaceContainerLow | `#F2F3FF` |
+  | surfaceContainerHighest | `#DAE2FD` |
+  | onSurface | `#131B2E` |
+  | onSurfaceVariant | `#3C4A42` |
+
+- Thiết kế chỉ có giao diện sáng; giao diện tối sinh từ cùng seed.
+- **Phông** (nhìn từ ảnh, chờ FLuw xác nhận): tiêu đề Plus Jakarta Sans, nội dung Inter. Đóng gói file phông trong app, không tải lúc chạy.
+- **Bỏ hoặc sửa chữ sai sự thật trong thiết kế:**
+  - "NutriTrack" → Fluw.
+  - Bỏ: "chuẩn y khoa", "HIPAA/GDPR", "24.000+ thành viên", "Hội viên", "Apple Health", "LIVE RADAR 60FPS 98,4%", Nutri-Score "A+" và "/100", chỉ số GI, "độ no", "thời gian chuẩn bị", điểm "92/100", "100% khớp", "an toàn tuyệt đối", khẳng định y khoa về dạ dày.
+  - Không ước lượng khối lượng từ ảnh; người dùng chọn khẩu phần.
+  - Số sao ẩn đến M7.
 
 ### Android signing
 - `android/app/build.gradle.kts` đọc `android/key.properties` nếu có. Không có thì bản release ký bằng debug key.
@@ -157,9 +194,21 @@ flutter test
 ## 5. Quyết định đã chốt (FLuw duyệt 11/11/2026)
 
 - **Git:** giữ lịch sử, dọn code bằng commit. Không force push. Xóa toàn bộ 22 branch cũ, kể cả 4 branch có commit chưa merge (FLuw tự xóa trên GitHub).
-- **Tên:** app "Fluw", trợ lý "Zero", tab nhật ký tên **"Note"**.
-- **Giao diện:** theo Figma của FLuw. File Figma `2E8p4ZnGESwih1lNFyWeMA` có Page 1 trống và gói Starter đã hết lượt gọi MCP → **FLuw gửi ảnh PNG từng màn**. Chưa có ảnh thì không tự dựng giao diện chi tiết.
-- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Note, lịch sử tra cứu, sở thích. Không gửi chiều cao, cân nặng, bệnh lên server.
+- **Tên:** app "Fluw", trợ lý "Zero". Tab nhật ký tên **"Nhật Ký"** (đổi lại từ "Note" ngày 11/11 cho khớp thiết kế); trong code vẫn là `note`.
+- **Giao diện:** theo Figma của FLuw, ảnh ở `design/figma/`. Gói Figma Starter chỉ có vài lượt gọi MCP mỗi tháng, nên không dùng MCP; màn mới thì FLuw xuất PNG 2x.
+- **Chức năng thêm từ thiết kế (FLuw duyệt 11/11):**
+  - Theo dõi và nhắc uống nước.
+  - Báo cáo tuần/tháng và ghi cân nặng.
+  - Đã lưu và nhập món thủ công.
+  - Sở thích và chế độ ăn.
+- **Trợ lý AI chat (màn Báo cáo):** chưa làm ở bản đầu, vì phải gửi dữ liệu sức khỏe lên Gemini.
+- **Lệch giữa thiết kế và spec, chốt theo đề xuất của agent:**
+  - Tên khung theo thiết kế (Sáng / Trưa-Chiều / Tối / Khuya-Đêm), giờ theo spec. Màn Nhật ký hiện Khuya cuối cùng, nhưng món lúc khuya vẫn thuộc ngày mới.
+  - Tách "mức vận động" và "hình thức tập" thành 2 ô.
+  - Hỏi ngày sinh đầy đủ (thiết kế chỉ hỏi năm).
+  - Giới tính "Khác" thì hỏi thêm tính BMR theo công thức Nam hay Nữ.
+  - BMI theo thang châu Á; natri dưới 2.000 mg/ngày (WHO).
+- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Nhật ký, lịch sử tra cứu, sở thích, nước uống, cân nặng. Không gửi chiều cao, cân nặng, bệnh lên server.
 - **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7 với Firebase Authentication (Google/email) + PostgreSQL trên Neon + backend Node kiểm ID token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 - **Nguồn dữ liệu dinh dưỡng:**
   - Đồ đóng gói và mã vạch: Open Food Facts.
@@ -172,10 +221,12 @@ flutter test
 - **Dưới 18 tuổi:** không dùng Mifflin–St Jeor, không tính calo. `14 ≤ tuổi < 18` chỉ hiện protein 0,85 g/kg kèm lời khuyên gặp chuyên gia. `tuổi < 14` chặn tính toán. Người lớn là `tuổi ≥ 18`.
 - **Tốc độ giảm/tăng cân:** tối đa 0,5 kg/tuần (khoảng ±550 kcal/ngày so với TDEE). Mục tiêu calo không bao giờ thấp hơn BMR.
 - **Bệnh hỗ trợ bản đầu:**
-  - Tiểu đường: theo dõi đường.
-  - Huyết áp cao: theo dõi natri.
-  - Mỡ máu cao: theo dõi béo bão hòa.
-  - Dị ứng: theo tag dị ứng của OFF.
+  - Có cảnh báo tự động:
+    - Tiểu đường: theo dõi đường.
+    - Huyết áp cao: theo dõi natri.
+    - Mỡ máu cao: theo dõi béo bão hòa.
+    - Dị ứng: theo tag dị ứng của OFF, có mức độ.
+  - Chỉ lưu làm ghi chú, không cảnh báo vì không có dữ liệu purin, độ cay, GI: dạ dày, huyết áp thấp, gout, bệnh tự nhập.
 - **Nhắc nhở:** nhắc theo lịch, mặc định 10:00, 17:00, 22:00, người dùng chỉnh được. Nội dung nhắc dựa trên lượng đã nạp so với mục tiêu; ăn chưa đủ thì kèm gợi ý.
 - Dữ liệu từ nguồn và nội dung AI phải phân biệt rõ trên giao diện. Thiếu dữ liệu thì ghi "Chưa có dữ liệu", không hiện số 0 hay số bịa.
 - Mọi đánh giá sức khỏe ghi rõ là ước tính, không thay thế tư vấn y tế.
@@ -214,7 +265,25 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp.
 
 Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo "hình thức tập" người dùng khai (không tập / nhẹ, sức bền / gym); gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ. App hiện cả khoảng; coi là **đủ** khi đạt cận dưới. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
 
-**Khung giờ trang Note** (tính theo phút, bỏ giây):
+**Tinh bột, chất béo, đường (theo % năng lượng mục tiêu, FLuw chọn 11/11):**
+- Chất béo = 25% kcal ÷ 9.
+- Béo bão hòa < 10% kcal ÷ 9; có mỡ máu cao thì < 7%.
+- Đường < 10% kcal ÷ 4; bật "giảm ngọt" hoặc có tiểu đường thì < 5%.
+  - Theo WHO là đường tự do; dữ liệu OFF/USDA chỉ có đường tổng, nên ghi rõ là đường tổng.
+- Tinh bột = (kcal mục tiêu − protein × 4 − chất béo × 9) ÷ 4.
+- Dưới 18 tuổi không có kcal mục tiêu nên không tính các mục này.
+
+**Nước:** 35 ml × cân nặng (kg) mỗi ngày, người dùng chỉnh được. Không dùng thời tiết.
+
+**BMI** = cân nặng ÷ chiều cao(m)², thang châu Á:
+- dưới 18,5: thiếu cân;
+- 18,5–22,9: bình thường;
+- 23–24,9: thừa cân;
+- từ 25: béo phì.
+
+Chỉ áp dụng khi `tuổi ≥ 18`.
+
+**Khung giờ trang Nhật ký** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
 - **Đêm thuộc ngày mới** (ngày theo lịch). Riêng 00:00 là "24:00", thuộc khung Tối của ngày hôm trước.
 - Ngoài cùng là nhóm theo ngày; mỗi khung và mỗi ngày có tổng calo, protein, đường...
@@ -225,7 +294,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 ## 7. Đang chờ FLuw
 
 ### Câu hỏi
-1. **Ảnh PNG từng màn** từ Figma.
+1. **Phông chữ:** thiết kế dùng Plus Jakarta Sans (tiêu đề) và Inter (nội dung) phải không?
 2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
@@ -241,13 +310,16 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
+| UI0 | Hệ thống giao diện theo thiết kế (màu, phông, header, thanh 5 tab có nút Quét nổi) | Tiếp theo |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
-| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain ở PR #20; giao diện, lưu SQLite chờ PNG |
-| M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
-| M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Domain ở PR M4; giao diện, lưu SQLite chờ PNG |
-| M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
-| M6 | Gợi ý nên/không nên, nhắc 10h/17h/22h, sở thích | Chờ M2–M4 |
-| M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau M6; khi bắt đầu, FLuw tạo project Firebase và database Neon |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, ghi cân nặng, chế độ ăn, dị ứng có mức độ | Domain công thức xong (#20) |
+| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
+| M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
+| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
+| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Chờ M2–M4 |
+| M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
+| M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
+| M9 | Báo cáo tuần/tháng: calo, macro, đường/natri, cân nặng, nước | Chờ M2, M4, M8 |
 
 ---
 
@@ -268,6 +340,20 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 11/11/2026 — Nhận thiết kế Figma, chốt phạm vi theo thiết kế
+- **Merge PR #21** (M4 domain, `b53e986`).
+- **Xác minh quy tắc tự merge:** sau khi merge #20 (không đụng `backend/`), Render không tạo deploy mới. Deploy gần nhất vẫn là `dep-dbq9t0tbedkc739l7h80` của #19.
+- **Thiết kế:**
+  - FLuw gửi zip 11 màn PNG 2x, lưu ở `design/figma/` với tên không dấu.
+  - Đã đọc hết các màn, lấy mẫu bảng màu (mục 3).
+- **FLuw chốt:**
+  - Thêm 4 nhóm chức năng: nước, báo cáo + cân nặng, đã lưu + nhập thủ công, chế độ ăn.
+  - 5 tab, tên "Nhật Ký".
+  - Macro theo % năng lượng.
+  - Chưa làm trợ lý AI chat.
+  - Các đề xuất về chỗ lệch giữa thiết kế và spec: không phản đối.
+- **Test:** không có code thay đổi.
 
 ### 11/11/2026 — M4 (phần domain): khung giờ Note, gom món theo ngày, tổng dinh dưỡng
 - **Merge PR #20** (M2 domain, `cac1f81`), agent tự merge theo quyền ở mục 1: CI xanh, đã review, không đụng `backend/` hay workflow.
