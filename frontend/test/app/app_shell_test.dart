@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_tab.dart';
 import 'package:fluw/app/fluw_app.dart';
-import 'package:fluw/features/diary/presentation/diary_screen.dart';
 import 'package:fluw/features/home/presentation/home_screen.dart';
+import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
 import 'package:fluw/features/search/presentation/search_screen.dart';
@@ -13,7 +13,7 @@ Type _expectedScreen(AppTab tab) {
     AppTab.home => HomeScreen,
     AppTab.search => SearchScreen,
     AppTab.scan => ScanScreen,
-    AppTab.diary => DiaryScreen,
+    AppTab.note => NoteScreen,
     AppTab.profile => ProfileScreen,
   };
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:fluw/app/app_shell.dart';
 import 'package:fluw/app/app_tab.dart';
-import 'package:fluw/features/diary/presentation/diary_screen.dart';
 import 'package:fluw/features/home/presentation/home_screen.dart';
+import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
 import 'package:fluw/features/search/presentation/search_screen.dart';
@@ -30,7 +30,7 @@ Widget _screenFor(AppTab tab) {
     AppTab.home => const HomeScreen(),
     AppTab.search => const SearchScreen(),
     AppTab.scan => const ScanScreen(),
-    AppTab.diary => const DiaryScreen(),
+    AppTab.note => const NoteScreen(),
     AppTab.profile => const ProfileScreen(),
   };
 }
