@@ -1,0 +1,19 @@
+{
+  "name": "fluw-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API dữ liệu dinh dưỡng cho ứng dụng Fluw",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
