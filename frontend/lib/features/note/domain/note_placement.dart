@@ -7,10 +7,11 @@ const int _morningStartMinute = 6 * 60;
 const int _afternoonStartMinute = 12 * 60 + 1;
 const int _eveningStartMinute = 18 * 60 + 1;
 
-/// [eatenAt] must be in the user's local time. Seconds are ignored; 00:00 counts as 24:00 of the previous day.
+/// Uses the device's local time. Seconds are ignored; 00:00 counts as 24:00 of the previous day.
 NotePlacement placeInNote(DateTime eatenAt) {
-  final day = CalendarDate.fromDateTime(eatenAt);
-  final minuteOfDay = eatenAt.hour * 60 + eatenAt.minute;
+  final localTime = eatenAt.toLocal();
+  final day = CalendarDate.fromDateTime(localTime);
+  final minuteOfDay = localTime.hour * 60 + localTime.minute;
 
   if (minuteOfDay == 0) {
     return (day: day.addDays(-1), slot: MealSlot.evening);

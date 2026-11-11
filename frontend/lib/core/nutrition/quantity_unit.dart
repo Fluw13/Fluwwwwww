@@ -1,0 +1,1 @@
+enum QuantityUnit { gram, milliliter }

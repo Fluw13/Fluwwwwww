@@ -5,12 +5,10 @@ import 'package:fluw/features/note/domain/note_entry.dart';
 
 final class NoteDay {
   NoteDay._(this.date, Map<MealSlot, List<NoteEntry>> entriesBySlot)
-    : entriesBySlot = {
+    : entriesBySlot = Map.unmodifiable({
         for (final slot in MealSlot.values)
-          slot: List.unmodifiable(
-            <NoteEntry>[...?entriesBySlot[slot]]..sort((first, second) => first.eatenAt.compareTo(second.eatenAt)),
-          ),
-      };
+          slot: List<NoteEntry>.unmodifiable(<NoteEntry>[...?entriesBySlot[slot]]..sort(_byTimeThenId)),
+      });
 
   final CalendarDate date;
   final Map<MealSlot, List<NoteEntry>> entriesBySlot;
@@ -19,6 +17,12 @@ final class NoteDay {
 
   NutrientTotals get dayTotal =>
       NutrientTotals.of(entriesBySlot.values.expand((entries) => entries).map((entry) => entry.nutrients));
+
+  // List.sort is not stable, so entries eaten at the same time need a tie-breaker to keep a fixed order.
+  static int _byTimeThenId(NoteEntry first, NoteEntry second) {
+    final byTime = first.eatenAt.compareTo(second.eatenAt);
+    return byTime != 0 ? byTime : first.id.compareTo(second.id);
+  }
 }
 
 /// Newest day first; days without entries are not included.

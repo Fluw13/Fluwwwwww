@@ -75,7 +75,7 @@ Trang chủ, Tìm kiếm, Quét (mã vạch và nhận diện ảnh), **Note** (
 ### Frontend `frontend/lib/`
 ```
 app/                      ghép app: FluwApp, router (go_router), shell 5 tab, AppTab
-core/                     dùng chung: theme, widget chung, time (CalendarDate), (sau này) network, database, format
+core/                     dùng chung: theme, widget chung, time (CalendarDate), nutrition, (sau này) network, database, format
 features/<tên>/
   data/                   gọi API, đọc/ghi SQLite, chuyển đổi JSON
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
@@ -99,6 +99,17 @@ features/<tên>/
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
 - **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
+- `core/nutrition/` (dùng chung cho tra cứu, Note, gợi ý):
+  - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
+  - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
+  - `NutritionFacts`: số liệu cho mỗi 100 g hoặc 100 ml kèm `QuantityUnit`, nên lượng ăn luôn cùng đơn vị với số liệu.
+  - `NutrientTotals`: tổng các giá trị đã biết kèm số món thiếu dữ liệu. Món nào cũng thiếu thì `knownSum` là `null`; không có món nào thì là 0.
+- `features/note/domain/` (M4):
+  - `MealSlot` (Đêm, Sáng, Chiều, Tối, xếp theo thứ tự trong ngày).
+  - `placeInNote`: đổi giờ về giờ địa phương trước khi xếp, bỏ giây; 00:00 thuộc Tối hôm trước.
+  - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
+  - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
+  - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Android signing
@@ -135,6 +146,7 @@ dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 ```
+- Code dính tới giờ (`placeInNote`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test`. CI chạy UTC nên không bắt được lỗi quên `toLocal()`. Đã đề xuất FLuw thêm `TZ` vào workflow (sửa workflow cần FLuw duyệt).
 - Môi trường cloud của agent không có Flutter sẵn: tải SDK `flutter_linux_3.47.9-stable.tar.xz` từ `storage.googleapis.com` vào scratchpad, `chown` thư mục SDK. **Không chạy `git config --global --add safe.directory`.**
 - Không có Android SDK trong môi trường agent → không build APK tại chỗ, không kiểm được `build.gradle.kts`. CI build APK ở job `android-apk`.
 - Proxy của môi trường agent chỉ cho push vào branch của phiên. Tạo tag, xóa branch khác phải để FLuw làm trên GitHub.
@@ -232,7 +244,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
 | M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain ở PR #20; giao diện, lưu SQLite chờ PNG |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
-| M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
+| M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Domain ở PR M4; giao diện, lưu SQLite chờ PNG |
 | M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
 | M6 | Gợi ý nên/không nên, nhắc 10h/17h/22h, sở thích | Chờ M2–M4 |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau M6; khi bắt đầu, FLuw tạo project Firebase và database Neon |
@@ -256,6 +268,24 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 11/11/2026 — M4 (phần domain): khung giờ Note, gom món theo ngày, tổng dinh dưỡng
+- **Merge PR #20** (M2 domain, `cac1f81`), agent tự merge theo quyền ở mục 1: CI xanh, đã review, không đụng `backend/` hay workflow.
+- **Thêm:**
+  - `frontend/lib/core/nutrition/` (5 file), `CalendarDate.addDays`.
+  - `frontend/lib/features/note/domain/` (4 file).
+  - Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - Giờ dạng UTC bị xếp sai khung: lúc 00:00 giờ Việt Nam bị xếp vào Chiều hôm trước. Đã thêm `toLocal()`.
+  - Tổng khi món nào cũng thiếu dữ liệu ra 0 → trả `null`.
+  - `unit` không dùng khi tính, nhập 200 ml cho số liệu theo 100 g vẫn được → thêm `NutritionFacts` gói số liệu cùng đơn vị.
+  - Map ngoài của `entriesBySlot` sửa được, gây crash → `Map.unmodifiable`.
+  - Thêm `id` cho `NoteEntry`, dùng làm khóa phụ khi sắp xếp.
+  - `Nutrients` có `==` và `asMap()`.
+  - Bổ sung test cho 3 đột biến trước đó lọt qua: 00:00:59, tổng ngày bỏ khung Đêm, từ chối giá trị 0.
+- **Test:**
+  - `flutter test` 104/104, chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
+  - Kiểm 16 đột biến dưới `TZ=Asia/Ho_Chi_Minh`: lần nào cũng có test fail.
 
 ### 11/11/2026 — Merge PR #19 và deploy backend khung mới
 - **Merge:** FLuw cho phép, merge commit `70a58e9`. CI trên `main` xanh cả 3 job.

@@ -25,8 +25,19 @@ void main() {
     });
   }
 
-  test('bỏ qua giây: 12:00:59 vẫn là Sáng', () {
+  test('bỏ qua giây: 12:00:59 vẫn là Sáng, 05:59:59 vẫn là Đêm', () {
     expect(at(12, 0, 59).slot, MealSlot.morning);
+    expect(at(5, 59, 59), (day: today, slot: MealSlot.night));
+  });
+
+  test('bỏ qua giây ở mốc 00:00: 00:00:59 vẫn thuộc Tối hôm trước', () {
+    expect(at(0, 0, 59), (day: CalendarDate(2026, 11, 10), slot: MealSlot.evening));
+  });
+
+  test('giờ dạng UTC được đổi về giờ địa phương trước khi xếp', () {
+    for (final local in [DateTime(2026, 11, 12), DateTime(2026, 11, 11, 6), DateTime(2026, 11, 11, 23, 59)]) {
+      expect(placeInNote(local.toUtc()), placeInNote(local));
+    }
   });
 
   test('00:00 là 24:00, thuộc khung Tối của ngày hôm trước', () {
