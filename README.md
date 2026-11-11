@@ -1,114 +1,162 @@
 # Fluw
 
-Ứng dụng quét mã vạch thực phẩm và phân tích dinh dưỡng bằng AI **Zero**.
+Ứng dụng di động giúp bạn tra cứu dinh dưỡng của thực phẩm, ghi lại những gì đã ăn trong ngày và biết mình cần nạp bao nhiêu calo, protein theo chiều cao, cân nặng và mục tiêu. Trợ lý AI của app tên là **Zero**.
 
-Luồng chính: quét mã vạch hoặc nhập tên sản phẩm → tra cứu OpenFoodFacts → Gemini chấm điểm sức khỏe (0-100) → hiển thị kết quả.
+> Dự án đang ở mốc **M0 (khung dự án)**. Các màn hình đã có điều hướng nhưng nội dung ghi "Đang xây dựng".
 
-## Cấu trúc
+## Tính năng
 
-| Thư mục | Công nghệ | Vai trò |
-| :--- | :--- | :--- |
-| `backend/` | Node.js, Express 5 | API `GET /api/product/:query`, `GET /api/product?q=`, `GET /health` |
-| `frontend/` | Flutter | Ứng dụng di động (Android là mục tiêu chính) |
+| Tính năng | Mô tả | Trạng thái |
+|---|---|---|
+| Tra cứu | Tìm calo, protein (đạm), đường, chất béo của đồ đóng gói, trái cây, đồ tươi, món nấu chín, bánh kẹo | Chưa làm |
+| Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm tươi (cà chua, hành...) | Chưa làm |
+| Thông tin sản phẩm | Tên, ảnh, nhà cung cấp, số sao đánh giá, các chỉ số dinh dưỡng | Chưa làm |
+| Note | Thêm món vào Note, xếp theo ngày và 4 khung giờ, có tổng theo buổi và theo ngày | Chưa làm |
+| Hồ sơ sức khỏe | Chiều cao, cân nặng, tuổi, giới tính, mức vận động, dị ứng, bệnh, cân nặng mục tiêu, sở thích | Chưa làm |
+| Gợi ý | Lượng calo và protein nên nạp; sản phẩm nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được), kèm gợi ý nếu ăn chưa đủ | Chưa làm |
+| Lịch sử tra cứu | Xem lại những gì đã tìm hoặc quét | Chưa làm |
+| Tài khoản và đánh giá | Đăng nhập để chấm sao cho sản phẩm | Chưa làm |
 
-Backend theo từng lớp: `routes` → `controllers` → `services` (`productService` điều phối cache, `foodApiService`, `aiService`), lỗi được xử lý tập trung ở `middlewares/errorHandler.js` với `AppError`.
+**Khung giờ trong Note:** Sáng 06:00–12:00 · Chiều 12:01–18:00 · Tối 18:01–24:00 · Đêm 00:01–05:59. Khung Đêm tính vào ngày mới; riêng 00:00 tính là 24:00 của ngày hôm trước.
 
-| Thư mục backend | Trách nhiệm |
-| :--- | :--- |
-| `src/services/openFoodFacts/` | `openFoodFactsClient` (HTTP, User-Agent, timeout, phân loại lỗi), `productNormalizer` (chuẩn hóa dữ liệu), `allergenMapper` (tên dị ứng tiếng Việt) |
-| `src/services/ai/` | `geminiClient` (gọi Gemini, timeout, lỗi), `analysisPrompt` (prompt + schema), `analysisParser` (kiểm tra đầu ra AI) |
-| `src/errors/` | `AppError`, danh sách mã lỗi `errorCodes` |
+## App tính nhu cầu thế nào
 
-Phản hồi lỗi có dạng `{ "success": false, "error": "<thông báo tiếng Việt>", "code": "<MÃ_LỖI>" }`. Mã lỗi: `INVALID_QUERY`, `INVALID_BARCODE`, `BAD_REQUEST`, `ROUTE_NOT_FOUND`, `PRODUCT_NOT_FOUND`, `RATE_LIMITED`, `UPSTREAM_RATE_LIMITED` (kèm header `Retry-After`), `UPSTREAM_TIMEOUT`, `UPSTREAM_UNAVAILABLE`, `INTERNAL_ERROR`.
+**Năng lượng cơ bản (BMR, công thức Mifflin–St Jeor)**
+- Nam: `BMR = 10 × cân nặng(kg) + 6,25 × chiều cao(cm) − 5 × tuổi + 5`
+- Nữ: `BMR = 10 × cân nặng(kg) + 6,25 × chiều cao(cm) − 5 × tuổi − 161`
 
-## Chạy backend
+**Tổng năng lượng tiêu hao trong ngày:** `TDEE = BMR × hệ số vận động`
+
+| Mức vận động | Hệ số |
+|---|---|
+| Ít vận động | 1,2 |
+| Hoạt động nhẹ | 1,375 |
+| Hoạt động vừa | 1,55 |
+| Hoạt động nhiều | 1,725 |
+| Hoạt động rất cao | 1,9 |
+
+**Mục tiêu calo khi muốn giảm/tăng cân:** lệch khỏi TDEE tối đa khoảng 550 kcal/ngày (không quá 0,5 kg/tuần) và không bao giờ thấp hơn BMR.
+
+**Protein:** `cân nặng(kg) × P`
+
+| Nhóm | P (g/kg/ngày) |
+|---|---|
+| 14 đến dưới 18 tuổi | 0,85 |
+| Từ 18 tuổi, không tập thường xuyên | 0,8 |
+| Vận động nhẹ / sức bền (chạy bộ, đạp xe, yoga) | 1,2–1,4 |
+| Gym / tăng cơ | 1,6–2,2 |
+| Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
+
+Các mức tập luyện chỉ áp dụng từ 18 tuổi.
+
+**Dưới 18 tuổi:** app không tính calo, vì công thức của người lớn không phù hợp với tuổi đang phát triển. Tuổi 14 đến dưới 18 chỉ hiện mức protein tham khảo và khuyên hỏi chuyên gia; dưới 14 tuổi app không tính.
+
+Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư vấn của bác sĩ hay chuyên gia dinh dưỡng.
+
+## Quyền riêng tư (thiết kế dự kiến)
+
+- Hồ sơ sức khỏe, Note và lịch sử tra cứu sẽ **chỉ lưu trên điện thoại**, không gửi lên máy chủ.
+- Tài khoản chỉ dùng để chấm sao cho sản phẩm. Dữ liệu sức khỏe không gắn với tài khoản.
+- Ảnh chụp để nhận diện sẽ đi qua máy chủ Fluw tới Google Gemini để nhận ra tên thực phẩm. Máy chủ Fluw không lưu ảnh; Google xử lý ảnh theo điều khoản Gemini API (với gói miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm).
+- Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL) và [USDA FoodData Central](https://fdc.nal.usda.gov) (phạm vi công cộng); món Việt từ bảng dữ liệu do Fluw tự xây.
+
+## Kiến trúc
+
+```
+Điện thoại (Flutter)
+  ├─ Hồ sơ, Note, lịch sử: SQLite trên máy
+  ├─ Công thức BMR / TDEE / protein: tính trên máy
+  └─ Tra cứu, quét, nhận diện ảnh, đánh giá ──► Backend Fluw (Node.js, Render)
+                                                  ├─ Open Food Facts (đồ đóng gói, mã vạch)
+                                                  ├─ USDA FoodData Central (đồ tươi)
+                                                  ├─ Bảng món Việt của Fluw
+                                                  ├─ Google Gemini (nhận diện ảnh)
+                                                  └─ Tài khoản + database đánh giá (M7)
+```
+
+```
+frontend/   app Flutter (Android, iOS)
+  lib/app/        ghép app: router, thanh điều hướng
+  lib/core/       theme, widget dùng chung
+  lib/features/   mỗi tính năng một thư mục; hiện có presentation/, sẽ thêm data/ và domain/
+backend/    API Node.js + Express
+  src/            app.js, middlewares/; sẽ thêm routes/, controllers/, services/, providers/
+  tests/
+```
+
+## Chạy trên máy
+
+Yêu cầu: Flutter 3.47.9, Node.js 22.9 trở lên (bản 22.x).
 
 ```bash
 cd backend
-cp .env.example .env   # điền GEMINI_API_KEY
 npm install
-npm run dev
 npm test
+npm run dev
 ```
-
-### Biến môi trường
-
-| Biến | Mặc định | Ý nghĩa |
-| :--- | :--- | :--- |
-| `GEMINI_API_KEY` | (bắt buộc) | API key Gemini. Chỉ đặt trong `.env` hoặc trên Render, không commit. |
-| `GEMINI_MODEL` | `gemini-3.6-flash` | Model dùng để phân tích |
-| `OFF_CONTACT_EMAIL` | (trống = dùng link GitHub của dự án) | Email liên hệ trong User-Agent gửi tới OpenFoodFacts (`Fluw/<version> (<email>)`), theo yêu cầu của OpenFoodFacts |
-| `RATE_LIMIT_WINDOW_MINUTES` / `RATE_LIMIT_MAX_REQUESTS` | `15` / `30` | Số lần tra cứu tối đa mỗi IP trong một khoảng thời gian |
-| `TRUST_PROXY_HOPS` | `1` | Số proxy đứng trước server (Render), để rate limit đọc đúng IP |
-| `CORS_ORIGINS` | (trống = cho phép mọi origin) | Danh sách origin web được phép, cách nhau bằng dấu phẩy. App di động không bị ảnh hưởng. |
-| `CACHE_TTL_HOURS` / `CACHE_MAX_ENTRIES` | `24` / `500` | Thời gian giữ và số kết quả tối đa trong cache |
-
-### Bảo mật và dữ liệu
-
-- Đầu vào giới hạn 100 ký tự, không chấp nhận ký tự điều khiển.
-- Dữ liệu OpenFoodFacts (do cộng đồng đóng góp) được đặt trong khối riêng trong prompt và cắt bớt độ dài, Gemini được dặn bỏ qua mọi chỉ dẫn nằm trong đó. Ký tự `<`, `>`, `&` được escape để dữ liệu không thể tự đóng khối `<product_data>`.
-- Đầu ra của Gemini được kiểm tra lại: phải có nội dung giải thích, danh sách chỉ giữ chuỗi và bị giới hạn độ dài. Gemini **không chấm điểm**: mọi điểm Gemini tự trả về đều bị bỏ, `alternatives` luôn rỗng (giữ trường cho app cũ).
-- Giá trị dinh dưỡng chỉ lấy theo 100 g (không dùng số liệu theo khẩu phần); không có dữ liệu thì trả về `null`, không phải `0`. Sản phẩm chỉ có năng lượng theo kJ được quy đổi sang kcal.
-- Khi Gemini lỗi hoặc chưa cấu hình, API vẫn trả dữ liệu sản phẩm với `aiAnalysis: null` và `aiError` cho biết lý do.
-- Gọi Gemini có timeout 40 giây (tự thử lại 1 lần khi gặp lỗi tạm thời 408, 500, 502-504 hoặc lỗi mạng, vẫn nằm trong 40 giây; lỗi 429 hết hạn mức không thử lại và trả `aiError: AI_RATE_LIMITED`), gọi OpenFoodFacts có timeout 10 giây (lần tìm thêm bản không dấu: 5 giây). Tổng tối đa 55 giây, còn dư cho cold start của Render (~50 giây) trong giới hạn 120 giây của app; app gọi `/health` khi mở để đánh thức server.
-- Mã vạch 12-14 chữ số (UPC-A, EAN-13, GTIN-14) được kiểm tra số kiểm tra; sai thì trả `400 INVALID_BARCODE` thay vì gọi OpenFoodFacts.
-- OpenFoodFacts trả 404 → `PRODUCT_NOT_FOUND`; trả 429 → `503 UPSTREAM_RATE_LIMITED` kèm `Retry-After: 60`; các lỗi khác → 502/504.
-- Tra cứu theo mã vạch chỉ lấy các trường cần dùng (`fields=`) thay vì cả tài liệu sản phẩm.
-- Server dừng êm khi nhận `SIGTERM`/`SIGINT` (ngừng nhận kết nối mới, chờ request đang chạy).
-- Chính sách quyền riêng tư (bản nháp): [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md).
-
-### Fluw Nutrition Score (FNS)
-
-- Điểm 0–10 do engine thuần ở `backend/src/services/scoring/` tính, không gọi mạng hay AI. Cấu trúc điểm theo HSR Implementation Guide v9. Chi tiết, contract và các mục cần đối chiếu: [`docs/ADR-001-FNS-V1.md`](docs/ADR-001-FNS-V1.md).
-- `GET /api/product/:query` trả thêm object `fns` (cùng cấp với `product`).
-- Ba trạng thái `status`:
-  - `VERIFIED`;
-  - `PROVISIONAL`: dữ liệu cộng đồng, FVNL ước tính, hoặc bộ quy tắc chưa đối chiếu xong;
-  - `NOT_SCORED`: `score: null`, kèm `reason_codes` và `missing_fields`.
-- Trạng thái `NOT_SCORED` không bao giờ hiển thị thành 0 điểm.
-- Nhóm sản phẩm suy ra từ `categories_tags` của OpenFoodFacts (`categoryResolver.js`). Không chắc thì không chấm.
-- Không chấm các nhóm sau (`OUT_OF_SCOPE`): đồ uống có cồn, thực phẩm trẻ em, thực phẩm bổ sung, nước lọc, siro/bột pha.
-- Gemini nhận kết quả FNS đã tính và chỉ giải thích. Gemini lỗi hay hết hạn mức không làm thay đổi điểm.
-
-### Cache và tìm kiếm
-
-- Kết quả thành công (sản phẩm + phân tích AI) được lưu trong bộ nhớ theo mã vạch hoặc tên đã chuẩn hóa, mặc định 24 giờ, tối đa 500 mục (bỏ mục ít dùng nhất). Lỗi và kết quả thiếu phân tích AI không được lưu, để lần sau gọi lại Gemini. Header `X-Cache: HIT|MISS` cho biết kết quả lấy từ đâu.
-- Nhiều yêu cầu cùng lúc cho cùng một sản phẩm chỉ gọi Gemini một lần.
-- Cache nằm trong bộ nhớ của server: mất khi Render khởi động lại.
-- Tìm theo tên ưu tiên tiếng Việt (`langs: vi, en`) và dùng `product_name_vi`, `ingredients_text_vi` khi có.
-- Lấy 10 kết quả rồi chọn sản phẩm có tên/thương hiệu khớp nhiều từ nhất với từ khóa (không phân biệt dấu và chữ hoa, có đếm từ lặp lại, từ có cả ở tên và thương hiệu chỉ tính một lần, `src/search/pickBestSearchHit.js`). Bằng điểm thì ưu tiên sản phẩm có tên; với từ khóa từ 2 từ trở lên thì tiếp theo ưu tiên tên ít từ thừa; vẫn bằng thì giữ thứ tự của máy tìm kiếm.
-- Nếu từ khóa có dấu mà không kết quả nào khớp đủ các từ, tìm thêm một lần bằng bản không dấu ("mì hảo hảo" → "mi hao hao"), gộp kết quả (bỏ trùng mã vạch) rồi chọn lại (`src/services/openFoodFacts/productSearch.js`). Lần tìm thêm có timeout 5 giây; nếu nó lỗi mà lần đầu đã có kết quả thì vẫn dùng kết quả lần đầu. Mỗi lần tìm thêm được ghi log `[Search Fallback]` để theo dõi tỉ lệ.
-
-### Danh sách kết quả tìm kiếm
-
-- `GET /api/product?q=<từ khóa hoặc mã vạch>` trả `{ success, query, count, results: [{ product, fns }] }`, tối đa 20 mục, mục khớp nhất đứng đầu (cùng tiêu chí với `pickBestSearchHit`, `rankSearchHits`).
-- `product` cùng dạng với API chi tiết; `fns` do cùng engine tính. Dữ liệu danh sách lấy từ chỉ mục tìm kiếm của OpenFoodFacts, có thể cập nhật chậm hơn API sản phẩm, nên điểm có thể lệch với trang chi tiết; app mở chi tiết bằng mã vạch. **Không gọi Gemini** cho danh sách: phân tích AI chỉ có khi mở chi tiết.
-- Không có kết quả là `200` với `results: []`, không phải 404. Mã vạch không có trên OpenFoodFacts cũng vậy. Lỗi/giới hạn từ OpenFoodFacts vẫn trả `502/503/504` như API chi tiết.
-- `q` thiếu, rỗng, lặp lại (`?q=a&q=b`), quá 100 ký tự hoặc mã vạch sai số kiểm tra thì `400`.
-- Tìm theo tên thì bỏ mục không có tên; tìm theo mã vạch thì giữ cả sản phẩm chưa có tên (như API chi tiết). Bỏ mục trùng mã vạch.
-- Cache riêng: thời hạn theo `CACHE_TTL_HOURS` (mặc định 24 giờ), tối đa 200 mục cố định (không theo `CACHE_MAX_ENTRIES`, vì mỗi mục chứa tới 20 sản phẩm). Lỗi và danh sách rỗng không được cache. Chung bộ giới hạn lượt gọi với `/api/product/:query`.
-- `ingredients` có tối đa 25 thành phần, mỗi tên tối đa 120 ký tự (bị cắt thì có "…"); `ingredients_truncated: true` khi OpenFoodFacts có nhiều hơn 25.
-- Đã thử request thật (09/11/2026): chỉ mục tìm kiếm `search.openfoodfacts.org` trả `nova_group`, `nutriscore_grade`, `labels_tags`, `categories_tags`, `nutriments`, nhưng **không trả `additives_tags` và `ingredients`** (0/20 kết quả, kể cả Nutella). API sản phẩm theo mã vạch thì trả đủ. Vì vậy mục trong danh sách có `additives: []`, `ingredients: []`; app mở chi tiết bằng mã vạch để có đủ dữ liệu.
-
-## Chạy frontend
 
 ```bash
 cd frontend
 flutter pub get
-flutter run
 flutter test
+flutter run
 ```
 
-Mặc định ứng dụng gọi `https://fluw.onrender.com`. Để trỏ tới backend khác:
+## Cài APK lên điện thoại Android
 
-```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api/product
-```
+1. Vào tab **Actions** của repo trên GitHub, chọn lần chạy **CI** mới nhất có dấu xanh.
+2. Ở mục **Artifacts**, tải **fluw-apk** (file .zip) và giải nén ra `app-release.apk`.
+3. Chép file vào điện thoại, mở và cho phép "Cài ứng dụng không rõ nguồn gốc" khi được hỏi.
 
-Email hỗ trợ hiện trong màn Tài khoản đặt bằng `--dart-define=SUPPORT_EMAIL=...`. Nếu không đặt, app hiện một địa chỉ mẫu và ghi rõ đó là mẫu.
+Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa debug mới mỗi lần build. Lúc đó muốn cài bản mới phải gỡ bản cũ trước, và gỡ app là mất dữ liệu trên máy. Có keystore rồi thì các bản sau cài đè được, giữ nguyên dữ liệu. Riêng lần chuyển từ khóa debug sang keystore vẫn phải gỡ bản cũ một lần.
 
-Lịch sử quét và tìm kiếm chỉ giữ trong lúc app đang mở, không ghi xuống máy và không gửi đi. Muốn lưu lâu dài cần có đăng nhập, phần này chưa làm.
+### Tạo keystore (làm một lần)
 
-Build bản release cần tạo `frontend/android/key.properties` từ file `key.properties.example`. Không commit file này và file `.jks`.
+1. Tạo file keystore. Lệnh `keytool` có sẵn trong JDK:
 
-Yêu cầu Flutter 3.44 trở lên (do `shared_preferences`). Kiến trúc giao diện (theme sáng/tối, skeleton, chuyển trang) xem [`docs/FRONTEND_UI_FOUNDATION.md`](docs/FRONTEND_UI_FOUNDATION.md).
+   ```bash
+   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+
+   Trên Windows, nếu không gọi được `keytool` thì dùng bản đi kèm Android Studio (PowerShell):
+
+   ```powershell
+   & "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+
+   Mật khẩu: **chữ cái không dấu và số, tối thiểu 6 ký tự**. Nếu được hỏi mật khẩu riêng cho key thì nhập **giống hệt** mật khẩu keystore.
+
+2. Chuyển file sang dạng base64 (chạy trong thư mục chứa `upload-keystore.jks`):
+   - Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\upload-keystore.jks")) | Set-Content -NoNewline -Encoding ascii keystore-base64.txt`
+   - macOS: `base64 -i upload-keystore.jks -o keystore-base64.txt`
+   - Linux: `base64 -w 0 upload-keystore.jks > keystore-base64.txt`
+
+3. Trên GitHub: **Settings → Secrets and variables → Actions → New repository secret**, thêm 4 secret:
+
+   | Tên | Giá trị |
+   |---|---|
+   | `ANDROID_KEYSTORE_BASE64` | nội dung file `keystore-base64.txt` |
+   | `ANDROID_KEYSTORE_PASSWORD` | mật khẩu keystore |
+   | `ANDROID_KEY_ALIAS` | `upload` |
+   | `ANDROID_KEY_PASSWORD` | giống hệt mật khẩu keystore |
+
+4. Xóa `keystore-base64.txt`.
+5. Cất `upload-keystore.jks` và mật khẩu ở nơi an toàn: mất chúng thì không cập nhật được app trên Google Play.
+6. Không commit file `.jks`, không gửi file hay mật khẩu cho ai, kể cả trong chat.
+
+## Lộ trình
+
+| Mốc | Nội dung |
+|---|---|
+| **M0** | Khung dự án, CI build và ký APK *(đang review)* |
+| M1 | API tra cứu, mã vạch, nhận diện ảnh; deploy Render |
+| M2 | Hồ sơ sức khỏe và công thức tính nhu cầu |
+| M3 | Tìm kiếm, thông tin sản phẩm, lịch sử |
+| M4 | Note theo ngày và khung giờ |
+| M5 | Quét mã vạch và nhận diện ảnh |
+| M6 | Gợi ý, nhắc nhở, sở thích |
+| M7 | Tài khoản và đánh giá sao |
+
+## Bản cũ
+
+Phiên bản trước (tra cứu thực phẩm và chấm điểm FNS) đã được gỡ ở mốc M0. Toàn bộ mã nguồn cũ vẫn xem được tại commit `df79e6b`.

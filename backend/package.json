@@ -1,24 +1,19 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "API tra cứu sản phẩm và phân tích dinh dưỡng bằng AI cho ứng dụng Fluw",
+  "name": "fluw-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API dữ liệu dinh dưỡng cho ứng dụng Fluw",
   "main": "server.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
     "test": "node --test"
   },
-  "license": "ISC",
-  "type": "commonjs",
   "engines": {
-    "node": "22.x"
+    "node": ">=22.9.0 <23"
   },
   "dependencies": {
-    "@google/genai": "^2.31.0",
-    "axios": "^1.21.0",
-    "cors": "^2.8.6",
-    "dotenv": "^18.0.9",
-    "express": "^5.3.0",
-    "express-rate-limit": "^8.7.1"
+    "express": "^5.3.0"
   }
 }
