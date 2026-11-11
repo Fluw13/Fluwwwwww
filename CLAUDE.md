@@ -21,8 +21,15 @@
 - Mỗi mốc / tính năng / bug fix một Pull Request để FLuw xem.
 - **Không push trực tiếp vào `main`. Không deploy production** khi FLuw chưa cho phép rõ ràng.
 - **Quyền merge (FLuw cho phép 11/11/2026):**
-  - Agent được tự merge PR **không sửa file nào trong `backend/`**, khi CI xanh cả 3 job và các lỗi review chéo đã sửa. Merge bằng merge commit, tiêu đề `Merge PR #N: ...`.
-  - PR có sửa `backend/` (merge là Render deploy production) thì phải chờ FLuw duyệt.
+  - Agent được tự merge PR **không thêm, sửa, xóa hay đổi tên file nào trong `backend/` và `.github/workflows/`**, khi đủ 3 điều kiện:
+    - CI xanh cả 3 job `backend`, `frontend`, `android-apk`;
+    - đã có review chéo;
+    - các lỗi review đã sửa.
+  - Merge bằng merge commit, tiêu đề `Merge PR #N: ...`.
+  - PR có đụng `backend/` hoặc `.github/workflows/` thì phải chờ FLuw duyệt.
+    - `backend/`: merge là Render deploy production.
+    - Workflow CI: CI xanh là điều kiện để Render deploy.
+  - Quy tắc này dựa trên việc Render đặt root dir `backend` (đổi file ngoài `backend/` không làm Render deploy). Đổi root dir hoặc build filter của Render thì phải xem lại quy tắc.
 - Không ghi đè thay đổi sẵn có của FLuw. Working tree có thay đổi lạ thì kiểm tra trước.
 - Trước khi push: phải có agent khác review chéo và các lỗi review đã sửa.
 - Commit bằng danh tính git đã cấu hình sẵn, không ghi tên FLuw làm tác giả.
@@ -228,7 +235,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 | M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
 | M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
 | M6 | Gợi ý nên/không nên, nhắc 10h/17h/22h, sở thích | Chờ M2–M4 |
-| M7 | Tài khoản + đánh giá sao | Chờ câu 4 |
+| M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau M6; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 
 ---
 
@@ -259,8 +266,9 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - API cũ `/api/product/*` đã gỡ khỏi production.
 - **Chưa kiểm:** gọi `/health` từ ngoài, vì mạng của môi trường agent chặn `fluw.onrender.com`.
 - **Quyền merge mới:** FLuw cho agent tự merge PR không đụng `backend/` (ghi ở mục 1).
+  - Theo review chéo, quy tắc được thắt chặt thêm: PR đụng `.github/workflows/` cũng phải chờ FLuw duyệt, vì CI xanh là điều kiện để Render deploy.
 
-### 11/11/2026 — M2 (phần domain): công thức BMR, TDEE, mục tiêu calo, protein
+### 11/11/2026 — M2 (phần domain, PR #20): công thức BMR, TDEE, mục tiêu calo, protein
 - **Quyết định FLuw đồng ý:**
   - Bảng món Việt tính từ công thức món × số liệu USDA.
   - Protein hiện cả khoảng, đủ khi đạt cận dưới; gym kèm giảm cân thì vào nhóm giảm mỡ giữ cơ.
