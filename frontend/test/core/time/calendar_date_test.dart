@@ -20,6 +20,12 @@ void main() {
     expect(CalendarDate(2026, 2, 1).isAfter(CalendarDate(2026, 1, 31)), isTrue);
   });
 
+  test('cộng trừ ngày qua tháng, năm và ngày 29/2', () {
+    expect(CalendarDate(2026, 1, 1).addDays(-1), CalendarDate(2025, 12, 31));
+    expect(CalendarDate(2028, 3, 1).addDays(-1), CalendarDate(2028, 2, 29));
+    expect(CalendarDate(2026, 2, 28).addDays(1), CalendarDate(2026, 3, 1));
+  });
+
   test('bằng nhau khi cùng ngày và in ra dạng yyyy-MM-dd', () {
     expect(CalendarDate(2026, 5, 3), CalendarDate(2026, 5, 3));
     expect(CalendarDate(2026, 5, 3).hashCode, CalendarDate(2026, 5, 3).hashCode);

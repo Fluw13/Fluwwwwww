@@ -13,6 +13,8 @@ final class CalendarDate implements Comparable<CalendarDate> {
   final int month;
   final int day;
 
+  CalendarDate addDays(int days) => CalendarDate.fromDateTime(DateTime.utc(year, month, day + days));
+
   bool isAfter(CalendarDate other) => compareTo(other) > 0;
 
   @override
