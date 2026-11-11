@@ -45,8 +45,8 @@
 |---|---|
 | Repository | `https://github.com/Fluw13/Fluwwwwww`, branch chính `main` |
 | Frontend | Flutter 3.47.9 / Dart 3.13.7, thư mục `frontend/`, chỉ Android và iOS, id `com.fluw.app` |
-| Backend | Node.js 22 + Express 5, thư mục `backend/`, entry `server.js` |
-| Hosting backend | Render: `https://fluw.onrender.com`. Cấu hình service **chưa kiểm tra** (chờ FLuw xác nhận workspace) |
+| Backend | Node.js ≥ 22.9 (22.x) + Express 5, thư mục `backend/`, entry `server.js` |
+| Hosting backend | Render: `https://fluw.onrender.com`, tự deploy khi `main` đổi. Cấu hình service **chưa kiểm tra** (chờ FLuw xác nhận workspace) |
 | APK | CI build, tải ở GitHub Actions → artifact `fluw-apk` |
 
 ### Các trang
@@ -172,7 +172,7 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp. Ngư�
 
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
-| M0 | Dọn repo, khung frontend/backend, CI build APK, CLAUDE.md, README | Đang review (PR) |
+| M0 | Dọn repo, khung frontend/backend, CI build APK, CLAUDE.md, README | Đang review (PR). **Merge là Render deploy khung mới ngay, API cũ `/api/product/*` biến mất** |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; deploy Render | Chờ câu 2, 10 |
 | M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Chờ PNG, câu 4, 5, 12 |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG, câu 3 |
@@ -187,6 +187,9 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp. Ngư�
 - Dữ liệu sức khỏe là dữ liệu cá nhân nhạy cảm theo Nghị định 13/2023/NĐ-CP → giữ trên máy. Nếu sau này có tài khoản/đồng bộ thì cần màn đồng ý, chính sách quyền riêng tư và cho xóa tài khoản trong app.
 - Open Food Facts: dữ liệu ODbL, ảnh CC BY-SA; phải ghi nguồn trên giao diện. Nhiều sản phẩm Việt Nam thiếu `categories_tags` và dinh dưỡng.
 - `android/gradle/wrapper/gradle-wrapper.jar`, `gradlew` bị `.gitignore` của template bỏ qua; Flutter tự tạo khi build.
+- Runner CI tạo debug keystore mới mỗi lần → mỗi APK một chữ ký, không cài đè được, phải gỡ bản cũ (mất dữ liệu SQLite). Cần keystore cố định trong GitHub Secrets trước khi M2 bắt đầu lưu dữ liệu (câu 11).
+- M1, khi thêm `express.json()`: `errorHandler` phải giữ `error.status` 4xx (JSON hỏng → 400, body quá lớn → 413) thay vì trả 500.
+- Express 5 gọi callback của `app.listen` cả khi lỗi; `server.js` đã bỏ qua nhánh lỗi để handler `'error'` xử lý.
 - Gói Gemini miễn phí giới hạn lượt/ngày; model đang dùng trên Render chưa kiểm tra lại.
 
 ---
@@ -201,4 +204,11 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
 - **Frontend mới:** `flutter create` lại, chỉ Android/iOS, id `com.fluw.app`, quyền INTERNET ở manifest chính, bỏ comment TODO của template. `lib/app/` (FluwApp, router, shell, AppTab), `lib/core/theme/`, `lib/core/widgets/empty_state.dart`, 5 màn khung ở `lib/features/*/presentation/` ghi rõ "Đang xây dựng".
 - **CI:** ghim Flutter 3.47.9, thêm kiểm tra `dart format`, thêm job `android-apk` build APK release và tải lên artifact `fluw-apk`.
 - **Không làm được:** tạo tag `legacy-v0` và xóa 22 branch cũ, vì proxy chặn push ngoài branch của phiên. Lịch sử vẫn giữ; bản cũ ở `df79e6b`.
-- **Test:** `npm test` 3/3; `npm start` trả `{"status":"ok"}` ở `/health`. `flutter analyze` sạch, `dart format` sạch, `flutter test` 6/6. Job `android-apk` chưa chạy tại chỗ (không có Android SDK); kết quả xem trên CI của PR.
+- **Sửa theo review độc lập:**
+  - `server.js`: cổng bị chiếm vẫn in "Server is running" (callback Express 5 nhận lỗi).
+  - `engines` thành `>=22.9.0 <23`, vì `--env-file-if-exists` cần Node 22.9.
+  - Thêm test kiểm `notFound` và `errorHandler` là hai middleware cuối của app; gỡ `errorHandler` thì test fail.
+  - CI thêm `permissions: contents: read`.
+  - README: ghi rõ phần quyền riêng tư là dự kiến (kèm điều khoản Gemini gói miễn phí), thư mục nào chưa có, và cảnh báo APK phải gỡ bản cũ trước khi cài.
+  - Hoãn sang M1: `errorHandler` giữ status 4xx (chưa có body parser nào sinh lỗi 4xx).
+- **Test:** `npm test` 4/4; `npm start` trả `{"status":"ok"}` ở `/health`; cổng bị chiếm thì thoát mã 1 và không in log sai. `flutter analyze` sạch, `dart format` sạch, `flutter test` 6/6; bỏ `SingleChildScrollView` khỏi `EmptyState` thì test 320×568 chữ 200% fail. Job `android-apk` chưa chạy tại chỗ (không có Android SDK); kết quả xem trên CI của PR.

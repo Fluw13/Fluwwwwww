@@ -38,11 +38,11 @@
 
 Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư vấn của bác sĩ hay chuyên gia dinh dưỡng. Người dưới 18 tuổi không dùng trực tiếp công thức của người lớn.
 
-## Quyền riêng tư
+## Quyền riêng tư (thiết kế dự kiến)
 
-- Hồ sơ sức khỏe, nhật ký ăn uống và lịch sử tra cứu **chỉ lưu trên điện thoại**. App không có đăng nhập.
-- Ảnh chụp để nhận diện được gửi lên máy chủ Fluw rồi tới Google Gemini để nhận ra tên thực phẩm; không lưu lại.
-- Dữ liệu sản phẩm từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL).
+- Hồ sơ sức khỏe, nhật ký ăn uống và lịch sử tra cứu sẽ **chỉ lưu trên điện thoại**. App không có đăng nhập.
+- Ảnh chụp để nhận diện sẽ đi qua máy chủ Fluw tới Google Gemini để nhận ra tên thực phẩm. Máy chủ Fluw không lưu ảnh; Google xử lý ảnh theo điều khoản Gemini API (với gói miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm).
+- Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL).
 
 ## Kiến trúc
 
@@ -60,15 +60,15 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 frontend/   app Flutter (Android, iOS)
   lib/app/        ghép app: router, thanh điều hướng
   lib/core/       theme, widget dùng chung
-  lib/features/   mỗi tính năng một thư mục: data / domain / presentation
+  lib/features/   mỗi tính năng một thư mục; hiện có presentation/, sẽ thêm data/ và domain/
 backend/    API Node.js + Express
-  src/            app, routes, controllers, services, middlewares
+  src/            app.js, middlewares/; sẽ thêm routes/, controllers/, services/, providers/
   tests/
 ```
 
 ## Chạy trên máy
 
-Yêu cầu: Flutter 3.47.9, Node.js 22.
+Yêu cầu: Flutter 3.47.9, Node.js 22.9 trở lên (bản 22.x).
 
 ```bash
 cd backend
@@ -90,7 +90,12 @@ flutter run
 2. Ở mục **Artifacts**, tải **fluw-apk** (file .zip) và giải nén ra `app-release.apk`.
 3. Chép file vào điện thoại, mở và cho phép "Cài ứng dụng không rõ nguồn gốc" khi được hỏi.
 
-Bản APK hiện ký bằng khóa debug: cài thử được ngay, nhưng chưa đưa lên Google Play được.
+Bản APK hiện ký bằng khóa debug do CI tạo mới **mỗi lần build**, nên:
+- Cài lần đầu thì được ngay.
+- Muốn cài bản mới hơn phải **gỡ bản cũ trước**. Gỡ app thì mất dữ liệu đã lưu trên máy.
+- Chưa đưa lên Google Play được.
+
+Muốn cài đè giữ dữ liệu thì cần một keystore cố định lưu trong GitHub Secrets (đang chờ quyết định).
 
 ## Lộ trình
 
