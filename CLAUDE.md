@@ -19,7 +19,10 @@
 
 ### Git (không được tự ý vượt)
 - Mỗi mốc / tính năng / bug fix một Pull Request để FLuw xem.
-- **Không push trực tiếp vào `main`. Không tự merge PR. Không deploy production** khi FLuw chưa cho phép rõ ràng.
+- **Không push trực tiếp vào `main`. Không deploy production** khi FLuw chưa cho phép rõ ràng.
+- **Quyền merge (FLuw cho phép 11/11/2026):**
+  - Agent được tự merge PR **không sửa file nào trong `backend/`**, khi CI xanh cả 3 job và các lỗi review chéo đã sửa. Merge bằng merge commit, tiêu đề `Merge PR #N: ...`.
+  - PR có sửa `backend/` (merge là Render deploy production) thì phải chờ FLuw duyệt.
 - Không ghi đè thay đổi sẵn có của FLuw. Working tree có thay đổi lạ thì kiểm tra trước.
 - Trước khi push: phải có agent khác review chéo và các lỗi review đã sửa.
 - Commit bằng danh tính git đã cấu hình sẵn, không ghi tên FLuw làm tác giả.
@@ -207,7 +210,6 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
-- Duyệt và merge PR #19 (M0). Merge xong Render deploy khung mới, API cũ `/api/product/*` biến mất.
 - Xóa 22 branch cũ trên GitHub.
 - Tạo keystore, thêm 4 secret Android (hướng dẫn trong README).
 - Đặt Health Check Path `/health` cho service `Fluw` trên Render.
@@ -219,9 +221,9 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
-| M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | PR #19 đang review |
+| M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
-| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain xong (chờ review); giao diện, lưu SQLite chờ PNG |
+| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain ở PR #20; giao diện, lưu SQLite chờ PNG |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
 | M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
 | M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
@@ -247,6 +249,16 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 11/11/2026 — Merge PR #19 và deploy backend khung mới
+- **Merge:** FLuw cho phép, merge commit `70a58e9`. CI trên `main` xanh cả 3 job.
+- **Deploy (VERIFIED qua log Render, 16:58 UTC):**
+  - Node 22.23.5, chọn theo `engines`.
+  - `npm install` báo 0 lỗ hổng.
+  - Có log `Server is running on port 5000`; deploy `dep-dbq9t0tbedkc739l7h80` ở trạng thái `live`.
+  - API cũ `/api/product/*` đã gỡ khỏi production.
+- **Chưa kiểm:** gọi `/health` từ ngoài, vì mạng của môi trường agent chặn `fluw.onrender.com`.
+- **Quyền merge mới:** FLuw cho agent tự merge PR không đụng `backend/` (ghi ở mục 1).
 
 ### 11/11/2026 — M2 (phần domain): công thức BMR, TDEE, mục tiêu calo, protein
 - **Quyết định FLuw đồng ý:**
