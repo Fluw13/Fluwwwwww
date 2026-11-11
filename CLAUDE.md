@@ -75,6 +75,13 @@ features/<tên>/
 - Chỉ `app/` được import `features/`. `core/` không import `features/`. Feature không import thẳng feature khác; phần dùng chung đưa vào `core/`.
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
+- `features/profile/domain/` (M2):
+  - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn, làm tròn 0,1 kg).
+  - `age` (mốc 14 và 18).
+  - `energy` (BMR, TDEE), `calorie_target`, `protein_target` (`ProteinGroup` và `ProteinTarget`).
+  - `health_profile`, `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
+  - `calculateDailyTargets` trả `AdultTargets` / `TeenTargets` / `BelowMinimumAge`, dùng sealed class nên UI phải xử lý đủ 3 trường hợp.
+  - Giới hạn hồ sơ (Zero chọn, FLuw chưa duyệt): chiều cao 100–250 cm, cân nặng 20–300 kg, tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần.
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Android signing
@@ -124,11 +131,11 @@ flutter test
 - **Tên:** app "Fluw", trợ lý "Zero", tab nhật ký tên **"Note"**.
 - **Giao diện:** theo Figma của FLuw. File Figma `2E8p4ZnGESwih1lNFyWeMA` có Page 1 trống và gói Starter đã hết lượt gọi MCP → **FLuw gửi ảnh PNG từng màn**. Chưa có ảnh thì không tự dựng giao diện chi tiết.
 - **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Note, lịch sử tra cứu, sở thích. Không gửi chiều cao, cân nặng, bệnh lên server.
-- **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7.
+- **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7 với Firebase Authentication (Google/email) + PostgreSQL trên Neon + backend Node kiểm ID token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 - **Nguồn dữ liệu dinh dưỡng:**
   - Đồ đóng gói và mã vạch: Open Food Facts.
   - Đồ tươi: USDA FoodData Central (cần API key miễn phí, đặt ở Render dưới tên `USDA_API_KEY`).
-  - Món Việt: Fluw **tự xây bảng dữ liệu** (cách xây đang chờ chốt, mục 7).
+  - Món Việt: Fluw **tự xây bảng dữ liệu**. Mỗi món là một công thức (nguyên liệu, số gram cho 1 suất), dinh dưỡng tính từ số liệu nguyên liệu của USDA (CC0). Trên app ghi "Ước tính theo công thức Fluw". Không chép Bảng thành phần thực phẩm Việt Nam khi chưa rõ giấy phép.
 - **Scan ảnh:** Gemini Vision qua backend, chỉ để nhận ra tên thực phẩm; dinh dưỡng tra từ các nguồn trên, không lấy từ AI. Máy chủ Fluw không lưu ảnh.
 - **Render:** dùng workspace "My Workspace", service `Fluw` hiện tại chạy backend mới.
 - **APK:** FLuw tự tạo keystore và đưa vào GitHub Secrets.
@@ -176,7 +183,7 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp.
 | Gym / tăng cơ | 1,6–2,2 |
 | Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
 
-Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
+Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo "hình thức tập" người dùng khai (không tập / nhẹ, sức bền / gym); gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ. App hiện cả khoảng; coi là **đủ** khi đạt cận dưới. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
 
 **Khung giờ trang Note** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
@@ -190,11 +197,6 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 
 ### Câu hỏi
 1. **Ảnh PNG từng màn** từ Figma.
-2. **Cách xây bảng món Việt.** Đề xuất: mỗi món là một công thức (nguyên liệu và số gram cho 1 suất), dinh dưỡng tính từ số liệu nguyên liệu của USDA. Dữ liệu USDA thuộc phạm vi công cộng (CC0) nên dùng hợp pháp. Trên app ghi "Ước tính theo công thức Fluw". Không chép nguyên Bảng thành phần thực phẩm Việt Nam của Viện Dinh dưỡng khi chưa rõ giấy phép.
-3. **Protein trong khoảng (vd 1,6–2,2):**
-   - Đề xuất hiện cả khoảng; coi là "đủ" khi đạt cận dưới.
-   - Chọn nhóm theo lựa chọn "hình thức tập" của người dùng: không tập, nhẹ/sức bền, gym. Gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ.
-4. **Hạ tầng tài khoản cho đánh giá sao (M7).** Đề xuất Firebase Authentication (đăng nhập Google/email) + PostgreSQL trên Neon (gói free không hết hạn) + backend Node kiểm token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 
 ### Việc FLuw làm trên GitHub / Render
 - Duyệt và merge PR #19 (M0). Merge xong Render deploy khung mới, API cũ `/api/product/*` biến mất.
@@ -211,7 +213,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | PR #19 đang review |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key, câu 2 |
-| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Phần domain làm được sau khi #19 merge (chờ câu 3); giao diện chờ PNG |
+| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain xong (chờ review); giao diện, lưu SQLite chờ PNG |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
 | M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
 | M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
@@ -237,6 +239,22 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 11/11/2026 — M2 (phần domain): công thức BMR, TDEE, mục tiêu calo, protein
+- **Quyết định FLuw đồng ý:**
+  - Bảng món Việt tính từ công thức món × số liệu USDA.
+  - Protein hiện cả khoảng, đủ khi đạt cận dưới; gym kèm giảm cân thì vào nhóm giảm mỡ giữ cơ.
+  - Tài khoản: Firebase Auth + Neon Postgres.
+- **Thêm:** 11 file trong `frontend/lib/features/profile/domain/` (xem mục 3), Dart thuần, không import Flutter.
+- **Quyết định kỹ thuật:**
+  - Tuổi tính từ ngày sinh, không lưu số tuổi. Người sinh 29/2 thì ở năm không nhuận được thêm tuổi từ 1/3.
+  - ±550 kcal/ngày lấy từ 0,5 kg × 7700 kcal/kg ÷ 7.
+  - Giảm cân bị chặn ở BMR thì có cờ `isRaisedToBmr` để UI giải thích.
+  - So mốc protein "đủ" theo đơn vị 0,1 g, vì `42,2 × 0,85` trong máy ra `35,870000000000005`.
+- **Test:**
+  - Thêm 42 test ở `test/features/profile/domain/`; số mong đợi tính tay.
+  - `flutter test` 48/48, `flutter analyze` sạch, `dart format` sạch.
+  - Kiểm 8 đột biến (sai hằng số nữ, bỏ chặn BMR, sai mốc 18 và 14 tuổi, bỏ làm tròn, sai ngày sinh nhật, sai nhóm giảm mỡ, sai biên giới hạn): lần nào cũng có test fail.
 
 ### 11/11/2026 — PR #19 (tiếp): ghi quyết định của FLuw, đổi tab Note, ký APK bằng keystore
 - **Sửa theo review độc lập (trước khi push):**
