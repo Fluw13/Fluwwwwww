@@ -1,3 +1,4 @@
+import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -12,17 +13,19 @@ final class HealthProfile {
     required this.targetWeightKg,
     required this.activityLevel,
     required this.trainingType,
-    required this.weeklyChangeKg,
+    this.weeklyChangeKg,
   });
 
   final Sex sex;
-  final DateTime birthDate;
+  final CalendarDate birthDate;
   final double heightCm;
   final double weightKg;
   final double targetWeightKg;
   final ActivityLevel activityLevel;
   final TrainingType trainingType;
-  final double weeklyChangeKg;
+
+  /// Only needed for adults who want to lose or gain weight.
+  final double? weeklyChangeKg;
 
   WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
 }

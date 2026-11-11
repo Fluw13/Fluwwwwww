@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
+import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/protein_target.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
 
 import 'profile_fixture.dart';
 
 void main() {
+  DailyTargets targetsFor(CalendarDate birthDate) =>
+      calculateDailyTargets(buildProfile(birthDate: birthDate), today: fixtureToday);
+
   test('người lớn: đủ BMR, TDEE, mục tiêu calo và protein', () {
     final targets = calculateDailyTargets(buildProfile(), today: fixtureToday);
 
@@ -21,14 +26,16 @@ void main() {
   });
 
   test('tròn 18 tuổi đúng hôm nay thì tính như người lớn', () {
-    final targets = calculateDailyTargets(buildProfile(birthDate: DateTime(2008, 11, 11)), today: fixtureToday);
+    expect(targetsFor(CalendarDate(2008, 11, 11)), isA<AdultTargets>());
+  });
 
-    expect(targets, isA<AdultTargets>());
+  test('còn 1 ngày nữa mới 18 tuổi thì vẫn là nhóm 14 đến dưới 18', () {
+    expect(targetsFor(CalendarDate(2008, 11, 12)), isA<TeenTargets>());
   });
 
   test('14 đến dưới 18 tuổi: không tính calo, chỉ có protein 0,85 g/kg', () {
     final targets = calculateDailyTargets(
-      buildProfile(birthDate: DateTime(2010, 1, 1), weightKg: 55, trainingType: TrainingType.strength),
+      buildProfile(birthDate: CalendarDate(2010, 1, 1), weightKg: 55, trainingType: TrainingType.strength),
       today: fixtureToday,
     );
 
@@ -38,13 +45,18 @@ void main() {
     expect(teen.protein.minGrams, closeTo(46.75, 1e-9));
   });
 
-  test('dưới 14 tuổi thì không tính gì', () {
-    final targets = calculateDailyTargets(buildProfile(birthDate: DateTime(2012, 11, 12)), today: fixtureToday);
-
-    expect(targets, isA<BelowMinimumAge>());
+  test('tròn 14 tuổi đúng hôm nay thì được tính protein', () {
+    expect(targetsFor(CalendarDate(2012, 11, 11)), isA<TeenTargets>());
   });
 
-  test('hồ sơ không hợp lệ thì không tính', () {
-    expect(() => calculateDailyTargets(buildProfile(heightCm: 40), today: fixtureToday), throwsA(isA<ArgumentError>()));
+  test('còn 1 ngày nữa mới 14 tuổi thì không tính gì', () {
+    expect(targetsFor(CalendarDate(2012, 11, 12)), isA<BelowMinimumAge>());
+  });
+
+  test('hồ sơ không hợp lệ thì trả về danh sách lỗi, không ném lỗi', () {
+    final targets = calculateDailyTargets(buildProfile(heightCm: 40), today: fixtureToday);
+
+    expect(targets, isA<InvalidProfile>());
+    expect((targets as InvalidProfile).issues, {ProfileIssue.heightOutOfRange});
   });
 }

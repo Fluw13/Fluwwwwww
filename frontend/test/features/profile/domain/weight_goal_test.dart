@@ -13,9 +13,10 @@ void main() {
     expect(goal(70, 70.1), WeightGoal.gain);
   });
 
-  test('lệch dưới 0,05 kg thì coi như giữ cân', () {
+  test('hai cân nặng làm tròn đến 0,1 kg mà bằng nhau thì là giữ cân', () {
     expect(goal(70, 70), WeightGoal.maintain);
     expect(goal(70, 70.04), WeightGoal.maintain);
     expect(goal(70, 69.96), WeightGoal.maintain);
+    expect(goal(69.96, 70.04), WeightGoal.maintain);
   });
 }

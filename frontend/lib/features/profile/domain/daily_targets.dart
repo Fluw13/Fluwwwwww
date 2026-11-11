@@ -1,3 +1,4 @@
+import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/calorie_target.dart';
 import 'package:fluw/features/profile/domain/energy.dart';
@@ -9,6 +10,22 @@ sealed class DailyTargets {
   const DailyTargets();
 }
 
+final class InvalidProfile extends DailyTargets {
+  const InvalidProfile(this.issues);
+
+  final Set<ProfileIssue> issues;
+}
+
+final class BelowMinimumAge extends DailyTargets {
+  const BelowMinimumAge();
+}
+
+final class TeenTargets extends DailyTargets {
+  const TeenTargets({required this.protein});
+
+  final ProteinTarget protein;
+}
+
 final class AdultTargets extends DailyTargets {
   const AdultTargets({required this.bmr, required this.tdee, required this.calories, required this.protein});
 
@@ -18,20 +35,10 @@ final class AdultTargets extends DailyTargets {
   final ProteinTarget protein;
 }
 
-final class TeenTargets extends DailyTargets {
-  const TeenTargets({required this.protein});
-
-  final ProteinTarget protein;
-}
-
-final class BelowMinimumAge extends DailyTargets {
-  const BelowMinimumAge();
-}
-
-DailyTargets calculateDailyTargets(HealthProfile profile, {required DateTime today}) {
+DailyTargets calculateDailyTargets(HealthProfile profile, {required CalendarDate today}) {
   final issues = validateProfile(profile, today: today);
   if (issues.isNotEmpty) {
-    throw ArgumentError.value(issues, 'profile', 'Hồ sơ không hợp lệ');
+    return InvalidProfile(issues);
   }
 
   final age = ageInYears(birthDate: profile.birthDate, today: today);

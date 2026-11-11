@@ -10,7 +10,7 @@ void main() {
     }
 
     test('dưới 14 tuổi thì không tính', () {
-      expect(() => select(13, TrainingType.none), throwsA(isA<ArgumentError>()));
+      expect(() => select(13, TrainingType.none), throwsArgumentError);
     });
 
     test('14 đến dưới 18 tuổi luôn là 0,85 g/kg, kể cả khi tập gym và giảm cân', () {
@@ -37,6 +37,23 @@ void main() {
   });
 
   group('lượng protein theo cân nặng', () {
+    const gramsAt50Kg = {
+      ProteinGroup.teen: (42.5, 42.5),
+      ProteinGroup.adult: (40.0, 40.0),
+      ProteinGroup.endurance: (60.0, 70.0),
+      ProteinGroup.strength: (80.0, 110.0),
+      ProteinGroup.cutting: (90.0, 120.0),
+    };
+
+    for (final MapEntry(key: group, value: (min, max)) in gramsAt50Kg.entries) {
+      test('50 kg nhóm ${group.name}: $min–$max g', () {
+        final target = ProteinTarget(group: group, weightKg: 50);
+
+        expect(target.minGrams, closeTo(min, 1e-9));
+        expect(target.maxGrams, closeTo(max, 1e-9));
+      });
+    }
+
     test('70 kg tập gym: 112–154 g', () {
       const target = ProteinTarget(group: ProteinGroup.strength, weightKg: 70);
 
@@ -55,6 +72,12 @@ void main() {
       const target = ProteinTarget(group: ProteinGroup.teen, weightKg: 42.2);
 
       expect(target.isReachedBy(35.87), isTrue);
+    });
+
+    test('lượng đã nạp là NaN thì coi như chưa đủ, không crash', () {
+      const target = ProteinTarget(group: ProteinGroup.adult, weightKg: 70);
+
+      expect(target.isReachedBy(double.nan), isFalse);
     });
   });
 }

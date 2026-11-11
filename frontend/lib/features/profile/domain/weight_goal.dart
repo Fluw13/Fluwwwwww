@@ -4,7 +4,7 @@ enum WeightGoal {
   gain;
 
   static WeightGoal fromWeights({required double currentKg, required double targetKg}) {
-    final differenceInTenthsOfKg = ((targetKg - currentKg) * 10).round();
+    final differenceInTenthsOfKg = (targetKg * 10).round() - (currentKg * 10).round();
     if (differenceInTenthsOfKg < 0) {
       return WeightGoal.lose;
     }

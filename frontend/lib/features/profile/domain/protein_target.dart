@@ -39,7 +39,7 @@ final class ProteinTarget {
 
   double get maxGrams => weightKg * group.maxGramsPerKg;
 
-  bool isReachedBy(double consumedGrams) => _toTenths(consumedGrams) >= _toTenths(minGrams);
+  bool isReachedBy(double consumedGrams) => consumedGrams.isFinite && _toTenths(consumedGrams) >= _toTenths(minGrams);
 
   static int _toTenths(double grams) => (grams * 10).round();
 }

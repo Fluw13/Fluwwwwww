@@ -65,7 +65,7 @@ Trang chủ, Tìm kiếm, Quét (mã vạch và nhận diện ảnh), **Note** (
 ### Frontend `frontend/lib/`
 ```
 app/                      ghép app: FluwApp, router (go_router), shell 5 tab, AppTab
-core/                     dùng chung: theme, widget chung, (sau này) network, database, format
+core/                     dùng chung: theme, widget chung, time (CalendarDate), (sau này) network, database, format
 features/<tên>/
   data/                   gọi API, đọc/ghi SQLite, chuyển đổi JSON
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
@@ -76,12 +76,19 @@ features/<tên>/
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
 - `features/profile/domain/` (M2):
-  - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn, làm tròn 0,1 kg).
-  - `age` (mốc 14 và 18).
-  - `energy` (BMR, TDEE), `calorie_target`, `protein_target` (`ProteinGroup` và `ProteinTarget`).
-  - `health_profile`, `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
-  - `calculateDailyTargets` trả `AdultTargets` / `TeenTargets` / `BelowMinimumAge`, dùng sealed class nên UI phải xử lý đủ 3 trường hợp.
-  - Giới hạn hồ sơ (Zero chọn, FLuw chưa duyệt): chiều cao 100–250 cm, cân nặng 20–300 kg, tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần.
+  - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn: làm tròn từng cân nặng đến 0,1 kg rồi so).
+  - `age` (mốc 14, 18, tối đa 120).
+  - `energy` (BMR, TDEE), `calorie_target` (`isValidWeeklyChangeKg` so theo 0,01 kg), `protein_target` (`ProteinGroup` và `ProteinTarget`).
+  - `health_profile` (`weeklyChangeKg` để trống được), `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
+  - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `TeenTargets` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
+  - Giới hạn hồ sơ (agent đề xuất, chờ FLuw duyệt ở mục 7):
+    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120;
+    - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân.
+- **Ngày tháng:**
+  - Ngày sinh và ngày trong Note dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
+  - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
+  - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
+- **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Android signing
@@ -197,6 +204,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 
 ### Câu hỏi
 1. **Ảnh PNG từng màn** từ Figma.
+2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
 - Duyệt và merge PR #19 (M0). Merge xong Render deploy khung mới, API cũ `/api/product/*` biến mất.
@@ -212,7 +220,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | PR #19 đang review |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key, câu 2 |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
 | M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain xong (chờ review); giao diện, lưu SQLite chờ PNG |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
 | M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
@@ -245,16 +253,27 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - Bảng món Việt tính từ công thức món × số liệu USDA.
   - Protein hiện cả khoảng, đủ khi đạt cận dưới; gym kèm giảm cân thì vào nhóm giảm mỡ giữ cơ.
   - Tài khoản: Firebase Auth + Neon Postgres.
-- **Thêm:** 11 file trong `frontend/lib/features/profile/domain/` (xem mục 3), Dart thuần, không import Flutter.
+- **Thêm:**
+  - 11 file trong `frontend/lib/features/profile/domain/` (xem mục 3), Dart thuần, không import Flutter.
+  - `frontend/lib/core/time/calendar_date.dart`.
 - **Quyết định kỹ thuật:**
   - Tuổi tính từ ngày sinh, không lưu số tuổi. Người sinh 29/2 thì ở năm không nhuận được thêm tuổi từ 1/3.
   - ±550 kcal/ngày lấy từ 0,5 kg × 7700 kcal/kg ÷ 7.
   - Giảm cân bị chặn ở BMR thì có cờ `isRaisedToBmr` để UI giải thích.
   - So mốc protein "đủ" theo đơn vị 0,1 g, vì `42,2 × 0,85` trong máy ra `35,870000000000005`.
+- **Sửa theo review độc lập (trước khi push):**
+  - Thiếu giới hạn tuổi tối đa: sinh năm 1800 ra calo âm → thêm `birthDateTooOld` (trên 120 tuổi).
+  - `weeklyChangeKg` bắt buộc cả khi giữ cân → cho để trống, chỉ bắt buộc với người lớn tăng/giảm cân (`weeklyChangeMissing`).
+  - Hồ sơ lỗi ném `ArgumentError` → trả `InvalidProfile(issues)`.
+  - `DateTime` lệch ngày theo múi giờ → thêm `CalendarDate`.
+  - `WeightGoal` làm tròn hiệu số (69,96 → 70,04 bị coi là tăng) → làm tròn từng cân nặng.
+  - `0.1*3 + 0.2` bị coi là vượt 0,5 → so theo 0,01 kg.
+  - NaN làm crash → NaN bị coi là không hợp lệ hoặc chưa đủ.
+  - Bổ sung test cho 9 đột biến trước đó lọt qua: tháng sinh, mốc 14/18 trong `calculateDailyTargets`, hệ số từng nhóm protein, cận dưới cân nặng mong muốn, tốc độ âm.
 - **Test:**
-  - Thêm 42 test ở `test/features/profile/domain/`; số mong đợi tính tay.
-  - `flutter test` 48/48, `flutter analyze` sạch, `dart format` sạch.
-  - Kiểm 8 đột biến (sai hằng số nữ, bỏ chặn BMR, sai mốc 18 và 14 tuổi, bỏ làm tròn, sai ngày sinh nhật, sai nhóm giảm mỡ, sai biên giới hạn): lần nào cũng có test fail.
+  - 61 test ở `test/features/profile/domain/` và `test/core/time/`, số mong đợi tính tay.
+  - `flutter test` 67/67, `flutter analyze` sạch, `dart format` sạch.
+  - Kiểm 20 đột biến (gồm 9 đột biến review chỉ ra): lần nào cũng có test fail.
 
 ### 11/11/2026 — PR #19 (tiếp): ghi quyết định của FLuw, đổi tab Note, ký APK bằng keystore
 - **Sửa theo review độc lập (trước khi push):**

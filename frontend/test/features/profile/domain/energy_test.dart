@@ -18,10 +18,7 @@ void main() {
     });
 
     test('dưới 18 tuổi thì không tính', () {
-      expect(
-        () => calculateBmr(sex: Sex.male, weightKg: 60, heightCm: 170, ageYears: 17),
-        throwsA(isA<ArgumentError>()),
-      );
+      expect(() => calculateBmr(sex: Sex.male, weightKg: 60, heightCm: 170, ageYears: 17), throwsArgumentError);
     });
   });
 

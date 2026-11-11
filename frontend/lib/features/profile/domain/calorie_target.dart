@@ -12,21 +12,36 @@ final class CalorieTarget {
   final bool isRaisedToBmr;
 }
 
+bool isValidWeeklyChangeKg(double weeklyChangeKg) {
+  if (!weeklyChangeKg.isFinite) {
+    return false;
+  }
+  final hundredthsOfKg = (weeklyChangeKg * 100).round();
+  return hundredthsOfKg > 0 && hundredthsOfKg <= (maxWeeklyChangeKg * 100).round();
+}
+
 CalorieTarget calculateCalorieTarget({
   required double bmr,
   required double tdee,
   required WeightGoal goal,
-  required double weeklyChangeKg,
+  double? weeklyChangeKg,
 }) {
-  if (weeklyChangeKg <= 0 || weeklyChangeKg > maxWeeklyChangeKg) {
+  switch (goal) {
+    case WeightGoal.maintain:
+      return CalorieTarget(kcal: tdee, isRaisedToBmr: false);
+    case WeightGoal.gain:
+      return CalorieTarget(kcal: tdee + _dailyChangeKcal(weeklyChangeKg), isRaisedToBmr: false);
+    case WeightGoal.lose:
+      final kcal = tdee - _dailyChangeKcal(weeklyChangeKg);
+      return kcal < bmr
+          ? CalorieTarget(kcal: bmr, isRaisedToBmr: true)
+          : CalorieTarget(kcal: kcal, isRaisedToBmr: false);
+  }
+}
+
+double _dailyChangeKcal(double? weeklyChangeKg) {
+  if (weeklyChangeKg == null || !isValidWeeklyChangeKg(weeklyChangeKg)) {
     throw ArgumentError.value(weeklyChangeKg, 'weeklyChangeKg', 'Phải lớn hơn 0 và không quá $maxWeeklyChangeKg kg');
   }
-  final dailyChangeKcal = weeklyChangeKg * _kcalPerKgBodyWeight / DateTime.daysPerWeek;
-
-  return switch (goal) {
-    WeightGoal.maintain => CalorieTarget(kcal: tdee, isRaisedToBmr: false),
-    WeightGoal.gain => CalorieTarget(kcal: tdee + dailyChangeKcal, isRaisedToBmr: false),
-    WeightGoal.lose when tdee - dailyChangeKcal < bmr => CalorieTarget(kcal: bmr, isRaisedToBmr: true),
-    WeightGoal.lose => CalorieTarget(kcal: tdee - dailyChangeKcal, isRaisedToBmr: false),
-  };
+  return weeklyChangeKg * _kcalPerKgBodyWeight / DateTime.daysPerWeek;
 }
