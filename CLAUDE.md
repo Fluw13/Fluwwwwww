@@ -126,7 +126,7 @@ features/<tên>/
   | Vai trò | Màu |
   |---|---|
   | primary | `#006C49` |
-  | nút chính | `#10B981` |
+  | xanh sáng (vòng tiến độ, thanh, nhãn) | `#10B981` |
   | primaryContainer | `#6FFBBE` |
   | secondary (protein, nước) | `#006398` |
   | secondaryContainer | `#CCE5FF` |
@@ -141,8 +141,9 @@ features/<tên>/
   | onSurface | `#131B2E` |
   | onSurfaceVariant | `#3C4A42` |
 
+- **Nút chính và nút Quét dùng `#006C49`** (FLuw chọn 11/11). Lý do: `#10B981` với chữ trắng chỉ đạt độ tương phản 2,5:1, dưới chuẩn WCAG AA.
 - Thiết kế chỉ có giao diện sáng; giao diện tối sinh từ cùng seed.
-- **Phông** (nhìn từ ảnh, chờ FLuw xác nhận): tiêu đề Plus Jakarta Sans, nội dung Inter. Đóng gói file phông trong app, không tải lúc chạy.
+- **Phông** (nhìn từ ảnh; FLuw chưa chắc, tạm dùng): tiêu đề Plus Jakarta Sans, nội dung Inter. Đóng gói file phông trong app, không tải lúc chạy.
 - **Bỏ hoặc sửa chữ sai sự thật trong thiết kế:**
   - "NutriTrack" → Fluw.
   - Bỏ: "chuẩn y khoa", "HIPAA/GDPR", "24.000+ thành viên", "Hội viên", "Apple Health", "LIVE RADAR 60FPS 98,4%", Nutri-Score "A+" và "/100", chỉ số GI, "độ no", "thời gian chuẩn bị", điểm "92/100", "100% khớp", "an toàn tuyệt đối", khẳng định y khoa về dạ dày.
@@ -294,7 +295,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 7. Đang chờ FLuw
 
 ### Câu hỏi
-1. **Phông chữ:** thiết kế dùng Plus Jakarta Sans (tiêu đề) và Inter (nội dung) phải không?
+1. **Phông chữ:** FLuw chưa chắc. Đang tạm dùng Plus Jakarta Sans (tiêu đề) và Inter (nội dung). FLuw chọn một đoạn chữ trong Figma, xem tên phông ở bảng Typography rồi báo.
 2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
@@ -353,6 +354,7 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - Macro theo % năng lượng.
   - Chưa làm trợ lý AI chat.
   - Các đề xuất về chỗ lệch giữa thiết kế và spec: không phản đối.
+  - Nút chính dùng `#006C49` cho đủ độ tương phản; phông tạm dùng Plus Jakarta Sans + Inter.
 - **Test:** không có code thay đổi.
 
 ### 11/11/2026 — M4 (phần domain): khung giờ Note, gom món theo ngày, tổng dinh dưỡng
