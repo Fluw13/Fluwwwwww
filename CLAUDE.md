@@ -19,7 +19,17 @@
 
 ### Git (không được tự ý vượt)
 - Mỗi mốc / tính năng / bug fix một Pull Request để FLuw xem.
-- **Không push trực tiếp vào `main`. Không tự merge PR. Không deploy production** khi FLuw chưa cho phép rõ ràng.
+- **Không push trực tiếp vào `main`. Không deploy production** khi FLuw chưa cho phép rõ ràng.
+- **Quyền merge (FLuw cho phép 11/11/2026):**
+  - Agent được tự merge PR **không thêm, sửa, xóa hay đổi tên file nào trong `backend/` và `.github/workflows/`**, khi đủ 3 điều kiện:
+    - CI xanh cả 3 job `backend`, `frontend`, `android-apk`;
+    - đã có review chéo;
+    - các lỗi review đã sửa.
+  - Merge bằng merge commit, tiêu đề `Merge PR #N: ...`.
+  - PR có đụng `backend/` hoặc `.github/workflows/` thì phải chờ FLuw duyệt.
+    - `backend/`: merge là Render deploy production.
+    - Workflow CI: CI xanh là điều kiện để Render deploy.
+  - Quy tắc này dựa trên việc Render đặt root dir `backend` (đổi file ngoài `backend/` không làm Render deploy). Đổi root dir hoặc build filter của Render thì phải xem lại quy tắc.
 - Không ghi đè thay đổi sẵn có của FLuw. Working tree có thay đổi lạ thì kiểm tra trước.
 - Trước khi push: phải có agent khác review chéo và các lỗi review đã sửa.
 - Commit bằng danh tính git đã cấu hình sẵn, không ghi tên FLuw làm tác giả.
@@ -65,7 +75,7 @@ Trang chủ, Tìm kiếm, Quét (mã vạch và nhận diện ảnh), **Note** (
 ### Frontend `frontend/lib/`
 ```
 app/                      ghép app: FluwApp, router (go_router), shell 5 tab, AppTab
-core/                     dùng chung: theme, widget chung, (sau này) network, database, format
+core/                     dùng chung: theme, widget chung, time (CalendarDate), (sau này) network, database, format
 features/<tên>/
   data/                   gọi API, đọc/ghi SQLite, chuyển đổi JSON
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
@@ -75,6 +85,20 @@ features/<tên>/
 - Chỉ `app/` được import `features/`. `core/` không import `features/`. Feature không import thẳng feature khác; phần dùng chung đưa vào `core/`.
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
+- `features/profile/domain/` (M2):
+  - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn: làm tròn từng cân nặng đến 0,1 kg rồi so).
+  - `age` (mốc 14, 18, tối đa 120).
+  - `energy` (BMR, TDEE), `calorie_target` (`isValidWeeklyChangeKg` so theo 0,01 kg), `protein_target` (`ProteinGroup` và `ProteinTarget`).
+  - `health_profile` (`weeklyChangeKg` để trống được), `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
+  - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `TeenTargets` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
+  - Giới hạn hồ sơ (agent đề xuất, chờ FLuw duyệt ở mục 7):
+    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120;
+    - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân.
+- **Ngày tháng:**
+  - Ngày sinh và ngày trong Note dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
+  - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
+  - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
+- **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
 - Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Android signing
@@ -124,11 +148,11 @@ flutter test
 - **Tên:** app "Fluw", trợ lý "Zero", tab nhật ký tên **"Note"**.
 - **Giao diện:** theo Figma của FLuw. File Figma `2E8p4ZnGESwih1lNFyWeMA` có Page 1 trống và gói Starter đã hết lượt gọi MCP → **FLuw gửi ảnh PNG từng màn**. Chưa có ảnh thì không tự dựng giao diện chi tiết.
 - **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Note, lịch sử tra cứu, sở thích. Không gửi chiều cao, cân nặng, bệnh lên server.
-- **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7.
+- **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7 với Firebase Authentication (Google/email) + PostgreSQL trên Neon + backend Node kiểm ID token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 - **Nguồn dữ liệu dinh dưỡng:**
   - Đồ đóng gói và mã vạch: Open Food Facts.
   - Đồ tươi: USDA FoodData Central (cần API key miễn phí, đặt ở Render dưới tên `USDA_API_KEY`).
-  - Món Việt: Fluw **tự xây bảng dữ liệu** (cách xây đang chờ chốt, mục 7).
+  - Món Việt: Fluw **tự xây bảng dữ liệu**. Mỗi món là một công thức (nguyên liệu, số gram cho 1 suất), dinh dưỡng tính từ số liệu nguyên liệu của USDA (CC0). Trên app ghi "Ước tính theo công thức Fluw". Không chép Bảng thành phần thực phẩm Việt Nam khi chưa rõ giấy phép.
 - **Scan ảnh:** Gemini Vision qua backend, chỉ để nhận ra tên thực phẩm; dinh dưỡng tra từ các nguồn trên, không lấy từ AI. Máy chủ Fluw không lưu ảnh.
 - **Render:** dùng workspace "My Workspace", service `Fluw` hiện tại chạy backend mới.
 - **APK:** FLuw tự tạo keystore và đưa vào GitHub Secrets.
@@ -176,7 +200,7 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp.
 | Gym / tăng cơ | 1,6–2,2 |
 | Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
 
-Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
+Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo "hình thức tập" người dùng khai (không tập / nhẹ, sức bền / gym); gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ. App hiện cả khoảng; coi là **đủ** khi đạt cận dưới. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
 
 **Khung giờ trang Note** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
@@ -190,14 +214,9 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 
 ### Câu hỏi
 1. **Ảnh PNG từng màn** từ Figma.
-2. **Cách xây bảng món Việt.** Đề xuất: mỗi món là một công thức (nguyên liệu và số gram cho 1 suất), dinh dưỡng tính từ số liệu nguyên liệu của USDA. Dữ liệu USDA thuộc phạm vi công cộng (CC0) nên dùng hợp pháp. Trên app ghi "Ước tính theo công thức Fluw". Không chép nguyên Bảng thành phần thực phẩm Việt Nam của Viện Dinh dưỡng khi chưa rõ giấy phép.
-3. **Protein trong khoảng (vd 1,6–2,2):**
-   - Đề xuất hiện cả khoảng; coi là "đủ" khi đạt cận dưới.
-   - Chọn nhóm theo lựa chọn "hình thức tập" của người dùng: không tập, nhẹ/sức bền, gym. Gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ.
-4. **Hạ tầng tài khoản cho đánh giá sao (M7).** Đề xuất Firebase Authentication (đăng nhập Google/email) + PostgreSQL trên Neon (gói free không hết hạn) + backend Node kiểm token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
+2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
-- Duyệt và merge PR #19 (M0). Merge xong Render deploy khung mới, API cũ `/api/product/*` biến mất.
 - Xóa 22 branch cũ trên GitHub.
 - Tạo keystore, thêm 4 secret Android (hướng dẫn trong README).
 - Đặt Health Check Path `/health` cho service `Fluw` trên Render.
@@ -209,14 +228,14 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
-| M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | PR #19 đang review |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key, câu 2 |
-| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Phần domain làm được sau khi #19 merge (chờ câu 3); giao diện chờ PNG |
+| M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
+| M2 | Hồ sơ sức khỏe + công thức BMR/TDEE/protein/mục tiêu | Domain ở PR #20; giao diện, lưu SQLite chờ PNG |
 | M3 | Tìm kiếm, thông tin + chi tiết sản phẩm, lịch sử tra cứu | Chờ M1, PNG |
 | M4 | Note theo ngày và 4 khung giờ, tổng theo buổi và ngày | Chờ PNG |
 | M5 | Quét mã vạch + nhận diện ảnh | Chờ M1 |
 | M6 | Gợi ý nên/không nên, nhắc 10h/17h/22h, sở thích | Chờ M2–M4 |
-| M7 | Tài khoản + đánh giá sao | Chờ câu 4 |
+| M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau M6; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 
 ---
 
@@ -237,6 +256,44 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức t
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 11/11/2026 — Merge PR #19 và deploy backend khung mới
+- **Merge:** FLuw cho phép, merge commit `70a58e9`. CI trên `main` xanh cả 3 job.
+- **Deploy (VERIFIED qua log Render, 16:58 UTC):**
+  - Node 22.23.5, chọn theo `engines`.
+  - `npm install` báo 0 lỗ hổng.
+  - Có log `Server is running on port 5000`; deploy `dep-dbq9t0tbedkc739l7h80` ở trạng thái `live`.
+  - API cũ `/api/product/*` đã gỡ khỏi production.
+- **Chưa kiểm:** gọi `/health` từ ngoài, vì mạng của môi trường agent chặn `fluw.onrender.com`.
+- **Quyền merge mới:** FLuw cho agent tự merge PR không đụng `backend/` (ghi ở mục 1).
+  - Theo review chéo, quy tắc được thắt chặt thêm: PR đụng `.github/workflows/` cũng phải chờ FLuw duyệt, vì CI xanh là điều kiện để Render deploy.
+
+### 11/11/2026 — M2 (phần domain, PR #20): công thức BMR, TDEE, mục tiêu calo, protein
+- **Quyết định FLuw đồng ý:**
+  - Bảng món Việt tính từ công thức món × số liệu USDA.
+  - Protein hiện cả khoảng, đủ khi đạt cận dưới; gym kèm giảm cân thì vào nhóm giảm mỡ giữ cơ.
+  - Tài khoản: Firebase Auth + Neon Postgres.
+- **Thêm:**
+  - 11 file trong `frontend/lib/features/profile/domain/` (xem mục 3), Dart thuần, không import Flutter.
+  - `frontend/lib/core/time/calendar_date.dart`.
+- **Quyết định kỹ thuật:**
+  - Tuổi tính từ ngày sinh, không lưu số tuổi. Người sinh 29/2 thì ở năm không nhuận được thêm tuổi từ 1/3.
+  - ±550 kcal/ngày lấy từ 0,5 kg × 7700 kcal/kg ÷ 7.
+  - Giảm cân bị chặn ở BMR thì có cờ `isRaisedToBmr` để UI giải thích.
+  - So mốc protein "đủ" theo đơn vị 0,1 g, vì `42,2 × 0,85` trong máy ra `35,870000000000005`.
+- **Sửa theo review độc lập (trước khi push):**
+  - Thiếu giới hạn tuổi tối đa: sinh năm 1800 ra calo âm → thêm `birthDateTooOld` (trên 120 tuổi).
+  - `weeklyChangeKg` bắt buộc cả khi giữ cân → cho để trống, chỉ bắt buộc với người lớn tăng/giảm cân (`weeklyChangeMissing`).
+  - Hồ sơ lỗi ném `ArgumentError` → trả `InvalidProfile(issues)`.
+  - `DateTime` lệch ngày theo múi giờ → thêm `CalendarDate`.
+  - `WeightGoal` làm tròn hiệu số (69,96 → 70,04 bị coi là tăng) → làm tròn từng cân nặng.
+  - `0.1*3 + 0.2` bị coi là vượt 0,5 → so theo 0,01 kg.
+  - NaN làm crash → NaN bị coi là không hợp lệ hoặc chưa đủ.
+  - Bổ sung test cho 9 đột biến trước đó lọt qua: tháng sinh, mốc 14/18 trong `calculateDailyTargets`, hệ số từng nhóm protein, cận dưới cân nặng mong muốn, tốc độ âm.
+- **Test:**
+  - 61 test ở `test/features/profile/domain/` và `test/core/time/`, số mong đợi tính tay.
+  - `flutter test` 67/67, `flutter analyze` sạch, `dart format` sạch.
+  - Kiểm 20 đột biến (gồm 9 đột biến review chỉ ra): lần nào cũng có test fail.
 
 ### 11/11/2026 — PR #19 (tiếp): ghi quyết định của FLuw, đổi tab Note, ký APK bằng keystore
 - **Sửa theo review độc lập (trước khi push):**
