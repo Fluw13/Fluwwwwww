@@ -81,6 +81,8 @@ features/<tên>/
 - `android/app/build.gradle.kts` đọc `android/key.properties` nếu có. Không có thì bản release ký bằng debug key.
 - CI tạo `key.properties` và `android/app/upload-keystore.jks` từ 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Thiếu secret thì CI cảnh báo và dùng debug key.
 - `key.properties`, `*.jks`, `*.keystore` đã nằm trong `android/.gitignore`. Không bao giờ commit.
+- `build.gradle.kts` phải `import java.util.Properties`: trong script Gradle, `java` là extension của plugin Java nên `java.util.Properties()` không compile.
+- PR từ branch trong repo (kể cả branch của agent) nhận được keystore thật; PR từ fork thì không. Muốn chặt hơn thì chỉ ký ở `push main` hoặc dùng GitHub Environment có bảo vệ.
 
 ### Backend `backend/`
 ```
@@ -131,14 +133,14 @@ flutter test
 - **Render:** dùng workspace "My Workspace", service `Fluw` hiện tại chạy backend mới.
 - **APK:** FLuw tự tạo keystore và đưa vào GitHub Secrets.
 - **Công thức BMR, TDEE, protein, mục tiêu** tính trên máy bằng Dart thuần ở `features/profile/domain/`, có unit test.
-- **Dưới 18 tuổi:** không dùng Mifflin–St Jeor, không tính calo. Tuổi 14–18 chỉ hiện protein 0,85 g/kg kèm lời khuyên gặp chuyên gia. Dưới 14 tuổi chặn tính toán.
+- **Dưới 18 tuổi:** không dùng Mifflin–St Jeor, không tính calo. `14 ≤ tuổi < 18` chỉ hiện protein 0,85 g/kg kèm lời khuyên gặp chuyên gia. `tuổi < 14` chặn tính toán. Người lớn là `tuổi ≥ 18`.
 - **Tốc độ giảm/tăng cân:** tối đa 0,5 kg/tuần (khoảng ±550 kcal/ngày so với TDEE). Mục tiêu calo không bao giờ thấp hơn BMR.
 - **Bệnh hỗ trợ bản đầu:**
   - Tiểu đường: theo dõi đường.
   - Huyết áp cao: theo dõi natri.
   - Mỡ máu cao: theo dõi béo bão hòa.
   - Dị ứng: theo tag dị ứng của OFF.
-- **Nhắc nhở mặc định:** 10:00, 17:00, 22:00; người dùng chỉnh được. Nội dung nhắc dựa trên lượng đã nạp so với mục tiêu (ăn chưa đủ thì gợi ý).
+- **Nhắc nhở:** nhắc theo lịch, mặc định 10:00, 17:00, 22:00, người dùng chỉnh được. Nội dung nhắc dựa trên lượng đã nạp so với mục tiêu; ăn chưa đủ thì kèm gợi ý.
 - Dữ liệu từ nguồn và nội dung AI phải phân biệt rõ trên giao diện. Thiếu dữ liệu thì ghi "Chưa có dữ liệu", không hiện số 0 hay số bịa.
 - Mọi đánh giá sức khỏe ghi rõ là ước tính, không thay thế tư vấn y tế.
 
@@ -168,13 +170,13 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp.
 
 | Nhóm | P (g/kg/ngày) |
 |---|---|
-| 14–18 tuổi (mọi mức tập luyện) | 0,85 |
-| Người trưởng thành, không tập thường xuyên | 0,8 |
+| `14 ≤ tuổi < 18` (mọi mức tập luyện) | 0,85 |
+| `tuổi ≥ 18`, không tập thường xuyên | 0,8 |
 | Vận động nhẹ / sức bền (chạy bộ, đạp xe, yoga) | 1,2–1,4 |
 | Gym / tăng cơ | 1,6–2,2 |
 | Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
 
-Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
+Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
 
 **Khung giờ trang Note** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
@@ -237,6 +239,16 @@ TDEE là ước tính, không phải số calo bắt buộc phải nạp.
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
 
 ### 11/11/2026 — PR #19 (tiếp): ghi quyết định của FLuw, đổi tab Note, ký APK bằng keystore
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** `build.gradle.kts` dùng `java.util.Properties()` sẽ không compile, vì `java` trong script Gradle trỏ tới extension của plugin Java. Đã đổi thành `import java.util.Properties`.
+  - CI: decode base64 bằng `--ignore-garbage`, để CRLF/BOM từ Windows không làm fail. Có base64 mà thiếu 3 secret còn lại thì báo `::error::` rõ ràng.
+  - README:
+    - Lệnh PowerShell dùng `$PWD` và `Set-Content -NoNewline -Encoding ascii`.
+    - Gọi `keytool.exe` có dấu cách bằng `&`.
+    - Mật khẩu key phải giống hệt mật khẩu keystore (PKCS12); mật khẩu không dấu, tối thiểu 6 ký tự.
+  - Mốc tuổi ghi rõ `14 ≤ tuổi < 18`, người lớn `tuổi ≥ 18`.
+  - Lịch nhắc thống nhất: nhắc theo lịch, nội dung tùy lượng đã nạp.
+  - Chạy thử lại bước keystore với 3 trường hợp: không secret (cảnh báo, exit 0), thiếu mật khẩu (exit 1), base64 lẫn CRLF và BOM (decode đúng).
 - **Quyết định FLuw trả lời:** ghi vào mục 5–8.
   - Món Việt tự xây bảng; đồ tươi lấy từ USDA.
   - Sao do người dùng chấm, làm ở M7.

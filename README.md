@@ -13,7 +13,7 @@
 | Thông tin sản phẩm | Tên, ảnh, nhà cung cấp, số sao đánh giá, các chỉ số dinh dưỡng | Chưa làm |
 | Note | Thêm món vào Note, xếp theo ngày và 4 khung giờ, có tổng theo buổi và theo ngày | Chưa làm |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, tuổi, giới tính, mức vận động, dị ứng, bệnh, cân nặng mục tiêu, sở thích | Chưa làm |
-| Gợi ý | Lượng calo và protein nên nạp; sản phẩm nên/không nên dùng; nhắc lúc 10h, 17h, 22h (tự chỉnh được) khi ăn chưa đủ | Chưa làm |
+| Gợi ý | Lượng calo và protein nên nạp; sản phẩm nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được), kèm gợi ý nếu ăn chưa đủ | Chưa làm |
 | Lịch sử tra cứu | Xem lại những gì đã tìm hoặc quét | Chưa làm |
 | Tài khoản và đánh giá | Đăng nhập để chấm sao cho sản phẩm | Chưa làm |
 
@@ -41,13 +41,15 @@
 
 | Nhóm | P (g/kg/ngày) |
 |---|---|
-| 14–18 tuổi | 0,85 |
-| Người trưởng thành, không tập thường xuyên | 0,8 |
+| 14 đến dưới 18 tuổi | 0,85 |
+| Từ 18 tuổi, không tập thường xuyên | 0,8 |
 | Vận động nhẹ / sức bền (chạy bộ, đạp xe, yoga) | 1,2–1,4 |
 | Gym / tăng cơ | 1,6–2,2 |
 | Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
 
-**Dưới 18 tuổi:** app không tính calo, vì công thức của người lớn không phù hợp với tuổi đang phát triển. Tuổi 14–18 chỉ hiện mức protein tham khảo và khuyên hỏi chuyên gia; dưới 14 tuổi app không tính.
+Các mức tập luyện chỉ áp dụng từ 18 tuổi.
+
+**Dưới 18 tuổi:** app không tính calo, vì công thức của người lớn không phù hợp với tuổi đang phát triển. Tuổi 14 đến dưới 18 chỉ hiện mức protein tham khảo và khuyên hỏi chuyên gia; dưới 14 tuổi app không tính.
 
 Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư vấn của bác sĩ hay chuyên gia dinh dưỡng.
 
@@ -110,16 +112,22 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
 
 ### Tạo keystore (làm một lần)
 
-1. Tạo file keystore. Lệnh `keytool` có sẵn trong JDK; trên Windows nếu không gọi được thì dùng `C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe`.
+1. Tạo file keystore. Lệnh `keytool` có sẵn trong JDK:
 
    ```bash
    keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
    ```
 
-   Đặt mật khẩu **chỉ gồm chữ và số**.
+   Trên Windows, nếu không gọi được `keytool` thì dùng bản đi kèm Android Studio (PowerShell):
 
-2. Chuyển file sang dạng base64:
-   - Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("upload-keystore.jks")) | Out-File keystore-base64.txt`
+   ```powershell
+   & "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   ```
+
+   Mật khẩu: **chữ cái không dấu và số, tối thiểu 6 ký tự**. Nếu được hỏi mật khẩu riêng cho key thì nhập **giống hệt** mật khẩu keystore.
+
+2. Chuyển file sang dạng base64 (chạy trong thư mục chứa `upload-keystore.jks`):
+   - Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\upload-keystore.jks")) | Set-Content -NoNewline -Encoding ascii keystore-base64.txt`
    - macOS: `base64 -i upload-keystore.jks -o keystore-base64.txt`
    - Linux: `base64 -w 0 upload-keystore.jks > keystore-base64.txt`
 
@@ -130,7 +138,7 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
    | `ANDROID_KEYSTORE_BASE64` | nội dung file `keystore-base64.txt` |
    | `ANDROID_KEYSTORE_PASSWORD` | mật khẩu keystore |
    | `ANDROID_KEY_ALIAS` | `upload` |
-   | `ANDROID_KEY_PASSWORD` | mật khẩu key (thường giống mật khẩu keystore) |
+   | `ANDROID_KEY_PASSWORD` | giống hệt mật khẩu keystore |
 
 4. Xóa `keystore-base64.txt`.
 5. Cất `upload-keystore.jks` và mật khẩu ở nơi an toàn: mất chúng thì không cập nhật được app trên Google Play.

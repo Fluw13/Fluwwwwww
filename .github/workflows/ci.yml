@@ -78,7 +78,11 @@ jobs:
             echo "::warning::Chưa có secret ANDROID_KEYSTORE_BASE64, APK được ký bằng debug key."
             exit 0
           fi
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+          if [ -z "$KEYSTORE_PASSWORD" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASSWORD" ]; then
+            echo "::error::Thiếu ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS hoặc ANDROID_KEY_PASSWORD."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode --ignore-garbage > android/app/upload-keystore.jks
           printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
       - run: flutter build apk --release
