@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/app/app_router.dart';
+import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 
-class FluwApp extends StatefulWidget {
+class FluwApp extends ConsumerStatefulWidget {
   const FluwApp({super.key});
 
   @override
-  State<FluwApp> createState() => _FluwAppState();
+  ConsumerState<FluwApp> createState() => _FluwAppState();
 }
 
-class _FluwAppState extends State<FluwApp> {
+class _FluwAppState extends ConsumerState<FluwApp> {
   final GoRouter _router = createAppRouter();
 
   @override
@@ -26,6 +28,7 @@ class _FluwAppState extends State<FluwApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: _router,
     );
   }

@@ -6,13 +6,11 @@ class SearchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Tìm kiếm')),
-      body: const EmptyState(
-        icon: Icons.search,
-        title: 'Tra cứu thực phẩm',
-        message: 'Đang xây dựng. Bạn sẽ tra được calo, protein và đường của đồ đóng gói, trái cây, món nấu chín và bánh kẹo.',
-      ),
+    return const EmptyState(
+      icon: Icons.search,
+      title: 'Tra cứu thực phẩm',
+      message:
+          'Đang xây dựng. Bạn sẽ tra được calo, protein và đường của đồ đóng gói, trái cây, món nấu chín và bánh kẹo.',
     );
   }
 }

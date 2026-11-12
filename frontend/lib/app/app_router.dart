@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'package:fluw/app/app_shell.dart';
 import 'package:fluw/app/app_tab.dart';
+import 'package:fluw/app/shell/app_shell.dart';
 import 'package:fluw/features/home/presentation/home_screen.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
