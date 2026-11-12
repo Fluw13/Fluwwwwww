@@ -31,4 +31,17 @@ void main() {
     expect(CalendarDate(2026, 5, 3).hashCode, CalendarDate(2026, 5, 3).hashCode);
     expect(CalendarDate(2026, 5, 3).toString(), '2026-05-03');
   });
+
+  test('đọc lại đúng dạng yyyy-MM-dd đã in ra', () {
+    final date = CalendarDate(2006, 5, 13);
+
+    expect(CalendarDate.tryParse(date.toString()), date);
+    expect(CalendarDate.tryParse('0999-01-02'), CalendarDate(999, 1, 2));
+  });
+
+  test('chuỗi sai dạng hoặc ngày không tồn tại thì trả null, không ném lỗi', () {
+    for (final text in ['', '2006-5-13', '2006/05/13', '2006-05-13T00:00', ' 2006-05-13', '2026-02-29', '2026-13-01']) {
+      expect(CalendarDate.tryParse(text), isNull, reason: text);
+    }
+  });
 }

@@ -17,6 +17,7 @@ HealthProfile buildProfile({
   TrainingType trainingType = TrainingType.strength,
   double? weeklyChangeKg = 0.5,
   Set<HealthCondition> conditions = const {},
+  String? conditionNote,
   bool limitsSugar = false,
 }) {
   return HealthProfile(
@@ -29,6 +30,7 @@ HealthProfile buildProfile({
     trainingType: trainingType,
     weeklyChangeKg: weeklyChangeKg,
     conditions: conditions,
+    conditionNote: conditionNote,
     limitsSugar: limitsSugar,
   );
 }
