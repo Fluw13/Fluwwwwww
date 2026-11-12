@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
@@ -6,7 +7,7 @@ import 'package:fluw/features/profile/domain/training_type.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 final class HealthProfile {
-  const HealthProfile({
+  HealthProfile({
     required this.sex,
     required this.birthDate,
     required this.heightCm,
@@ -15,9 +16,10 @@ final class HealthProfile {
     required this.activityLevel,
     required this.trainingType,
     this.weeklyChangeKg,
-    required this.conditions,
+    required Set<HealthCondition> conditions,
+    required this.conditionNote,
     required this.limitsSugar,
-  });
+  }) : conditions = Set.unmodifiable(conditions);
 
   final Sex sex;
   final CalendarDate birthDate;
@@ -32,8 +34,70 @@ final class HealthProfile {
 
   final Set<HealthCondition> conditions;
 
+  /// Conditions the user typed in; kept as a note only, never used to change targets.
+  final String? conditionNote;
+
   /// The "giảm ngọt" eating preference; lowers the sugar limit like diabetes does.
   final bool limitsSugar;
 
   WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
+
+  /// Nullable fields take a function so `null` can be set on purpose: `copyWith(weeklyChangeKg: () => null)` clears it.
+  HealthProfile copyWith({
+    Sex? sex,
+    CalendarDate? birthDate,
+    double? heightCm,
+    double? weightKg,
+    double? targetWeightKg,
+    ActivityLevel? activityLevel,
+    TrainingType? trainingType,
+    double? Function()? weeklyChangeKg,
+    Set<HealthCondition>? conditions,
+    String? Function()? conditionNote,
+    bool? limitsSugar,
+  }) {
+    return HealthProfile(
+      sex: sex ?? this.sex,
+      birthDate: birthDate ?? this.birthDate,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
+      targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+      activityLevel: activityLevel ?? this.activityLevel,
+      trainingType: trainingType ?? this.trainingType,
+      weeklyChangeKg: weeklyChangeKg == null ? this.weeklyChangeKg : weeklyChangeKg(),
+      conditions: conditions ?? this.conditions,
+      conditionNote: conditionNote == null ? this.conditionNote : conditionNote(),
+      limitsSugar: limitsSugar ?? this.limitsSugar,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is HealthProfile &&
+      other.sex == sex &&
+      other.birthDate == birthDate &&
+      other.heightCm == heightCm &&
+      other.weightKg == weightKg &&
+      other.targetWeightKg == targetWeightKg &&
+      other.activityLevel == activityLevel &&
+      other.trainingType == trainingType &&
+      other.weeklyChangeKg == weeklyChangeKg &&
+      const SetEquality<HealthCondition>().equals(other.conditions, conditions) &&
+      other.conditionNote == conditionNote &&
+      other.limitsSugar == limitsSugar;
+
+  @override
+  int get hashCode => Object.hash(
+    sex,
+    birthDate,
+    heightCm,
+    weightKg,
+    targetWeightKg,
+    activityLevel,
+    trainingType,
+    weeklyChangeKg,
+    Object.hashAllUnordered(conditions),
+    conditionNote,
+    limitsSugar,
+  );
 }

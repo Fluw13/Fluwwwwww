@@ -9,6 +9,22 @@ final class CalendarDate implements Comparable<CalendarDate> {
   /// Takes the date fields of [dateTime] in its own zone; pass `DateTime.now()` for the user's local today.
   CalendarDate.fromDateTime(DateTime dateTime) : this(dateTime.year, dateTime.month, dateTime.day);
 
+  /// Reads the `yyyy-MM-dd` form written by [toString]; returns `null` for anything else or a date that does not exist.
+  static CalendarDate? tryParse(String text) {
+    final match = _isoDate.firstMatch(text);
+    if (match == null) {
+      return null;
+    }
+    final [year, month, day] = [for (var group = 1; group <= 3; group++) int.parse(match.group(group)!)];
+    try {
+      return CalendarDate(year, month, day);
+    } on ArgumentError {
+      return null;
+    }
+  }
+
+  static final RegExp _isoDate = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
+
   final int year;
   final int month;
   final int day;
