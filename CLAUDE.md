@@ -81,14 +81,36 @@
 
 ### Frontend `frontend/lib/`
 ```
-app/                      ghép app: FluwApp, router (go_router), shell 5 tab, AppTab
-core/                     dùng chung: theme, widget chung, time (CalendarDate), nutrition, (sau này) network, database, format
+app/                      ghép app: FluwApp, router (go_router), AppTab; shell/ (header, thanh 5 tab)
+core/                     dùng chung: theme, settings, licenses, widget chung, time (CalendarDate), nutrition, (sau này) network, database, format
 features/<tên>/
   data/                   gọi API, đọc/ghi SQLite, chuyển đổi JSON
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
   presentation/           màn hình và widget riêng của tính năng
 ```
-- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`. Nhãn tab trong code (`AppTab`) đổi sang tên thiết kế ở UI0.
+- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
+- **Shell (UI0):**
+  - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
+  - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, avatar mở Hồ Sơ. Chưa có chuông thông báo; thêm ở M6/M8 khi có nhắc nhở.
+    - `AppBar` của Flutter tự giới hạn cỡ chữ tiêu đề (`_kMaxTitleTextScaleFactor`); giữ nguyên theo chuẩn Material.
+  - Thanh dưới: 5 tab, nút Quét tròn 56 dp nổi 24 dp.
+    - Phần nổi nằm trong chiều cao của thanh để nhận được chạm; có test chạm vào mép trên của nút.
+    - Nhãn tab to theo cỡ chữ hệ thống đến **130% rồi dừng**, giống `NavigationBar` của Material (thanh cao cố định). Trên màn hẹp, nhãn dài co theo chiều ngang bằng `Flexible` + `FittedBox`.
+    - Semantics mỗi tab: nút, có hành động chạm (`onTap`), có trạng thái đang chọn. Nút tròn bị loại khỏi semantics vì tab "Quét Món" bên dưới đã đọc tên.
+- **State:** Riverpod 3 (`flutter_riverpod`).
+  - `core/settings/`: `themeModeProvider` (Notifier) và `ThemeModeStorage` (shared_preferences, key `theme_mode`).
+  - `loadPreferences()` chờ tối đa 2 s; mọi lỗi (kể cả `Error`) hoặc quá giờ thì chạy với cài đặt mặc định.
+  - Test giả lập kho cài đặt chậm/lỗi bằng `test/helpers/fake_preferences_store.dart` (dev dependency `shared_preferences_platform_interface`).
+  - Storage được override trong `main()`; test dùng `test/helpers/pump_fluw_app.dart`.
+  - Chưa có chỗ chọn lại "Theo máy" sau khi đã bấm đổi; thêm vào cài đặt ở M2.
+- **Theme** `core/theme/`:
+  - `app_palette`: màu lấy từ thiết kế, cộng các màu thiết kế không có (`on*Container`, `tertiaryContainer`, lớp nền giữa) lấy theo tông Material 3 tương ứng, để mỗi nhóm màu đồng tông.
+  - Bảng sáng sinh từ `fromSeed(primary, fidelity)` rồi ghi đè trọn từng nhóm màu; bảng tối sinh từ seed `#10B981`.
+  - `nutrient_colors` (`ThemeExtension` cho kcal, protein, tinh bột, đường, béo, nước).
+  - `app_typography` (`AppFonts`), `app_radius`, `app_theme`.
+- **Phông** `assets/fonts/`:
+  - TTF tĩnh tách từ variable font của repo google/fonts bằng fontTools: Inter 400–700 (opsz 14), Plus Jakarta Sans 600–800. Đã kiểm đủ dấu tiếng Việt.
+  - Giấy phép OFL ở `assets/licenses/`, đăng ký bằng `registerFontLicenses()`.
 - Chỉ `app/` được import `features/`. `core/` không import `features/`. Feature không import thẳng feature khác; phần dùng chung đưa vào `core/`.
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
@@ -117,7 +139,7 @@ features/<tên>/
   - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
-- Thư viện dự kiến, **chỉ thêm khi dùng tới**: `flutter_riverpod` (state), `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
+- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`. Dự kiến, **chỉ thêm khi dùng tới**: `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -186,6 +208,9 @@ dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 ```
+- Bẫy khi test giao diện:
+  - Phông mặc định của `flutter test` có ký tự vuông, nên không bắt được tràn chiều cao ở cỡ chữ lớn. Test cỡ chữ lớn phải gọi `loadAppFonts()` (`test/helpers/load_app_fonts.dart`).
+  - `flutter test` tắt bóng đổ (`debugDisableShadows`), nên ảnh chụp trong test có dải đen ở mép thanh dưới. Đây không phải lỗi; muốn xem bóng thật thì đặt `debugDisableShadows = false`.
 - Code dính tới giờ (`placeInNote`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test`. CI chạy UTC nên không bắt được lỗi quên `toLocal()`. Đã đề xuất FLuw thêm `TZ` vào workflow (sửa workflow cần FLuw duyệt).
 - Môi trường cloud của agent không có Flutter sẵn: tải SDK `flutter_linux_3.47.9-stable.tar.xz` từ `storage.googleapis.com` vào scratchpad, `chown` thư mục SDK. **Không chạy `git config --global --add safe.directory`.**
 - Không có Android SDK trong môi trường agent → không build APK tại chỗ, không kiểm được `build.gradle.kts`. CI build APK ở job `android-apk`.
@@ -315,7 +340,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
-| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Đang làm |
+| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Đang review (PR) |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | #20 xong BMR/TDEE/calo/protein; còn BMI, macro %, nước |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
@@ -345,6 +370,46 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 12/11/2026 — UI0: hệ thống giao diện theo thiết kế
+- **Merge PR #22** (thiết kế + phạm vi, `dfcacae`).
+- **Thêm** (chi tiết ở mục 3):
+  - `core/theme/` 4 file mới, `core/settings/` 3 file, `core/licenses/font_licenses.dart`.
+  - `app/shell/` 5 file; `assets/fonts/` 7 file, `assets/licenses/` 2 file.
+- **Sửa:**
+  - `AppTab` theo nhãn thiết kế, thêm `title`.
+  - `FluwApp` đọc `themeModeProvider`; `main()` đọc cài đặt, đăng ký giấy phép phông.
+  - 5 màn tab bỏ `Scaffold`/`AppBar` riêng.
+- **Sửa theo review độc lập (trước khi push):**
+  - Semantics tab bỏ mất hành động chạm (`excludeSemantics`), nên Switch Access và Voice Access không bấm được tab → thêm `onTap` vào `Semantics`.
+  - `FittedBox` co nhãn về gần 100% nên nhãn không hề to lên; CLAUDE.md ghi "không giới hạn" là sai.
+    - Khôi phục giới hạn 130% như `NavigationBar`.
+    - Có test đo nhãn to đúng 120% / 130% / 130% ở cỡ chữ 120% / 200% / 310%.
+  - Bảng màu sáng chỉ ghi đè một phần, các nhóm màu lệch tông (tertiaryContainer xanh dương, lớp nền giữa ngả xanh lá) → ghi đè trọn nhóm.
+  - `loadPreferences` chỉ bắt `Exception`; plugin ném `Error` thì app kẹt ở màn chờ → bắt `Object`.
+  - 7 đột biến lọt test → thêm test:
+    - semantics tab; nút Quét nổi và chạm mép trên;
+    - giá trị hỏng khi máy để Tối;
+    - `loadPreferences` (đọc được, Exception, Error, quá giờ); ghi lỗi không ném;
+    - tương phản chữ trên các container; thứ tự và tông các lớp nền.
+- **Gỡ lại sau khi kiểm chứng:**
+  - Ảnh chụp trong test có dải đen trên thanh dưới; đã thử `ColoredBox` để tô nền.
+  - Chụp lại với bóng đổ thật thì thấy dải đen chỉ do test tắt bóng đổ, nên gỡ `ColoredBox` và test đi kèm.
+  - Gỡ luôn `extendBody` + `SafeArea` thừa.
+- **Test:**
+  - `flutter test` 147/147 (thêm 43), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
+  - Test mới: 5 tab đúng nhãn, header đổi theo tab, nút Quét và avatar, không tràn ở 320×568 với cỡ chữ 200% và 310% (phông thật).
+  - Test mới: Sáng/Tối theo máy, bấm đổi và lưu, mở lại dùng lựa chọn đã lưu, giá trị hỏng thì về theo máy.
+  - Test mới: màu đúng thiết kế, độ tương phản AA ở cả sáng và tối, phông tiêu đề/nội dung, giấy phép phông.
+  - Kiểm 10 đột biến, đều bị bắt:
+    - nút Quét hoặc avatar mở sai tab;
+    - không lưu lựa chọn; giá trị hỏng không về theo máy; bỏ `themeMode`;
+    - nút chính về `#10B981`; tiêu đề sai phông;
+    - nhãn tab sai; thiếu giấy phép phông;
+    - bỏ `Flexible` ở nhãn tab. Lần đầu lọt, vì phông test có ký tự vuông; thêm `loadAppFonts()` thì bắt được.
+  - Sau review: kiểm thêm 12 đột biến (gồm 7 đột biến review chỉ ra), đều bị bắt.
+  - Đã chụp ảnh app 390×844 bằng test tạm (không commit) để so với thiết kế, cả sáng và tối.
+  - APK chưa build tại chỗ; xem job `android-apk`.
 
 ### 11/11/2026 — Nhận thiết kế Figma, chốt phạm vi theo thiết kế
 - **Merge PR #21** (M4 domain, `b53e986`).

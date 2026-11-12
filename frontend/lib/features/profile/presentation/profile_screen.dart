@@ -6,13 +6,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Cá nhân')),
-      body: const EmptyState(
-        icon: Icons.person_outline,
-        title: 'Hồ sơ sức khỏe',
-        message: 'Đang xây dựng. Nhập chiều cao, cân nặng, mục tiêu, dị ứng và bệnh lý để Fluw tính nhu cầu calo và protein.',
-      ),
+    return const EmptyState(
+      icon: Icons.person_outline,
+      title: 'Hồ sơ sức khỏe',
+      message:
+          'Đang xây dựng. Nhập chiều cao, cân nặng, mục tiêu, dị ứng và bệnh lý để Fluw tính nhu cầu calo và protein.',
     );
   }
 }
