@@ -32,6 +32,10 @@ void main() {
         'chữ phụ trên thẻ': (scheme.onSurfaceVariant, scheme.surfaceContainerLowest),
         'chữ lỗi trên nền': (scheme.error, scheme.surface),
         'tab đang chọn trên thanh dưới': (scheme.primary, scheme.surfaceContainerLowest),
+        'chữ trên primaryContainer (avatar)': (scheme.onPrimaryContainer, scheme.primaryContainer),
+        'chữ trên secondaryContainer': (scheme.onSecondaryContainer, scheme.secondaryContainer),
+        'chữ trên tertiaryContainer': (scheme.onTertiaryContainer, scheme.tertiaryContainer),
+        'chữ trên errorContainer': (scheme.onErrorContainer, scheme.errorContainer),
       };
 
       for (final MapEntry(key: label, value: (foreground, background)) in pairs.entries) {
@@ -45,6 +49,24 @@ void main() {
       expect(theme.extension<NutrientColors>(), isNotNull);
     });
   }
+
+  test('các lớp nền của giao diện sáng đậm dần đúng thứ tự, cùng một tông', () {
+    final scheme = AppTheme.light().colorScheme;
+    final layers = [
+      scheme.surfaceContainerLowest,
+      scheme.surfaceContainerLow,
+      scheme.surfaceContainer,
+      scheme.surfaceContainerHigh,
+      scheme.surfaceContainerHighest,
+    ];
+
+    for (var index = 1; index < layers.length; index++) {
+      expect(layers[index].computeLuminance(), lessThan(layers[index - 1].computeLuminance()));
+    }
+    for (final layer in layers.skip(1)) {
+      expect(layer.b, greaterThan(layer.g), reason: 'các lớp nền trong thiết kế ngả tím xanh, không ngả xanh lá');
+    }
+  });
 
   test('tiêu đề dùng Plus Jakarta Sans, nội dung dùng Inter', () {
     final textTheme = AppTheme.light().textTheme;

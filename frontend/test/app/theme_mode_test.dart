@@ -39,8 +39,11 @@ void main() {
   });
 
   testWidgets('giá trị đã lưu bị hỏng thì quay về theo máy', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
     await pumpFluwApp(tester, storedSettings: {'theme_mode': 'tím'});
 
-    expect(_currentBrightness(tester), Brightness.light);
+    expect(_currentBrightness(tester), Brightness.dark);
   });
 }

@@ -92,16 +92,21 @@ features/<tên>/
 - **Shell (UI0):**
   - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
   - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, avatar mở Hồ Sơ. Chưa có chuông thông báo; thêm ở M6/M8 khi có nhắc nhở.
+    - `AppBar` của Flutter tự giới hạn cỡ chữ tiêu đề (`_kMaxTitleTextScaleFactor`); giữ nguyên theo chuẩn Material.
   - Thanh dưới: 5 tab, nút Quét tròn 56 dp nổi 24 dp.
-    - Phần nổi nằm trong chiều cao của thanh để nhận được chạm.
-    - Nhãn tab co bằng `Flexible` + `FittedBox`, không giới hạn cỡ chữ.
+    - Phần nổi nằm trong chiều cao của thanh để nhận được chạm; có test chạm vào mép trên của nút.
+    - Nhãn tab to theo cỡ chữ hệ thống đến **130% rồi dừng**, giống `NavigationBar` của Material (thanh cao cố định). Trên màn hẹp, nhãn dài co theo chiều ngang bằng `Flexible` + `FittedBox`.
+    - Semantics mỗi tab: nút, có hành động chạm (`onTap`), có trạng thái đang chọn. Nút tròn bị loại khỏi semantics vì tab "Quét Món" bên dưới đã đọc tên.
 - **State:** Riverpod 3 (`flutter_riverpod`).
   - `core/settings/`: `themeModeProvider` (Notifier) và `ThemeModeStorage` (shared_preferences, key `theme_mode`).
-  - `loadPreferences()` chờ tối đa 2 s; lỗi hoặc quá giờ thì chạy với cài đặt mặc định.
+  - `loadPreferences()` chờ tối đa 2 s; mọi lỗi (kể cả `Error`) hoặc quá giờ thì chạy với cài đặt mặc định.
+  - Test giả lập kho cài đặt chậm/lỗi bằng `test/helpers/fake_preferences_store.dart` (dev dependency `shared_preferences_platform_interface`).
   - Storage được override trong `main()`; test dùng `test/helpers/pump_fluw_app.dart`.
   - Chưa có chỗ chọn lại "Theo máy" sau khi đã bấm đổi; thêm vào cài đặt ở M2.
 - **Theme** `core/theme/`:
-  - `app_palette` (màu lấy từ thiết kế), `nutrient_colors` (`ThemeExtension` cho kcal, protein, tinh bột, đường, béo, nước).
+  - `app_palette`: màu lấy từ thiết kế, cộng các màu thiết kế không có (`on*Container`, `tertiaryContainer`, lớp nền giữa) lấy theo tông Material 3 tương ứng, để mỗi nhóm màu đồng tông.
+  - Bảng sáng sinh từ `fromSeed(primary, fidelity)` rồi ghi đè trọn từng nhóm màu; bảng tối sinh từ seed `#10B981`.
+  - `nutrient_colors` (`ThemeExtension` cho kcal, protein, tinh bột, đường, béo, nước).
   - `app_typography` (`AppFonts`), `app_radius`, `app_theme`.
 - **Phông** `assets/fonts/`:
   - TTF tĩnh tách từ variable font của repo google/fonts bằng fontTools: Inter 400–700 (opsz 14), Plus Jakarta Sans 600–800. Đã kiểm đủ dấu tiếng Việt.
@@ -375,12 +380,24 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - `AppTab` theo nhãn thiết kế, thêm `title`.
   - `FluwApp` đọc `themeModeProvider`; `main()` đọc cài đặt, đăng ký giấy phép phông.
   - 5 màn tab bỏ `Scaffold`/`AppBar` riêng.
+- **Sửa theo review độc lập (trước khi push):**
+  - Semantics tab bỏ mất hành động chạm (`excludeSemantics`), nên Switch Access và Voice Access không bấm được tab → thêm `onTap` vào `Semantics`.
+  - `FittedBox` co nhãn về gần 100% nên nhãn không hề to lên; CLAUDE.md ghi "không giới hạn" là sai.
+    - Khôi phục giới hạn 130% như `NavigationBar`.
+    - Có test đo nhãn to đúng 120% / 130% / 130% ở cỡ chữ 120% / 200% / 310%.
+  - Bảng màu sáng chỉ ghi đè một phần, các nhóm màu lệch tông (tertiaryContainer xanh dương, lớp nền giữa ngả xanh lá) → ghi đè trọn nhóm.
+  - `loadPreferences` chỉ bắt `Exception`; plugin ném `Error` thì app kẹt ở màn chờ → bắt `Object`.
+  - 7 đột biến lọt test → thêm test:
+    - semantics tab; nút Quét nổi và chạm mép trên;
+    - giá trị hỏng khi máy để Tối;
+    - `loadPreferences` (đọc được, Exception, Error, quá giờ); ghi lỗi không ném;
+    - tương phản chữ trên các container; thứ tự và tông các lớp nền.
 - **Gỡ lại sau khi kiểm chứng:**
   - Ảnh chụp trong test có dải đen trên thanh dưới; đã thử `ColoredBox` để tô nền.
   - Chụp lại với bóng đổ thật thì thấy dải đen chỉ do test tắt bóng đổ, nên gỡ `ColoredBox` và test đi kèm.
   - Gỡ luôn `extendBody` + `SafeArea` thừa.
 - **Test:**
-  - `flutter test` 128/128 (thêm 24), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
+  - `flutter test` 147/147 (thêm 43), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
   - Test mới: 5 tab đúng nhãn, header đổi theo tab, nút Quét và avatar, không tràn ở 320×568 với cỡ chữ 200% và 310% (phông thật).
   - Test mới: Sáng/Tối theo máy, bấm đổi và lưu, mở lại dùng lựa chọn đã lưu, giá trị hỏng thì về theo máy.
   - Test mới: màu đúng thiết kế, độ tương phản AA ở cả sáng và tối, phông tiêu đề/nội dung, giấy phép phông.
@@ -390,6 +407,7 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
     - nút chính về `#10B981`; tiêu đề sai phông;
     - nhãn tab sai; thiếu giấy phép phông;
     - bỏ `Flexible` ở nhãn tab. Lần đầu lọt, vì phông test có ký tự vuông; thêm `loadAppFonts()` thì bắt được.
+  - Sau review: kiểm thêm 12 đột biến (gồm 7 đột biến review chỉ ra), đều bị bắt.
   - Đã chụp ảnh app 390×844 bằng test tạm (không commit) để so với thiết kế, cả sáng và tối.
   - APK chưa build tại chỗ; xem job `android-apk`.
 

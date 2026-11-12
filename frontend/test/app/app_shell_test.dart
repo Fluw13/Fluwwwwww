@@ -74,6 +74,59 @@ void main() {
     _expectOnly(AppTab.profile);
   });
 
+  testWidgets('trình đọc màn hình: mỗi tab là nút bấm được và báo tab đang chọn', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpFluwApp(tester);
+
+    for (final tab in AppTab.values) {
+      expect(
+        tester.getSemantics(_tabItem(tab)),
+        isSemantics(
+          label: tab.label,
+          isButton: true,
+          hasTapAction: true,
+          hasSelectedState: true,
+          isSelected: tab == AppTab.home,
+        ),
+      );
+    }
+    semantics.dispose();
+  });
+
+  testWidgets('nút Quét nổi lên trên thanh và chạm vào mép trên của nút vẫn mở màn Quét', (tester) async {
+    await pumpFluwApp(tester);
+    final bar = find.byType(FluwBottomBar);
+    final scanCircle = tester.getRect(
+      find.descendant(of: bar, matching: find.byWidgetPredicate((w) => w is Material && w.shape is CircleBorder)),
+    );
+    final barSurfaceTop = tester
+        .getRect(find.descendant(of: bar, matching: find.byWidgetPredicate((w) => w is Material && w.elevation > 0)))
+        .top;
+
+    expect(scanCircle.top, lessThan(barSurfaceTop - 20));
+
+    await tester.tapAt(Offset(scanCircle.center.dx, scanCircle.top + 4));
+    await tester.pumpAndSettle();
+
+    _expectOnly(AppTab.scan);
+  });
+
+  testWidgets('nhãn tab to theo cỡ chữ hệ thống đến 130% rồi dừng, như NavigationBar của Material', (tester) async {
+    await loadAppFonts();
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    Future<double> labelHeightAt(double textScale) async {
+      tester.platformDispatcher.textScaleFactorTestValue = textScale;
+      await pumpFluwApp(tester);
+      return tester.getRect(find.descendant(of: find.byType(FluwBottomBar), matching: find.text('Hồ Sơ'))).height;
+    }
+
+    final normal = await labelHeightAt(1);
+    expect(await labelHeightAt(1.2) / normal, closeTo(1.2, 0.05));
+    expect(await labelHeightAt(2) / normal, closeTo(1.3, 0.05));
+    expect(await labelHeightAt(3.1) / normal, closeTo(1.3, 0.05));
+  });
+
   // 200% is Android's largest font size; 310% is iOS's largest accessibility size.
   for (final textScale in [2.0, 3.1]) {
     testWidgets('màn 320x568 với cỡ chữ ${(textScale * 100).round()}% không tràn bố cục ở mọi tab', (tester) async {

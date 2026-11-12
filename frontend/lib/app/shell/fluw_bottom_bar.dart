@@ -9,6 +9,7 @@ class FluwBottomBar extends StatelessWidget {
   static const double barHeight = 64;
   static const double scanButtonSize = 56;
   static const double _scanButtonRise = 24;
+  static const double _maxLabelTextScale = 1.3;
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onSelected;
@@ -19,43 +20,47 @@ class FluwBottomBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     // The raised scan button must stay inside this widget's bounds to receive taps, so the bar reserves that height.
-    return SizedBox(
-      height: _scanButtonRise + barHeight + bottomInset,
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: barHeight + bottomInset,
-            child: Material(
-              color: colorScheme.surfaceContainerLowest,
-              elevation: 8,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: bottomInset),
-                child: Row(
-                  children: [
-                    for (final tab in AppTab.values)
-                      Expanded(
-                        child: _TabItem(
-                          tab: tab,
-                          selected: tab == currentTab,
-                          showIcon: tab != AppTab.scan,
-                          onTap: () => onSelected(tab),
+    // Labels stop growing at 130%, the same limit as Material's NavigationBar, because the bar has a fixed height.
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: _maxLabelTextScale,
+      child: SizedBox(
+        height: _scanButtonRise + barHeight + bottomInset,
+        child: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: barHeight + bottomInset,
+              child: Material(
+                color: colorScheme.surfaceContainerLowest,
+                elevation: 8,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: bottomInset),
+                  child: Row(
+                    children: [
+                      for (final tab in AppTab.values)
+                        Expanded(
+                          child: _TabItem(
+                            tab: tab,
+                            selected: tab == currentTab,
+                            showIcon: tab != AppTab.scan,
+                            onTap: () => onSelected(tab),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Center(child: _ScanButton(onTap: () => onSelected(AppTab.scan))),
-          ),
-        ],
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Center(child: _ScanButton(onTap: () => onSelected(AppTab.scan))),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -78,6 +83,7 @@ class _TabItem extends StatelessWidget {
       button: true,
       selected: selected,
       label: tab.label,
+      onTap: onTap,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -88,7 +94,7 @@ class _TabItem extends StatelessWidget {
             children: [
               if (showIcon) Icon(selected ? tab.selectedIcon : tab.icon, color: color),
               const SizedBox(height: AppSpacing.xs),
-              // Shrinks the label into the bar's fixed height instead of overflowing at large text sizes.
+              // Narrow screens: shrink a long label to its slot instead of overflowing.
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,

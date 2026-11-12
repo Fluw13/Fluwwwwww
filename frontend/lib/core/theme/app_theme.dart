@@ -11,23 +11,36 @@ abstract final class AppTheme {
       _build(ColorScheme.fromSeed(seedColor: AppPalette.accent, brightness: Brightness.dark), NutrientColors.dark);
 
   static ColorScheme _lightScheme() {
-    return ColorScheme.fromSeed(seedColor: AppPalette.accent).copyWith(
+    return ColorScheme.fromSeed(
+      seedColor: AppPalette.primary,
+      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+    ).copyWith(
       primary: AppPalette.primary,
       onPrimary: Colors.white,
       primaryContainer: AppPalette.primaryContainer,
+      onPrimaryContainer: AppPalette.onPrimaryContainer,
+      surfaceTint: AppPalette.primary,
       secondary: AppPalette.secondary,
       onSecondary: Colors.white,
       secondaryContainer: AppPalette.secondaryContainer,
+      onSecondaryContainer: AppPalette.onSecondaryContainer,
       tertiary: AppPalette.tertiary,
       onTertiary: Colors.white,
+      tertiaryContainer: AppPalette.tertiaryContainer,
+      onTertiaryContainer: AppPalette.onTertiaryContainer,
       error: AppPalette.error,
       onError: Colors.white,
       errorContainer: AppPalette.errorContainer,
+      onErrorContainer: AppPalette.onErrorContainer,
       surface: AppPalette.surface,
+      surfaceBright: AppPalette.surface,
+      surfaceDim: AppPalette.surfaceDim,
       onSurface: AppPalette.onSurface,
       onSurfaceVariant: AppPalette.onSurfaceVariant,
       surfaceContainerLowest: Colors.white,
       surfaceContainerLow: AppPalette.surfaceContainerLow,
+      surfaceContainer: AppPalette.surfaceContainer,
+      surfaceContainerHigh: AppPalette.surfaceContainerHigh,
       surfaceContainerHighest: AppPalette.surfaceContainerHighest,
     );
   }
