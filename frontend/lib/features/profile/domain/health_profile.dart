@@ -15,8 +15,8 @@ final class HealthProfile {
     required this.activityLevel,
     required this.trainingType,
     this.weeklyChangeKg,
-    this.conditions = const {},
-    this.limitsSugar = false,
+    required this.conditions,
+    required this.limitsSugar,
   });
 
   final Sex sex;

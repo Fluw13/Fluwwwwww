@@ -121,10 +121,10 @@ features/<tên>/
   - `health_profile` (`weeklyChangeKg` để trống được), `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
   - M2a:
     - `health_condition`: chỉ tiểu đường, huyết áp cao, mỡ máu đổi chỉ tiêu hoặc gây cảnh báo; các bệnh khác chỉ là ghi chú.
-    - `bmi`: thang châu Á, xếp loại theo `roundedValue` (đã làm tròn 0,1); giao diện phải hiện đúng `roundedValue`.
+    - `bmi`: thang châu Á. `displayValue` là BMI **cắt xuống** 0,1 (cộng `1e-9` để 25,0 tính ra 24,999… không rơi xuống 24,9). Xếp loại theo số này nên giữ đúng ngưỡng spec và luôn khớp số hiện; giao diện phải hiện đúng `displayValue`.
     - `nutrient_targets`: béo, béo bão hòa, đường, tinh bột theo % năng lượng; `dailySodiumMaxMg` = 2000.
     - `water_target`: 35 ml/kg.
-    - `HealthProfile` thêm `conditions` và `limitsSugar` (giảm ngọt).
+    - `HealthProfile` thêm `conditions` và `limitsSugar` (giảm ngọt), đều bắt buộc (không mặc định), để lúc đọc SQLite quên cột thì không compile.
   - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `TeenTargets` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
     - `TeenTargets`: protein, nước.
     - `AdultTargets`: BMR, TDEE, calo, protein, `nutrients`, `bmi`, nước.
@@ -135,7 +135,11 @@ features/<tên>/
   - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
-- **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
+- **Khi làm phần data M2 (M2b):**
+  - Thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
+  - `conditions` so sánh bằng `SetEquality` (`package:collection`), `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
+  - `HealthCondition` lưu bằng khóa cố định riêng, không dùng `name`/`index`. Gặp khóa lạ khi đọc thì bỏ qua, không ném lỗi.
+  - Cần trường ghi chú cho "bệnh tự nhập".
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -312,7 +316,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 
 **Nước:** 35 ml × cân nặng (kg) mỗi ngày, người dùng chỉnh được. Không dùng thời tiết.
 
-**BMI** = cân nặng ÷ chiều cao(m)², thang châu Á:
+**BMI** = cân nặng ÷ chiều cao(m)², hiển thị cắt xuống 0,1 (vd 22,96 hiện 22,9), thang châu Á:
 - `BMI < 18,5`: thiếu cân;
 - `18,5 ≤ BMI < 23`: bình thường;
 - `23 ≤ BMI < 25`: thừa cân;
@@ -390,13 +394,20 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - BMI xếp loại theo số đã làm tròn 0,1 để nhãn luôn khớp số hiện trên màn.
   - Tinh bột âm thì `null` ("Chưa tính được"); đúng 0 thì vẫn là 0.
 - **Test:**
-  - `flutter test` 161/161 (thêm 14), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
+  - Trước review: `flutter test` 161/161 (thêm 14), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
   - Số mong đợi tính tay, vd 2000 kcal, protein 112 g → béo 500/9 g, tinh bột 263 g.
   - Kiểm 15 đột biến:
     - mốc BMI, xếp loại theo số chưa làm tròn;
     - tỉ lệ béo, mỡ máu, tiểu đường, giảm ngọt;
     - tinh bột âm/0; nước; cận protein; tuổi 101.
   - Lần đầu lọt đột biến "không truyền giảm ngọt"; thêm test thì bắt được cả 15.
+- **Sửa theo review độc lập (trước khi push):**
+  - BMI xếp loại theo số làm tròn làm ngưỡng lùi 0,05 so với spec (22,96 thành thừa cân) → đổi sang cắt xuống 0,1. Ca thật 64 kg / 160 cm: máy tính ra 24,999… nên cần `+1e-9`.
+  - Thiếu test cho calo bị nâng lên BMR → thêm test (nữ 50 kg, 160 cm, ít vận động: 1239 kcal, béo 34,42 g, tinh bột 142,31 g).
+  - `conditions`/`limitsSugar` có mặc định → bắt buộc.
+  - `stomachUlcer` hẹp hơn spec ("dạ dày") → đổi thành `stomach` trước khi có dữ liệu lưu.
+  - `Set` không so sánh theo nội dung và khóa lưu bệnh lý → ghi vào việc của M2b.
+  - Tổng: `flutter test` 163/163 (thêm 16). Kiểm thêm 3 đột biến cho phần sửa; đột biến "bỏ `1e-9`" lần đầu lọt, đổi sang ca 64 kg / 160 cm thì bắt được.
 
 ### 12/11/2026 — UI0: hệ thống giao diện theo thiết kế
 - **Merge PR #22** (thiết kế + phạm vi, `dfcacae`).

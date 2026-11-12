@@ -1,10 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/bmi.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/protein_target.dart';
+import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
 
 import 'profile_fixture.dart';
@@ -29,7 +31,7 @@ void main() {
     expect(adult.nutrients.saturatedFatMaxGrams, closeTo(23.14513889, 1e-6));
     expect(adult.nutrients.sugarsMaxGrams, closeTo(52.0765625, 1e-9));
     expect(adult.nutrients.carbohydratesGrams, closeTo(264.57421875, 1e-6));
-    expect(adult.bmi.roundedValue, 22.9);
+    expect(adult.bmi.displayValue, 22.8);
     expect(adult.bmi.category, BmiCategory.normal);
     expect(adult.waterMl, 2450);
   });
@@ -43,6 +45,27 @@ void main() {
     final adult = targets as AdultTargets;
     expect(adult.nutrients.sugarsMaxGrams, closeTo(26.03828125, 1e-9));
     expect(adult.nutrients.saturatedFatMaxGrams, closeTo(16.20159722, 1e-6));
+  });
+
+  test('calo bị nâng lên BMR thì chỉ tiêu dinh dưỡng tính theo số đã nâng', () {
+    final targets = calculateDailyTargets(
+      buildProfile(
+        sex: Sex.female,
+        weightKg: 50,
+        heightCm: 160,
+        targetWeightKg: 45,
+        activityLevel: ActivityLevel.sedentary,
+      ),
+      today: fixtureToday,
+    );
+
+    final adult = targets as AdultTargets;
+    expect(adult.bmr, 1239);
+    expect(adult.calories.kcal, 1239);
+    expect(adult.calories.isRaisedToBmr, isTrue);
+    expect(adult.nutrients.fatGrams, closeTo(34.41666667, 1e-6));
+    expect(adult.nutrients.sugarsMaxGrams, closeTo(30.975, 1e-9));
+    expect(adult.nutrients.carbohydratesGrams, closeTo(142.3125, 1e-9));
   });
 
   test('bật giảm ngọt trong hồ sơ thì giới hạn đường 5% năng lượng', () {

@@ -21,23 +21,30 @@ void main() {
     }
   });
 
-  test('xếp loại theo số đã làm tròn 0,1, đúng số hiện trên màn hình', () {
-    expect(at100cm(22.94).roundedValue, 22.9);
-    expect(at100cm(22.94).category, BmiCategory.normal);
-    expect(at100cm(22.96).roundedValue, 23.0);
-    expect(at100cm(22.96).category, BmiCategory.overweight);
-    expect(at100cm(18.44).category, BmiCategory.underweight);
-    expect(at100cm(18.46).category, BmiCategory.normal);
+  test('số hiển thị bị cắt xuống 0,1 nên giữ đúng ngưỡng spec và luôn khớp nhãn', () {
+    expect(at100cm(22.96).displayValue, 22.9);
+    expect(at100cm(22.96).category, BmiCategory.normal);
+    expect(at100cm(22.999).category, BmiCategory.normal);
+    expect(at100cm(18.46).displayValue, 18.4);
+    expect(at100cm(18.46).category, BmiCategory.underweight);
+    expect(at100cm(24.99).category, BmiCategory.overweight);
   });
 
-  test('70 kg, cao 175 cm: BMI 22,9, bình thường', () {
+  test('64 kg, cao 160 cm: BMI đúng 25,0 (máy tính ra 24,999...) vẫn hiện 25,0 và là béo phì', () {
+    final bmi = Bmi.fromMeasurements(weightKg: 64, heightCm: 160);
+
+    expect(bmi.displayValue, 25.0);
+    expect(bmi.category, BmiCategory.obese);
+  });
+
+  test('70 kg, cao 175 cm: BMI 22,857 hiện 22,8, bình thường', () {
     final bmi = Bmi.fromMeasurements(weightKg: 70, heightCm: 175);
 
-    expect(bmi.roundedValue, 22.9);
+    expect(bmi.displayValue, 22.8);
     expect(bmi.category, BmiCategory.normal);
   });
 
-  test('58,5 kg, cao 165 cm: BMI 21,5', () {
-    expect(Bmi.fromMeasurements(weightKg: 58.5, heightCm: 165).roundedValue, 21.5);
+  test('58,5 kg, cao 165 cm: BMI 21,488 hiện 21,4', () {
+    expect(Bmi.fromMeasurements(weightKg: 58.5, heightCm: 165).displayValue, 21.4);
   });
 }

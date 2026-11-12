@@ -36,9 +36,7 @@ void main() {
   });
 
   test('bệnh không có quy tắc (huyết áp, dạ dày, gout) không đổi chỉ tiêu', () {
-    final result = targets(
-      conditions: {HealthCondition.hypertension, HealthCondition.stomachUlcer, HealthCondition.gout},
-    );
+    final result = targets(conditions: {HealthCondition.hypertension, HealthCondition.stomach, HealthCondition.gout});
 
     expect(result.saturatedFatMaxGrams, closeTo(200 / 9, 1e-9));
     expect(result.sugarsMaxGrams, closeTo(50, 1e-9));
