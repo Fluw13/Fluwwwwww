@@ -26,9 +26,9 @@ void main() {
       base.copyWith(targetWeightKg: 66),
       base.copyWith(activityLevel: ActivityLevel.light),
       base.copyWith(trainingType: TrainingType.none),
-      base.copyWith(weeklyChangeKg: 0.25),
+      base.copyWith(weeklyChangeKg: () => 0.25),
       base.copyWith(conditions: {HealthCondition.hypertension}),
-      base.copyWith(conditionNote: 'hen'),
+      base.copyWith(conditionNote: () => 'hen'),
       base.copyWith(limitsSugar: true),
     ];
 
@@ -41,8 +41,8 @@ void main() {
     final base = buildProfile(weeklyChangeKg: 0.5, conditionNote: 'hen');
 
     expect(base.copyWith(), base);
-    expect(base.copyWith(weeklyChangeKg: null).weeklyChangeKg, isNull);
-    expect(base.copyWith(conditionNote: null).conditionNote, isNull);
+    expect(base.copyWith(weeklyChangeKg: () => null).weeklyChangeKg, isNull);
+    expect(base.copyWith(conditionNote: () => null).conditionNote, isNull);
     expect(base.copyWith(heightCm: 180).weeklyChangeKg, 0.5);
   });
 

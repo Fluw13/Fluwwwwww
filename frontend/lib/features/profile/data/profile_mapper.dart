@@ -26,8 +26,8 @@ List<String> conditionsToKeys(Set<HealthCondition> conditions) => [
   for (final condition in conditions) healthConditionKeys[condition]!,
 ];
 
-/// Returns `null` when a required field holds a value this version cannot read, so the app asks for the profile again
-/// instead of crashing. Unknown condition keys are skipped because conditions are optional.
+/// Returns `null` when a required field holds a value this version cannot read, instead of crashing.
+/// Unknown condition keys are skipped because conditions are optional.
 HealthProfile? profileFromRow(ProfileRow row, Iterable<String> conditionKeys) {
   final sex = valueForKey(sexKeys, row.sex);
   final birthDate = CalendarDate.tryParse(row.birthDate);

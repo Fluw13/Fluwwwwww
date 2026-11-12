@@ -62,7 +62,7 @@
 **Render (VERIFIED 11/11/2026):**
 - Cấu hình build và chạy: root dir `backend`, build `npm install`, start `node server.js`, gói free, region virginia.
 - Auto-deploy từ `main`, kích hoạt `checksPass` (chỉ deploy khi CI xanh).
-- **Health check path chưa đặt.**
+- Health check path `/health` (FLuw đặt 12/11, VERIFIED qua cấu hình service). Biến `USDA_API_KEY` FLuw đã thêm 12/11.
 - Gói free ngủ sau 15 phút không có request; request đầu tiên sau đó chậm khoảng 50 giây. App phải hiện trạng thái chờ và đặt timeout đủ dài.
 
 ### Các trang (theo thiết kế Figma, ảnh ở `design/figma/`)
@@ -135,11 +135,23 @@ features/<tên>/
   - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
-- **Khi làm phần data M2 (M2b):**
-  - Thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
-  - `conditions` so sánh bằng `SetEquality` (`package:collection`), `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
-  - `HealthCondition` lưu bằng khóa cố định riêng, không dùng `name`/`index`. Gặp khóa lạ khi đọc thì bỏ qua, không ném lỗi.
-  - Cần trường ghi chú cho "bệnh tự nhập".
+- **`HealthProfile` (M2b):**
+  - Có `==`, `hashCode`, `copyWith`. `conditions` so bằng `SetEquality`, `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
+  - `conditionNote`: ghi chú "bệnh tự nhập", chỉ để ghi chú.
+  - `copyWith` nhận hàm cho trường để trống được, để đặt `null` có chủ ý: `copyWith(weeklyChangeKg: () => null)`.
+- **SQLite (drift) `core/database/` (M2b):**
+  - `AppDatabase` (schema v1), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
+  - Bảng nằm ở `core/` vì `AppDatabase` phải liệt kê mọi bảng; `core/` vẫn không import `features/`.
+  - Code sinh `app_database.g.dart` được commit (CI không chạy build_runner). Sinh lại xem mục 4.
+  - Schema mỗi phiên bản lưu ở `frontend/drift_schemas/` (`build.yaml`). Tăng `schemaVersion` thì chạy `dart run drift_dev make-migrations` để có bước migration và test đối chiếu.
+  - `sqlite3` 3.x tự tải SQLite lúc build (native-assets hook). **Không thêm trực tiếp `sqlite3_flutter_libs`**; bản `0.6.0+eol` trong lock do `drift_flutter` kéo vào, là gói rỗng.
+- **`features/profile/data/` (M2b):**
+  - `profile_storage_keys`: khóa lưu cố định cho `Sex`, `ActivityLevel`, `TrainingType`, `HealthCondition`, không dùng `name`/`index`. Có test khóa không bao giờ đổi; chỉ được thêm khóa mới.
+  - `profile_mapper`: khóa bệnh lạ thì bỏ qua; trường bắt buộc không đọc được thì trả `null`.
+  - `ProfileRepository`: `load`, `watch` (một query join 2 bảng nên phản ứng khi bảng nào đổi), `save`/`clear` trong transaction. `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
+  - Kết quả đọc là `StoredProfile` (sealed): `NoProfile` / `UnreadableProfile` / `LoadedProfile`. UI phải báo người dùng khi hồ sơ hỏng, không âm thầm mở form trống.
+  - Provider: `profileRepositoryProvider`, `storedProfileProvider` (StreamProvider).
+  - Test: `test/helpers/in_memory_database.dart` (SQLite trong bộ nhớ); `pumpFluwApp` đã override `appDatabaseProvider`.
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -151,7 +163,7 @@ features/<tên>/
   - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
-- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`. Dự kiến, **chỉ thêm khi dùng tới**: `drift` (SQLite), `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
+- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -240,6 +252,9 @@ flutter pub get
 dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
+
+# Sau khi sửa bảng drift: sinh lại code rồi format (bộ sinh in độ rộng 80, repo dùng 120; quên format thì CI fail)
+dart run build_runner build && dart format lib test
 ```
 - Bẫy khi test giao diện:
   - Phông mặc định của `flutter test` có ký tự vuông, nên không bắt được tràn chiều cao ở cỡ chữ lớn. Test cỡ chữ lớn phải gọi `loadAppFonts()` (`test/helpers/load_app_fonts.dart`).
@@ -361,9 +376,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
-- Tạo keystore, thêm 4 secret Android (hướng dẫn trong README).
-- Đặt Health Check Path `/health` cho service `Fluw` trên Render.
-- Đăng ký USDA API key, thêm biến `USDA_API_KEY` trên Render (làm trước M1).
+- Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ---
 
@@ -373,8 +386,8 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức xong (#20, M2a); còn M2b lưu SQLite, M2c giao diện |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Sẵn sàng (đã có USDA key) |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức xong (#20, M2a); M2b lưu SQLite xong; còn M2c giao diện |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
@@ -392,7 +405,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 - **Open Food Facts:** dữ liệu ODbL, ảnh CC BY-SA; phải ghi nguồn trên giao diện. Nhiều sản phẩm Việt Nam thiếu `categories_tags` và dinh dưỡng.
 - **USDA FoodData Central:** tên thực phẩm bằng tiếng Anh. Từ khóa tiếng Việt cần bảng ánh xạ hoặc dịch trước khi tìm.
 - **Gradle wrapper:** `gradle-wrapper.jar` và `gradlew` bị `.gitignore` của template bỏ qua; Flutter tự tạo khi build.
-- **Chữ ký APK:** chưa có secret keystore thì mỗi lần CI build một debug key mới → không cài đè được, phải gỡ bản cũ. Cần có keystore trước khi M2 bắt đầu lưu dữ liệu.
+- **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần.
 - **M1, khi thêm `express.json()`:** `errorHandler` phải giữ `error.status` 4xx (JSON hỏng → 400, body quá lớn → 413) thay vì trả 500.
 - **Express 5** gọi callback của `app.listen` cả khi lỗi; `server.js` đã bỏ qua nhánh lỗi để handler `'error'` xử lý.
 - **Gemini:** gói miễn phí giới hạn lượt/ngày, và Google có thể dùng nội dung gửi lên để cải thiện sản phẩm. Model và biến môi trường Gemini trên Render chưa kiểm tra lại.
@@ -402,6 +415,26 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 12/11/2026 — M2b: lưu hồ sơ sức khỏe trên máy (SQLite/drift)
+- **Xác minh việc FLuw làm:**
+  - Keystore: CI run `43198464929` bước `Prepare release keystore` không cảnh báo, APK release build xong.
+  - Health Check: `healthCheckPath: /health` trong cấu hình service, deploy `dep-dbqp953rjlhs73a2me10` `live`.
+  - `USDA_API_KEY`: theo lời FLuw; service có 2 deploy `service_updated` lúc 10:26–10:27 UTC. Chưa tự xem tên biến.
+- **Thêm:** `core/database/` (4 file + `.g.dart`), `features/profile/data/` (5 file), `build.yaml`, `drift_schemas/fluw/drift_schema_v1.json`, `CalendarDate.tryParse`. Chi tiết ở mục 3.
+- **Sửa:** `HealthProfile` thêm `conditionNote`, `==`, `hashCode`, `copyWith`, bọc `Set.unmodifiable` (constructor hết `const`).
+- **Sửa theo review độc lập (trước khi push):**
+  - Lưu NaN thì `SqliteException` (cột NOT NULL) hoặc âm thầm thành `null` → `save` từ chối số không hữu hạn.
+  - `copyWith` dùng sentinel `Object?` nên truyền `int` crash lúc chạy → đổi sang tham số hàm có kiểu.
+  - Hồ sơ hỏng lẫn với chưa có hồ sơ → `StoredProfile` sealed.
+  - Test widget sau này sẽ mở database thật → `pumpFluwApp` override bằng database trong bộ nhớ.
+  - Chưa export schema → `build.yaml` + `make-migrations`.
+  - Sinh lại `.g.dart` ra độ rộng 80 làm CI format fail → ghi lệnh ở mục 4.
+  - Test watch bỏ `distinct()` để bắt cả lần phát thừa; thêm test số nhiều chữ số thập phân, ghi chú rỗng.
+- **Test:**
+  - `flutter test` 185/185, cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze` sạch, `dart format` sạch. Test repository chạy 5 lần liền đều xanh.
+  - Kiểm 12 đột biến, đều bị bắt: không xóa bệnh cũ khi lưu, `clear` không xóa bệnh, bỏ `conditionNote`, `tryParse` thiếu `^`, `hashAll` có thứ tự, bỏ `CHECK`, bỏ `Set.unmodifiable`, `==` bỏ `limitsSugar`, bỏ chặn NaN, bỏ chặn NaN ở `weeklyChangeKg`, hồ sơ hỏng thành `NoProfile`, `copyWith` bỏ qua giá trị mới.
+  - Chưa kiểm được: chưa có test bắt lỗi bỏ transaction trong `clear`. APK có `sqlite3` chưa build tại chỗ, xem job `android-apk`.
 
 ### 12/11/2026 — Xác minh phông theo thiết kế, chỉnh độ đậm tiêu đề
 - **Merge PR #24** (M2a, `6539885`).

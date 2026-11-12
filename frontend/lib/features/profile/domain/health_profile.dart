@@ -6,8 +6,6 @@ import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
 
-const Object _unchanged = Object();
-
 final class HealthProfile {
   HealthProfile({
     required this.sex,
@@ -44,7 +42,7 @@ final class HealthProfile {
 
   WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
 
-  /// The nullable fields take `null` to clear them; leave them out to keep the current value.
+  /// Nullable fields take a function so `null` can be set on purpose: `copyWith(weeklyChangeKg: () => null)` clears it.
   HealthProfile copyWith({
     Sex? sex,
     CalendarDate? birthDate,
@@ -53,9 +51,9 @@ final class HealthProfile {
     double? targetWeightKg,
     ActivityLevel? activityLevel,
     TrainingType? trainingType,
-    Object? weeklyChangeKg = _unchanged,
+    double? Function()? weeklyChangeKg,
     Set<HealthCondition>? conditions,
-    Object? conditionNote = _unchanged,
+    String? Function()? conditionNote,
     bool? limitsSugar,
   }) {
     return HealthProfile(
@@ -66,9 +64,9 @@ final class HealthProfile {
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
       activityLevel: activityLevel ?? this.activityLevel,
       trainingType: trainingType ?? this.trainingType,
-      weeklyChangeKg: identical(weeklyChangeKg, _unchanged) ? this.weeklyChangeKg : weeklyChangeKg as double?,
+      weeklyChangeKg: weeklyChangeKg == null ? this.weeklyChangeKg : weeklyChangeKg(),
       conditions: conditions ?? this.conditions,
-      conditionNote: identical(conditionNote, _unchanged) ? this.conditionNote : conditionNote as String?,
+      conditionNote: conditionNote == null ? this.conditionNote : conditionNote(),
       limitsSugar: limitsSugar ?? this.limitsSugar,
     );
   }
