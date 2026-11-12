@@ -16,7 +16,10 @@ class FieldErrorText extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Text(message, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+      child: Semantics(
+        liveRegion: true,
+        child: Text(message, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+      ),
     );
   }
 }

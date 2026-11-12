@@ -87,6 +87,32 @@ void main() {
     expect(find.text('Không đọc được hồ sơ đã lưu'), findsOneWidget);
   });
 
+  testWidgets('hồ sơ đã lưu có tốc độ ngoài giới hạn: không crash, không hiện BMI, báo cần sửa', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(weeklyChangeKg: 0));
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('BMI'), findsNothing);
+    await scrollTo(tester, find.text('Hồ sơ cần sửa trước khi tính:'));
+    expect(find.textContaining('Tốc độ thay đổi cân nặng phải lớn hơn 0'), findsOneWidget);
+  });
+
+  testWidgets('chỉ chạm vào ô hoặc sửa rồi trả lại như cũ thì quay lại không bị hỏi', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(TextField, 'Cân nặng'));
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '71');
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '70');
+    await tester.pump();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bỏ các thay đổi?'), findsNothing);
+    expect(find.text('1. Thông tin cơ bản'), findsNothing);
+  });
+
   testWidgets('sửa cân nặng rồi lưu thì lưu vào máy và màn Hồ Sơ cập nhật ngay', (tester) async {
     await openProfileTab(tester, saved: buildProfile());
     await scrollTo(tester, find.text('Cập nhật hồ sơ'));

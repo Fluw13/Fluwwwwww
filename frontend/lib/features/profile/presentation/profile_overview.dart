@@ -5,6 +5,7 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/bmi.dart';
+import 'package:fluw/features/profile/domain/calorie_target.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/goal_duration.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
@@ -25,6 +26,7 @@ class ProfileOverview extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final age = ageInYears(birthDate: profile.birthDate, today: today);
+    final targets = calculateDailyTargets(profile, today: today);
     final note = profile.conditionNote;
 
     return ListView(
@@ -39,7 +41,8 @@ class ProfileOverview extends StatelessWidget {
               children: [
                 TargetTile(label: 'Chiều cao', value: formatDecimal(profile.heightCm), unit: 'cm'),
                 TargetTile(label: 'Cân nặng', value: formatDecimal(profile.weightKg), unit: 'kg'),
-                if (age >= adultAgeYears) _bmiTile(),
+                // Taken from the targets, so a profile that fails validation (e.g. edited limits) shows no BMI.
+                if (targets case AdultTargets(:final bmi)) _bmiTile(bmi),
                 TargetTile(
                   label: 'Cân nặng mong muốn',
                   value: formatDecimal(profile.targetWeightKg),
@@ -58,7 +61,7 @@ class ProfileOverview extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         SectionCard(
           title: 'Chỉ tiêu mỗi ngày',
-          children: [DailyTargetsView(targets: calculateDailyTargets(profile, today: today))],
+          children: [DailyTargetsView(targets: targets)],
         ),
         if (profile.conditions.isNotEmpty || note != null) ...[
           const SizedBox(height: AppSpacing.md),
@@ -87,8 +90,7 @@ class ProfileOverview extends StatelessWidget {
     );
   }
 
-  Widget _bmiTile() {
-    final bmi = Bmi.fromMeasurements(weightKg: profile.weightKg, heightCm: profile.heightCm);
+  Widget _bmiTile(Bmi bmi) {
     return TargetTile(
       label: 'BMI (thang châu Á)',
       value: formatDecimal(bmi.displayValue),
@@ -104,7 +106,8 @@ class ProfileOverview extends StatelessWidget {
     }
     final difference = formatDecimal((profile.targetWeightKg - profile.weightKg).abs());
     final summary = '${weightGoalLabel(goal)} $difference kg';
-    if (weeklyChangeKg == null) {
+    // A stored speed outside the allowed range must not crash the page; the targets card lists the issue.
+    if (weeklyChangeKg == null || !isValidWeeklyChangeKg(weeklyChangeKg)) {
       return summary;
     }
     final weeks = estimateWeeksToTarget(

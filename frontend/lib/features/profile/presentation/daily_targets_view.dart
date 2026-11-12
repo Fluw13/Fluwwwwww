@@ -35,7 +35,7 @@ class DailyTargetsView extends StatelessWidget {
             label: 'Protein (đạm)',
             value: _range(protein.minGrams, protein.maxGrams),
             unit: 'g/ngày',
-            note: 'Đủ khi đạt ${formatWhole(protein.minGrams)} g',
+            note: 'Đủ khi đạt ${formatDecimal(protein.minGrams)} g',
             icon: Icons.egg_outlined,
             iconColor: colors.protein,
           ),

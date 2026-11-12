@@ -11,7 +11,7 @@ final class HealthProfile {
   HealthProfile({
     required this.displayName,
     required this.sex,
-    required this.bmrFormulaForOther,
+    required BmrFormula? bmrFormulaForOther,
     required this.birthDate,
     required this.heightCm,
     required this.weightKg,
@@ -22,14 +22,15 @@ final class HealthProfile {
     required Set<HealthCondition> conditions,
     required this.conditionNote,
     required this.limitsSugar,
-  }) : conditions = Set.unmodifiable(conditions);
+  }) : bmrFormulaForOther = sex == Sex.other ? bmrFormulaForOther : null,
+       conditions = Set.unmodifiable(conditions);
 
   /// Optional; only shown in the app.
   final String? displayName;
 
   final Sex sex;
 
-  /// Only used when [sex] is [Sex.other]; see [bmrFormula].
+  /// Kept only when [sex] is [Sex.other], so switching to male or female never leaves a stale choice behind.
   final BmrFormula? bmrFormulaForOther;
 
   final CalendarDate birthDate;

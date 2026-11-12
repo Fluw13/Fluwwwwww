@@ -114,4 +114,11 @@ void main() {
 
     expect((ProfileDraft.fromProfile(profile).toProfile(today: fixtureToday) as DraftValid).profile, profile);
   });
+
+  test('hai bản nháp cùng nội dung thì bằng nhau, khác một ô thì khác', () {
+    expect(_filled(), _filled());
+    expect(_filled().hashCode, _filled().hashCode);
+    expect(_filled(heightText: '166'), isNot(_filled()));
+    expect(_filled(conditionNote: 'Hen'), isNot(_filled()));
+  });
 }

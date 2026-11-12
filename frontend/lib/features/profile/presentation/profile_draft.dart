@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
@@ -96,6 +97,40 @@ final class ProfileDraft {
         goal != null &&
         goal != WeightGoal.maintain;
   }
+
+  @override
+  bool operator ==(Object other) =>
+      other is ProfileDraft &&
+      other.displayName == displayName &&
+      other.sex == sex &&
+      other.bmrFormulaForOther == bmrFormulaForOther &&
+      other.birthDate == birthDate &&
+      other.heightText == heightText &&
+      other.weightText == weightText &&
+      other.targetWeightText == targetWeightText &&
+      other.activityLevel == activityLevel &&
+      other.trainingType == trainingType &&
+      other.weeklyChangeKg == weeklyChangeKg &&
+      const SetEquality<HealthCondition>().equals(other.conditions, conditions) &&
+      other.conditionNote == conditionNote &&
+      other.limitsSugar == limitsSugar;
+
+  @override
+  int get hashCode => Object.hash(
+    displayName,
+    sex,
+    bmrFormulaForOther,
+    birthDate,
+    heightText,
+    weightText,
+    targetWeightText,
+    activityLevel,
+    trainingType,
+    weeklyChangeKg,
+    Object.hashAllUnordered(conditions),
+    conditionNote,
+    limitsSugar,
+  );
 
   DraftResult toProfile({required CalendarDate today}) {
     final heightCm = parseDecimal(heightText);

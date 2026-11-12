@@ -59,9 +59,9 @@ String healthConditionLabel(HealthCondition condition) => switch (condition) {
 
 /// Says only what Fluw really does with each condition; the note-only ones have no data to warn about.
 String healthConditionDescription(HealthCondition condition) => switch (condition) {
-  HealthCondition.diabetes => 'Giới hạn đường tổng dưới 5% năng lượng mỗi ngày.',
-  HealthCondition.hypertension => 'Theo dõi natri, mục tiêu dưới 2,000 mg mỗi ngày.',
-  HealthCondition.dyslipidemia => 'Giới hạn béo bão hòa dưới 7% năng lượng mỗi ngày.',
+  HealthCondition.diabetes => 'Giới hạn đường tổng dưới 5% năng lượng mỗi ngày (tính từ 18 tuổi).',
+  HealthCondition.hypertension => 'Lưu để cảnh báo món nhiều natri khi tra cứu và ghi Nhật ký (đang xây dựng).',
+  HealthCondition.dyslipidemia => 'Giới hạn béo bão hòa dưới 7% năng lượng mỗi ngày (tính từ 18 tuổi).',
   HealthCondition.stomach ||
   HealthCondition.lowBloodPressure ||
   HealthCondition.gout => 'Chỉ lưu làm ghi chú. Fluw chưa có dữ liệu để cảnh báo bệnh này.',

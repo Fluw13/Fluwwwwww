@@ -40,10 +40,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Set<HealthCondition> _conditions = const {};
   bool _limitsSugar = false;
 
+  /// What the form opened with; leaving asks for confirmation only when the draft really differs from it.
+  late final ProfileDraft _initialDraft;
+
   /// Errors stay hidden until the first save attempt, then follow every change.
   bool _showsErrors = false;
-  bool _hasChanges = false;
   bool _isSaving = false;
+  bool _isSaved = false;
 
   @override
   void initState() {
@@ -52,6 +55,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       LoadedProfile(:final profile) => ProfileDraft.fromProfile(profile),
       _ => const ProfileDraft(),
     };
+    _initialDraft = saved;
     _name = _controller(saved.displayName);
     _height = _controller(saved.heightText);
     _weight = _controller(saved.weightText);
@@ -67,7 +71,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _limitsSugar = saved.limitsSugar;
   }
 
-  TextEditingController _controller(String text) => TextEditingController(text: text)..addListener(_markChanged);
+  // Rebuilds on every edit so the goal, speed and target preview follow what is typed.
+  TextEditingController _controller(String text) => TextEditingController(text: text)..addListener(_refresh);
 
   @override
   void dispose() {
@@ -93,12 +98,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     limitsSugar: _limitsSugar,
   );
 
-  void _markChanged() => setState(() => _hasChanges = true);
+  void _refresh() => setState(() {});
 
-  void _update(VoidCallback change) => setState(() {
-    change();
-    _hasChanges = true;
-  });
+  void _update(VoidCallback change) => setState(change);
+
+  bool get _hasChanges => _draft != _initialDraft;
 
   @override
   Widget build(BuildContext context) {
@@ -109,9 +113,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final errors = _showsErrors && result is DraftInvalid ? result.errors : const <ProfileField, String>{};
 
     return PopScope(
-      canPop: !_hasChanges,
+      canPop: _isSaved || (!_isSaving && !_hasChanges),
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) {
+        if (!didPop && !_isSaving) {
           _confirmDiscard();
         }
       },
@@ -209,7 +213,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           return;
         }
         if (mounted) {
-          setState(() => _hasChanges = false);
+          setState(() => _isSaved = true);
           messenger.showSnackBar(const SnackBar(content: Text('Đã lưu hồ sơ.')));
           Navigator.of(context).pop();
         }
@@ -229,7 +233,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ),
     );
     if (discard == true && mounted) {
-      setState(() => _hasChanges = false);
+      setState(() => _isSaved = true);
       Navigator.of(context).pop();
     }
   }

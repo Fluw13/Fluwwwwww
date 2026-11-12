@@ -135,12 +135,13 @@ features/<tên>/
   - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
+- **Giới tính và tên (M2c):** `Sex` có `other`; khi đó người lớn phải chọn `BmrFormula` (Nam/Nữ), thiếu thì `ProfileIssue.bmrFormulaMissing`. Constructor tự bỏ `bmrFormulaForOther` khi giới tính không phải Khác. `displayName` để trống được, không có ảnh.
 - **`HealthProfile` (M2b):**
   - Có `==`, `hashCode`, `copyWith`. `conditions` so bằng `SetEquality`, `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
   - `conditionNote`: ghi chú "bệnh tự nhập", chỉ để ghi chú.
   - `copyWith` nhận hàm cho trường để trống được, để đặt `null` có chủ ý: `copyWith(weeklyChangeKg: () => null)`.
 - **SQLite (drift) `core/database/` (M2b):**
-  - `AppDatabase` (schema v1), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
+  - `AppDatabase` (schema v2 từ M2c: thêm cột `display_name`, `bmr_formula`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
   - Bảng nằm ở `core/` vì `AppDatabase` phải liệt kê mọi bảng; `core/` vẫn không import `features/`.
   - Code sinh `app_database.g.dart` được commit (CI không chạy build_runner). Sinh lại xem mục 4.
   - Schema mỗi phiên bản lưu ở `frontend/drift_schemas/` (`build.yaml`). Tăng `schemaVersion` thì chạy `dart run drift_dev make-migrations` để có bước migration và test đối chiếu.
@@ -151,7 +152,16 @@ features/<tên>/
   - `ProfileRepository`: `load`, `watch` (một query join 2 bảng nên phản ứng khi bảng nào đổi), `save`/`clear` trong transaction. `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
   - Kết quả đọc là `StoredProfile` (sealed): `NoProfile` / `UnreadableProfile` / `LoadedProfile`. UI phải báo người dùng khi hồ sơ hỏng, không âm thầm mở form trống.
   - Provider: `profileRepositoryProvider`, `storedProfileProvider` (StreamProvider).
-  - Test: `test/helpers/in_memory_database.dart` (SQLite trong bộ nhớ); `pumpFluwApp` đã override `appDatabaseProvider`.
+  - Test: `test/helpers/in_memory_database.dart` (SQLite trong bộ nhớ, `closeStreamsSynchronously`). `pumpFluwApp` tự tạo database theo app (đóng cùng app kể cả khi test fail), lấy qua `appContainer(tester)`; đọc/ghi database trong widget test phải bọc `tester.runAsync`.
+- **`features/profile/presentation/` (M2c):**
+  - `ProfileScreen` (tab Hồ Sơ) xử lý đủ `NoProfile` / `UnreadableProfile` / `LoadedProfile` / lỗi đọc (chỉ cho "Thử lại", không mở form trống để khỏi ghi đè).
+  - `ProfileSetupScreen` ở route `/profile/setup` trên root navigator (che thanh tab); `app_router` truyền `onEditProfile` để feature không import `app/`.
+  - `ProfileDraft`: chữ người dùng gõ → `HealthProfile`, lỗi theo từng ô (`ProfileField`). Tốc độ chỉ giữ khi người lớn muốn đổi cân. Có `==` để biết form có thay đổi thật không (hỏi trước khi bỏ).
+  - Số nhập nhận `58,5` và `58.5`, tối đa 2 chữ số thập phân (`core/format/decimal_text.dart`); hiển thị theo thiết kế: `58.5`, `1,850`.
+  - BMI trên màn Hồ Sơ lấy từ `AdultTargets`, nên hồ sơ không hợp lệ không hiện BMI và không crash.
+  - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình; test cố định ngày `appTestToday`.
+  - App chạy locale `vi` (`flutter_localizations`); iOS khai báo `CFBundleLocalizations`. `tester.pageBack()` tìm tooltip tiếng Anh nên test bấm `find.byType(BackButton)`.
+  - Ô nhập dùng `inputDecorationTheme` (nền `surfaceContainerLow`, bo 16, không viền) như thiết kế.
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -163,7 +173,7 @@ features/<tên>/
   - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
-- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`, `flutter_localizations`.
+- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -387,7 +397,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Sẵn sàng (đã có USDA key) |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức xong (#20, M2a); M2b lưu SQLite xong; còn M2c giao diện |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức (#20, M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập phần 1–3 (M2c) xong; còn M2d: dị ứng có mức độ, chế độ ăn, sở thích, ghi cân nặng, nút "Theo máy" |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
@@ -415,6 +425,31 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 12/11/2026 — M2c: màn Hồ Sơ và Thiết lập hồ sơ
+- **Merge PR #26** (M2b, `b0188f0`).
+- **FLuw chốt:** tách M2c (phần 1–3 + màn Hồ Sơ) và M2d (dị ứng, chế độ ăn, sở thích); tên tùy chọn, không ảnh; giới tính Khác làm ngay.
+- **Domain/data:** `BmrFormula`, `Sex.other`, `displayName`, `goal_duration` (số tuần làm tròn lên theo 0,1 kg), schema v2 + migration `stepByStep` + test đối chiếu v1→v2 có dữ liệu.
+- **Giao diện:** 13 file ở `features/profile/presentation/`, `core/widgets/section_card`, `core/format/decimal_text`, `core/time/today_provider`, route `/profile/setup`, locale `vi`, `inputDecorationTheme`. Chi tiết ở mục 3.
+- **Chữ trên màn:** bỏ "chuẩn y khoa", GI, HIPAA, NutriTrack, cộng đồng 24.000+; bệnh chỉ ghi chú thì nói rõ chưa có dữ liệu để cảnh báo.
+- **Sửa theo review độc lập (trước khi push):**
+  - Hồ sơ lưu tốc độ 0 làm màn Hồ Sơ crash (`estimateWeeksToTarget` ném lỗi) → chỉ tính số tuần khi tốc độ hợp lệ; BMI lấy từ `AdultTargets`.
+  - Chỉ chạm vào ô (đổi con trỏ) cũng bị hỏi "Bỏ thay đổi?" → so bản nháp hiện tại với bản ban đầu (`ProfileDraft ==`).
+  - Đang lưu mà bấm quay lại thì mở hộp thoại → chặn quay lại khi đang lưu.
+  - Lỗi đọc dữ liệu mở form trống có thể ghi đè hồ sơ → chỉ "Thử lại".
+  - `todayProvider` không đổi qua nửa đêm/sinh nhật → làm mới khi app quay lại.
+  - Bộ chọn ngày cho chọn người 101 tuổi, ngày cũ ngoài khoảng gây assert → mốc đúng 100 tuổi, kẹp `initialDate`.
+  - Mô tả huyết áp cao hứa theo dõi natri khi chưa có → ghi "đang xây dựng"; tiểu đường/mỡ máu ghi "tính từ 18 tuổi".
+  - Mốc protein "đủ" làm tròn đến gram, lệch domain (0,1 g) → hiện 1 chữ số thập phân.
+  - Đổi từ Khác sang Nam/Nữ còn giữ công thức BMR → constructor tự bỏ.
+  - Ô ngày sinh thiếu semantics nút; dòng lỗi không được đọc → `Semantics(button)`, `liveRegion`.
+  - iOS thiếu `CFBundleLocalizations` cho `vi` → đã thêm.
+- **Test:**
+  - `flutter test` 221/221, cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze` sạch, `dart format` sạch.
+  - Test luồng: chưa có hồ sơ, hồ sơ đã lưu (số liệu tính tay: 2,083 kcal, protein 126–168 g, BMI 22.8), dưới 18 tuổi, hồ sơ hỏng, tốc độ 0, tạo mới (lịch tiếng Việt, giới tính Khác, công thức Nữ), sửa và lưu, lưu khi thiếu (7 lỗi), hỏi khi bỏ thay đổi, không hỏi khi chỉ chạm ô; 320×568 cỡ chữ 200% và 310% không tràn.
+  - Kiểm 4 đột biến cho phần sửa review, đều bị bắt.
+  - Đã chụp ảnh 390 dp màn Hồ Sơ và Thiết lập (test tạm, không commit) để so với thiết kế.
+  - Chưa kiểm được: APK build (xem job `android-apk`), chạy trên điện thoại thật.
 
 ### 12/11/2026 — M2b: lưu hồ sơ sức khỏe trên máy (SQLite/drift)
 - **Xác minh việc FLuw làm:**

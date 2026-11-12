@@ -19,9 +19,9 @@ class ProfileScreen extends ConsumerWidget {
         today: ref.watch(todayProvider),
         onEdit: onEditProfile,
       ),
-      AsyncData(value: NoProfile()) => ProfileSetupPrompt.empty(onSetUp: onEditProfile),
-      AsyncData(value: UnreadableProfile()) => ProfileSetupPrompt.unreadable(onSetUp: onEditProfile),
-      AsyncError() => ProfileSetupPrompt.loadFailed(onSetUp: onEditProfile),
+      AsyncData(value: NoProfile()) => ProfileSetupPrompt.empty(onPressed: onEditProfile),
+      AsyncData(value: UnreadableProfile()) => ProfileSetupPrompt.unreadable(onPressed: onEditProfile),
+      AsyncError() => ProfileSetupPrompt.loadFailed(onPressed: () => ref.invalidate(storedProfileProvider)),
       _ => const Center(child: CircularProgressIndicator()),
     };
   }

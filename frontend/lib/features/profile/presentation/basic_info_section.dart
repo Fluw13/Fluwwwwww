@@ -54,15 +54,18 @@ class BasicInfoSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        InkWell(
-          onTap: () => _pickBirthDate(context),
-          child: InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Ngày sinh',
-              prefixIcon: const Icon(Icons.calendar_today_outlined),
-              errorText: errors[ProfileField.birthDate],
+        Semantics(
+          button: true,
+          child: InkWell(
+            onTap: () => _pickBirthDate(context),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Ngày sinh',
+                prefixIcon: const Icon(Icons.calendar_today_outlined),
+                errorText: errors[ProfileField.birthDate],
+              ),
+              child: Text(_birthDateText()),
             ),
-            child: Text(_birthDateText()),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -118,14 +121,21 @@ class BasicInfoSection extends StatelessWidget {
   }
 
   Future<void> _pickBirthDate(BuildContext context) async {
+    final lastDate = _toDateTime(today);
+    // The day after someone born on it would turn maximumAgeYears + 1 today, so every pickable date is a valid age.
+    final firstDate = DateTime(today.year - maximumAgeYears - 1, today.month, today.day + 1);
     final current = birthDate;
+    final initialDate = current == null ? DateTime(today.year - 25, today.month) : _toDateTime(current);
     final picked = await showDatePicker(
       context: context,
       helpText: 'Chọn ngày sinh',
       initialDatePickerMode: DatePickerMode.year,
-      initialDate: current == null ? DateTime(today.year - 25, today.month) : _toDateTime(current),
-      firstDate: DateTime(today.year - maximumAgeYears - 1, today.month, today.day),
-      lastDate: _toDateTime(today),
+      // A saved birth date can fall outside the range after enough years; the picker asserts on that.
+      initialDate: initialDate.isBefore(firstDate)
+          ? firstDate
+          : (initialDate.isAfter(lastDate) ? lastDate : initialDate),
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
     if (picked != null) {
       onBirthDateChanged(CalendarDate.fromDateTime(picked));

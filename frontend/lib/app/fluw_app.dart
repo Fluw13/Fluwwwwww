@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/app/app_router.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/theme/app_theme.dart';
+import 'package:fluw/core/time/today_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class FluwApp extends ConsumerStatefulWidget {
@@ -15,9 +16,18 @@ class FluwApp extends ConsumerStatefulWidget {
 
 class _FluwAppState extends ConsumerState<FluwApp> {
   final GoRouter _router = createAppRouter();
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    // The date only changes while the app is in the background long enough to matter (overnight, birthdays).
+    _lifecycle = AppLifecycleListener(onResume: () => ref.invalidate(todayProvider));
+  }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _router.dispose();
     super.dispose();
   }

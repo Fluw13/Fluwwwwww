@@ -22,7 +22,7 @@ void main() {
     final changed = [
       base.copyWith(displayName: () => 'An'),
       base.copyWith(sex: Sex.female),
-      base.copyWith(bmrFormulaForOther: () => BmrFormula.female),
+      base.copyWith(sex: Sex.other, bmrFormulaForOther: () => BmrFormula.female),
       base.copyWith(birthDate: CalendarDate(2006, 5, 14)),
       base.copyWith(heightCm: 176),
       base.copyWith(weightKg: 71),
@@ -64,5 +64,12 @@ void main() {
     expect(buildProfile(sex: Sex.female).bmrFormula, BmrFormula.female);
     expect(buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.female).bmrFormula, BmrFormula.female);
     expect(buildProfile(sex: Sex.other).bmrFormula, isNull);
+  });
+
+  test('đổi từ Khác sang Nam/Nữ thì bỏ công thức BMR đã chọn, hai hồ sơ bằng nhau', () {
+    final other = buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.female);
+
+    expect(other.copyWith(sex: Sex.male).bmrFormulaForOther, isNull);
+    expect(other.copyWith(sex: Sex.male), buildProfile(sex: Sex.male));
   });
 }

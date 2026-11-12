@@ -3,7 +3,7 @@ import 'package:fluw/core/theme/app_spacing.dart';
 
 /// Shown instead of the profile when there is nothing readable to show, with one clear way forward.
 class ProfileSetupPrompt extends StatelessWidget {
-  const ProfileSetupPrompt.empty({required this.onSetUp, super.key})
+  const ProfileSetupPrompt.empty({required this.onPressed, super.key})
     : icon = Icons.person_add_alt_1_outlined,
       title = 'Chưa có hồ sơ sức khỏe',
       message =
@@ -12,18 +12,19 @@ class ProfileSetupPrompt extends StatelessWidget {
       buttonLabel = 'Thiết lập hồ sơ',
       isError = false;
 
-  const ProfileSetupPrompt.unreadable({required this.onSetUp, super.key})
+  const ProfileSetupPrompt.unreadable({required this.onPressed, super.key})
     : icon = Icons.error_outline,
       title = 'Không đọc được hồ sơ đã lưu',
       message = 'Hồ sơ trên máy có dữ liệu mà phiên bản app này không hiểu. Hãy nhập lại để Fluw tính đúng chỉ tiêu.',
       buttonLabel = 'Nhập lại hồ sơ',
       isError = true;
 
-  const ProfileSetupPrompt.loadFailed({required this.onSetUp, super.key})
+  /// Offers a retry only: opening an empty form here could overwrite a profile that is just briefly unreadable.
+  const ProfileSetupPrompt.loadFailed({required this.onPressed, super.key})
     : icon = Icons.error_outline,
       title = 'Không mở được dữ liệu trên máy',
-      message = 'Hãy đóng hẳn app rồi mở lại. Nếu vẫn lỗi, bạn có thể nhập lại hồ sơ.',
-      buttonLabel = 'Nhập lại hồ sơ',
+      message = 'Hãy thử lại. Nếu vẫn lỗi, hãy đóng hẳn app rồi mở lại.',
+      buttonLabel = 'Thử lại',
       isError = true;
 
   final IconData icon;
@@ -31,7 +32,7 @@ class ProfileSetupPrompt extends StatelessWidget {
   final String message;
   final String buttonLabel;
   final bool isError;
-  final VoidCallback onSetUp;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +54,7 @@ class ProfileSetupPrompt extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
-            FilledButton(onPressed: onSetUp, child: Text(buttonLabel)),
+            FilledButton(onPressed: onPressed, child: Text(buttonLabel)),
           ],
         ),
       ),
