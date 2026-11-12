@@ -31,9 +31,9 @@ void main() {
     expect(issuesOf(birthDate: CalendarDate(2026, 11, 11)), isEmpty);
   });
 
-  test('trên 120 tuổi là lỗi; còn 1 ngày nữa mới 121 tuổi thì không', () {
-    expect(issuesOf(birthDate: CalendarDate(1905, 11, 12)), isEmpty);
-    expect(issuesOf(birthDate: CalendarDate(1905, 11, 11)), {ProfileIssue.birthDateTooOld});
+  test('trên 100 tuổi là lỗi; còn 1 ngày nữa mới 101 tuổi thì không', () {
+    expect(issuesOf(birthDate: CalendarDate(1925, 11, 12)), isEmpty);
+    expect(issuesOf(birthDate: CalendarDate(1925, 11, 11)), {ProfileIssue.birthDateTooOld});
   });
 
   test('chiều cao trong khoảng 100–250 cm, tính cả hai đầu', () {

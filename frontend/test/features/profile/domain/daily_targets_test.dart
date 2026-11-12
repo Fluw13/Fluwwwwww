@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/features/profile/domain/bmi.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
+import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/protein_target.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -23,6 +25,30 @@ void main() {
     expect(adult.protein.group, ProteinGroup.cutting);
     expect(adult.protein.minGrams, closeTo(126, 1e-9));
     expect(adult.protein.maxGrams, closeTo(168, 1e-9));
+    expect(adult.nutrients.fatGrams, closeTo(57.86284722, 1e-6));
+    expect(adult.nutrients.saturatedFatMaxGrams, closeTo(23.14513889, 1e-6));
+    expect(adult.nutrients.sugarsMaxGrams, closeTo(52.0765625, 1e-9));
+    expect(adult.nutrients.carbohydratesGrams, closeTo(264.57421875, 1e-6));
+    expect(adult.bmi.roundedValue, 22.9);
+    expect(adult.bmi.category, BmiCategory.normal);
+    expect(adult.waterMl, 2450);
+  });
+
+  test('người lớn có tiểu đường và mỡ máu thì giới hạn đường 5%, béo bão hòa 7%', () {
+    final targets = calculateDailyTargets(
+      buildProfile(conditions: {HealthCondition.diabetes, HealthCondition.dyslipidemia}),
+      today: fixtureToday,
+    );
+
+    final adult = targets as AdultTargets;
+    expect(adult.nutrients.sugarsMaxGrams, closeTo(26.03828125, 1e-9));
+    expect(adult.nutrients.saturatedFatMaxGrams, closeTo(16.20159722, 1e-6));
+  });
+
+  test('bật giảm ngọt trong hồ sơ thì giới hạn đường 5% năng lượng', () {
+    final targets = calculateDailyTargets(buildProfile(limitsSugar: true), today: fixtureToday);
+
+    expect((targets as AdultTargets).nutrients.sugarsMaxGrams, closeTo(26.03828125, 1e-9));
   });
 
   test('tròn 18 tuổi đúng hôm nay thì tính như người lớn', () {
@@ -43,6 +69,7 @@ void main() {
     final teen = targets as TeenTargets;
     expect(teen.protein.group, ProteinGroup.teen);
     expect(teen.protein.minGrams, closeTo(46.75, 1e-9));
+    expect(teen.waterMl, 1925);
   });
 
   test('tròn 14 tuổi đúng hôm nay thì được tính protein', () {

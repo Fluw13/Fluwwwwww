@@ -2,7 +2,7 @@
 
 Ứng dụng di động giúp bạn tra cứu dinh dưỡng của thực phẩm, ghi lại những gì đã ăn trong ngày và biết mình cần nạp bao nhiêu calo, protein theo chiều cao, cân nặng và mục tiêu. Trợ lý AI của app tên là **Zero**.
 
-> Đã xong khung dự án, công thức BMR/TDEE/calo/protein và cách xếp món vào Nhật ký. Đã có thiết kế; đang dựng giao diện, các màn vẫn ghi "Đang xây dựng".
+> Đã xong khung dự án, giao diện nền theo thiết kế (màu, phông, thanh 5 tab), công thức hồ sơ (BMR, TDEE, calo, protein, BMI, chất béo/đường/tinh bột, nước) và cách xếp món vào Nhật ký. Nội dung các màn vẫn ghi "Đang xây dựng".
 
 ## Tính năng
 
@@ -12,7 +12,7 @@
 | Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm tươi (cà chua, hành...) | Chưa làm |
 | Thông tin sản phẩm | Tên, ảnh, nhà cung cấp, Nutri-Score, các chỉ số dinh dưỡng, thành phần, đánh giá theo hồ sơ của bạn | Chưa làm |
 | Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong phần xếp món và tính tổng |
-| Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong công thức BMR, TDEE, calo, protein |
+| Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong công thức BMR, TDEE, calo, protein, BMI, chất béo/đường/tinh bột, nước |
 | Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Chưa làm |
 | Nước uống | Mục tiêu nước mỗi ngày, thêm nhanh 200/350/500 ml, lịch nhắc uống nước | Chưa làm |
 | Báo cáo | Biểu đồ calo theo tuần/tháng, tỉ lệ macro, cảnh báo đường/natri, cân nặng | Chưa làm |
@@ -161,9 +161,9 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
 | Mốc | Nội dung |
 |---|---|
 | M0 | Khung dự án, CI build và ký APK *(xong)* |
-| **UI0** | Hệ thống giao diện theo thiết kế: màu, phông, thanh 5 tab *(tiếp theo)* |
+| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, thanh 5 tab *(xong)* |
 | M1 | API tra cứu, mã vạch, nhận diện ảnh; deploy Render |
-| M2 | Hồ sơ sức khỏe *(xong công thức BMR, TDEE, calo, protein)* |
+| **M2** | Hồ sơ sức khỏe *(xong công thức; đang làm lưu dữ liệu và giao diện)* |
 | M3 | Tra cứu, chi tiết sản phẩm, lịch sử & đã lưu |
 | M4 | Nhật ký theo ngày và khung giờ *(phần tính toán xong)* |
 | M5 | Quét mã vạch và nhận diện ảnh |
