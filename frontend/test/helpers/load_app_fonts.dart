@@ -5,7 +5,7 @@ import 'package:fluw/core/theme/app_typography.dart';
 
 const Map<String, List<String>> _fontFiles = {
   AppFonts.body: ['Regular', 'Medium', 'SemiBold', 'Bold'],
-  AppFonts.heading: ['SemiBold', 'Bold', 'ExtraBold'],
+  AppFonts.heading: ['SemiBold'],
 };
 
 /// The default test font has square glyphs, so layout checks at large text sizes need the real font metrics.

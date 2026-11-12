@@ -77,6 +77,15 @@ void main() {
     expect(textTheme.labelMedium?.fontFamily, AppFonts.body);
   });
 
+  test('tiêu đề, header và số lớn đều Plus Jakarta Sans 600 như thiết kế', () {
+    final textTheme = AppTheme.light().textTheme;
+
+    for (final style in [textTheme.displayLarge, textTheme.headlineMedium, textTheme.titleLarge]) {
+      expect(style?.fontFamily, AppFonts.heading);
+      expect(style?.fontWeight, FontWeight.w600);
+    }
+  });
+
   test('NutrientColors chuyển màu mượt giữa sáng và tối', () {
     final halfway = NutrientColors.light.lerp(NutrientColors.dark, 0.5);
 

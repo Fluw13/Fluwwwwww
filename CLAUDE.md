@@ -109,7 +109,7 @@ features/<tên>/
   - `nutrient_colors` (`ThemeExtension` cho kcal, protein, tinh bột, đường, béo, nước).
   - `app_typography` (`AppFonts`), `app_radius`, `app_theme`.
 - **Phông** `assets/fonts/`:
-  - TTF tĩnh tách từ variable font của repo google/fonts bằng fontTools: Inter 400–700 (opsz 14), Plus Jakarta Sans 600–800. Đã kiểm đủ dấu tiếng Việt.
+  - TTF tĩnh tách từ variable font của repo google/fonts bằng fontTools: Inter 400–700 (opsz 14), Plus Jakarta Sans 600. Đã kiểm đủ dấu tiếng Việt.
   - Giấy phép OFL ở `assets/licenses/`, đăng ký bằng `registerFontLicenses()`.
 - Chỉ `app/` được import `features/`. `core/` không import `features/`. Feature không import thẳng feature khác; phần dùng chung đưa vào `core/`.
 - Import dạng `package:fluw/...`, xếp theo alphabet (lint `directives_ordering`). `dart format` độ rộng 120 (đặt trong `analysis_options.yaml`), CI chặn nếu sai format.
@@ -179,7 +179,28 @@ features/<tên>/
 - **Nút chính và nút Quét dùng `#006C49`** (FLuw chọn 11/11). Lý do: `#10B981` với chữ trắng chỉ đạt độ tương phản 2,5:1, dưới chuẩn WCAG AA.
 - **`#10B981` không dùng làm màu chữ**, vì trên nền sáng cũng chỉ đạt khoảng 2,5:1. Vòng tiến độ và thanh màu này luôn có số đi kèm, để thông tin không chỉ dựa vào màu.
 - Thiết kế chỉ có giao diện sáng; giao diện tối sinh từ cùng seed.
-- **Phông** (nhìn từ ảnh; FLuw chưa chắc, tạm dùng): tiêu đề Plus Jakarta Sans, nội dung Inter. Đóng gói file phông trong app, không tải lúc chạy.
+- **Phông (VERIFIED 12/11 bằng so khớp điểm ảnh với ảnh thiết kế):**
+  - **Cách đo:**
+    - cắt vùng chữ trong `design/figma/01-trang-chu.png`;
+    - vẽ cùng câu chữ bằng phông ứng viên;
+    - co về cùng kích thước, đo trung bình độ lệch điểm ảnh (0 là trùng khớp).
+    - Script nằm ở scratchpad, không nằm trong repo; chạy lại thì làm theo các bước trên.
+  - **Tiêu đề, header, số:** Plus Jakarta Sans **600** thắng ở cả 7 mẫu:
+
+    | Mẫu | 600 | 700 | 800 |
+    |---|---|---|---|
+    | "Bữa Ăn Hôm Nay" | **0,048** | 0,067 | 0,098 |
+    | "Dinh Dưỡng Hôm Nay" | **0,052** | 0,071 | 0,107 |
+    | "Đề Xuất Dinh Dưỡng Thông Minh" | **0,057** | 0,079 | 0,117 |
+    | "Lối Tắt Nhanh" | **0,052** | 0,089 | 0,119 |
+    | header "Trang" | **0,042** | 0,064 | 0,097 |
+    | số "1,420" | **0,052** | 0,058 | 0,110 |
+    | số "430" | **0,068** | 0,073 | 0,107 |
+
+    So với phông khác trên mẫu "Bữa Ăn Hôm Nay": Inter 700 lệch 0,110, Manrope 0,129, Be Vietnam Pro 0,136.
+  - **Nội dung:** Inter, lệch 0,116; Manrope 0,130; các phông còn lại từ 0,153. Mới so 1 mẫu, nên chắc chắn ở mức vừa.
+  - Đã so với 10 phông ứng viên: Be Vietnam Pro, Manrope, Lexend, DM Sans, Outfit, Work Sans, Public Sans, Nunito Sans...
+  - Đóng gói file phông trong app, không tải lúc chạy.
 - **Bỏ hoặc sửa chữ sai sự thật trong thiết kế:**
   - "NutriTrack" → Fluw.
   - Bỏ: "chuẩn y khoa", "HIPAA/GDPR", "24.000+ thành viên", "Hội viên", "Apple Health", "LIVE RADAR 60FPS 98,4%", Nutri-Score "A+" và "/100", chỉ số GI, "độ no", "thời gian chuẩn bị", điểm "92/100", "100% khớp", "an toàn tuyệt đối", khẳng định y khoa về dạ dày.
@@ -336,7 +357,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 7. Đang chờ FLuw
 
 ### Câu hỏi
-1. **Phông chữ:** FLuw chưa chắc. Đang tạm dùng Plus Jakarta Sans (tiêu đề) và Inter (nội dung). FLuw chọn một đoạn chữ trong Figma, xem tên phông ở bảng Typography rồi báo.
+- Không còn câu hỏi mở.
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
@@ -381,6 +402,23 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 12/11/2026 — Xác minh phông theo thiết kế, chỉnh độ đậm tiêu đề
+- **Merge PR #24** (M2a, `6539885`).
+- **FLuw nhờ làm 4 việc:**
+  - Làm được: xác định phông. Figma MCP vẫn hết lượt, nên so khớp điểm ảnh 8 mẫu chữ trong `design/figma/` (7 mẫu tiêu đề và số, 1 mẫu nội dung) với 10 phông ứng viên. Kết quả ở mục 3.
+  - Không làm được, đã hướng dẫn FLuw tự làm:
+    - tạo keystore và GitHub Secrets (không có công cụ; đây là khóa ký app của FLuw);
+    - `USDA_API_KEY` (cần email của FLuw; key Render do FLuw tự nhập);
+    - Health Check Path (Render MCP không sửa được cấu hình service);
+    - xóa 22 branch (proxy và GitHub MCP không cho).
+- **Sửa:**
+  - `app_typography.dart`: mọi kiểu chữ tiêu đề và số dùng Plus Jakarta Sans 600 (trước là 700/800).
+  - Gỡ `PlusJakartaSans-Bold.ttf` và `PlusJakartaSans-ExtraBold.ttf` vì không còn dùng; `load_app_fonts.dart` theo đó.
+- **Sửa theo review độc lập:**
+  - Bản đầu ghi "số lớn 700" và "lệch 0,04–0,06" mà script chỉ chạy lại được 2 mẫu. Mẫu số "430" lúc đó cũng chưa so với 600.
+  - Đo lại đủ 7 mẫu với cả 600/700/800 thì 600 thắng ở mọi mẫu, kể cả số → đổi số lớn sang 600 và ghi bảng số liệu ở mục 3.
+- **Test:** `flutter test` 164/164 (thêm 1 test độ đậm), `flutter analyze` sạch.
 
 ### 12/11/2026 — M2a: BMI, chỉ tiêu dinh dưỡng theo % năng lượng, nước, tuổi tối đa 100
 - **Merge PR #23** (UI0, `250c531`).
