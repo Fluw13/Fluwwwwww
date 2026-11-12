@@ -1,5 +1,6 @@
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -15,6 +16,8 @@ HealthProfile buildProfile({
   ActivityLevel activityLevel = ActivityLevel.moderate,
   TrainingType trainingType = TrainingType.strength,
   double? weeklyChangeKg = 0.5,
+  Set<HealthCondition> conditions = const {},
+  bool limitsSugar = false,
 }) {
   return HealthProfile(
     sex: sex,
@@ -25,5 +28,7 @@ HealthProfile buildProfile({
     activityLevel: activityLevel,
     trainingType: trainingType,
     weeklyChangeKg: weeklyChangeKg,
+    conditions: conditions,
+    limitsSugar: limitsSugar,
   );
 }

@@ -116,18 +116,30 @@ features/<tên>/
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
 - `features/profile/domain/` (M2):
   - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn: làm tròn từng cân nặng đến 0,1 kg rồi so).
-  - `age` (mốc 14, 18, tối đa 120).
+  - `age` (mốc 14, 18, tối đa 100).
   - `energy` (BMR, TDEE), `calorie_target` (`isValidWeeklyChangeKg` so theo 0,01 kg), `protein_target` (`ProteinGroup` và `ProteinTarget`).
   - `health_profile` (`weeklyChangeKg` để trống được), `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
+  - M2a:
+    - `health_condition`: chỉ tiểu đường, huyết áp cao, mỡ máu đổi chỉ tiêu hoặc gây cảnh báo; các bệnh khác chỉ là ghi chú.
+    - `bmi`: thang châu Á. `displayValue` là BMI **cắt xuống** 0,1 (cộng `1e-9` để 25,0 tính ra 24,999… không rơi xuống 24,9). Xếp loại theo số này nên giữ đúng ngưỡng spec và luôn khớp số hiện; giao diện phải hiện đúng `displayValue`.
+    - `nutrient_targets`: béo, béo bão hòa, đường, tinh bột theo % năng lượng; `dailySodiumMaxMg` = 2000.
+    - `water_target`: 35 ml/kg.
+    - `HealthProfile` thêm `conditions` và `limitsSugar` (giảm ngọt), đều bắt buộc (không mặc định), để lúc đọc SQLite quên cột thì không compile.
   - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `TeenTargets` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
-  - Giới hạn hồ sơ (agent đề xuất, chờ FLuw duyệt ở mục 7):
-    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120;
+    - `TeenTargets`: protein, nước.
+    - `AdultTargets`: BMR, TDEE, calo, protein, `nutrients`, `bmi`, nước.
+  - Giới hạn hồ sơ (FLuw duyệt 12/11):
+    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 100;
     - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân.
 - **Ngày tháng:**
   - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
-- **Khi làm phần data M2:** thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
+- **Khi làm phần data M2 (M2b):**
+  - Thêm `==`, `hashCode`, `copyWith` cho `HealthProfile` (Riverpod và test lưu/đọc SQLite cần).
+  - `conditions` so sánh bằng `SetEquality` (`package:collection`), `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
+  - `HealthCondition` lưu bằng khóa cố định riêng, không dùng `name`/`index`. Gặp khóa lạ khi đọc thì bỏ qua, không ném lỗi.
+  - Cần trường ghi chú cho "bệnh tự nhập".
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -304,7 +316,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 
 **Nước:** 35 ml × cân nặng (kg) mỗi ngày, người dùng chỉnh được. Không dùng thời tiết.
 
-**BMI** = cân nặng ÷ chiều cao(m)², thang châu Á:
+**BMI** = cân nặng ÷ chiều cao(m)², hiển thị cắt xuống 0,1 (vd 22,96 hiện 22,9), thang châu Á:
 - `BMI < 18,5`: thiếu cân;
 - `18,5 ≤ BMI < 23`: bình thường;
 - `23 ≤ BMI < 25`: thừa cân;
@@ -325,7 +337,6 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 
 ### Câu hỏi
 1. **Phông chữ:** FLuw chưa chắc. Đang tạm dùng Plus Jakarta Sans (tiêu đề) và Inter (nội dung). FLuw chọn một đoạn chữ trong Figma, xem tên phông ở bảng Typography rồi báo.
-2. **Giới hạn hồ sơ:** chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 120. Có cần đổi không?
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
@@ -340,9 +351,9 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | Mốc | Nội dung | Trạng thái |
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
-| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Đang review (PR) |
+| UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Chờ USDA key |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | #20 xong BMR/TDEE/calo/protein; còn BMI, macro %, nước |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức xong (#20, M2a); còn M2b lưu SQLite, M2c giao diện |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
@@ -370,6 +381,33 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 12/11/2026 — M2a: BMI, chỉ tiêu dinh dưỡng theo % năng lượng, nước, tuổi tối đa 100
+- **Merge PR #23** (UI0, `250c531`).
+- **FLuw chốt:** tuổi tối đa 100; chiều cao 100–250 cm, cân nặng 20–300 kg giữ nguyên.
+- **Thêm** ở `frontend/lib/features/profile/domain/`: `health_condition`, `bmi`, `nutrient_targets`, `water_target` (chi tiết ở mục 3).
+- **Sửa:**
+  - `age.dart`: tối đa 100.
+  - `health_profile.dart`: thêm `conditions`, `limitsSugar` (mặc định rỗng / tắt).
+  - `daily_targets.dart`: trả thêm BMI, chỉ tiêu dinh dưỡng, nước.
+- **Quyết định kỹ thuật:**
+  - BMI xếp loại theo số đã làm tròn 0,1 để nhãn luôn khớp số hiện trên màn.
+  - Tinh bột âm thì `null` ("Chưa tính được"); đúng 0 thì vẫn là 0.
+- **Test:**
+  - Trước review: `flutter test` 161/161 (thêm 14), chạy ở cả UTC và `TZ=Asia/Ho_Chi_Minh`. `flutter analyze` sạch, `dart format` sạch.
+  - Số mong đợi tính tay, vd 2000 kcal, protein 112 g → béo 500/9 g, tinh bột 263 g.
+  - Kiểm 15 đột biến:
+    - mốc BMI, xếp loại theo số chưa làm tròn;
+    - tỉ lệ béo, mỡ máu, tiểu đường, giảm ngọt;
+    - tinh bột âm/0; nước; cận protein; tuổi 101.
+  - Lần đầu lọt đột biến "không truyền giảm ngọt"; thêm test thì bắt được cả 15.
+- **Sửa theo review độc lập (trước khi push):**
+  - BMI xếp loại theo số làm tròn làm ngưỡng lùi 0,05 so với spec (22,96 thành thừa cân) → đổi sang cắt xuống 0,1. Ca thật 64 kg / 160 cm: máy tính ra 24,999… nên cần `+1e-9`.
+  - Thiếu test cho calo bị nâng lên BMR → thêm test (nữ 50 kg, 160 cm, ít vận động: 1239 kcal, béo 34,42 g, tinh bột 142,31 g).
+  - `conditions`/`limitsSugar` có mặc định → bắt buộc.
+  - `stomachUlcer` hẹp hơn spec ("dạ dày") → đổi thành `stomach` trước khi có dữ liệu lưu.
+  - `Set` không so sánh theo nội dung và khóa lưu bệnh lý → ghi vào việc của M2b.
+  - Tổng: `flutter test` 163/163 (thêm 16). Kiểm thêm 3 đột biến cho phần sửa; đột biến "bỏ `1e-9`" lần đầu lọt, đổi sang ca 64 kg / 160 cm thì bắt được.
 
 ### 12/11/2026 — UI0: hệ thống giao diện theo thiết kế
 - **Merge PR #22** (thiết kế + phạm vi, `dfcacae`).
