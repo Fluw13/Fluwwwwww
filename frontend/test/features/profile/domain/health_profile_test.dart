@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -19,7 +20,9 @@ void main() {
   test('khác bất kỳ trường nào thì không bằng nhau', () {
     final base = buildProfile();
     final changed = [
+      base.copyWith(displayName: () => 'An'),
       base.copyWith(sex: Sex.female),
+      base.copyWith(sex: Sex.other, bmrFormulaForOther: () => BmrFormula.female),
       base.copyWith(birthDate: CalendarDate(2006, 5, 14)),
       base.copyWith(heightCm: 176),
       base.copyWith(weightKg: 71),
@@ -38,11 +41,12 @@ void main() {
   });
 
   test('copyWith giữ nguyên trường không truyền và xóa được trường để trống', () {
-    final base = buildProfile(weeklyChangeKg: 0.5, conditionNote: 'hen');
+    final base = buildProfile(weeklyChangeKg: 0.5, conditionNote: 'hen', displayName: 'An');
 
     expect(base.copyWith(), base);
     expect(base.copyWith(weeklyChangeKg: () => null).weeklyChangeKg, isNull);
     expect(base.copyWith(conditionNote: () => null).conditionNote, isNull);
+    expect(base.copyWith(displayName: () => null).displayName, isNull);
     expect(base.copyWith(heightCm: 180).weeklyChangeKg, 0.5);
   });
 
@@ -53,5 +57,19 @@ void main() {
 
     expect(profile.conditions, {HealthCondition.diabetes});
     expect(() => profile.conditions.add(HealthCondition.gout), throwsUnsupportedError);
+  });
+
+  test('công thức BMR: Nam/Nữ theo giới tính, Khác theo lựa chọn riêng', () {
+    expect(buildProfile(sex: Sex.male, bmrFormulaForOther: BmrFormula.female).bmrFormula, BmrFormula.male);
+    expect(buildProfile(sex: Sex.female).bmrFormula, BmrFormula.female);
+    expect(buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.female).bmrFormula, BmrFormula.female);
+    expect(buildProfile(sex: Sex.other).bmrFormula, isNull);
+  });
+
+  test('đổi từ Khác sang Nam/Nữ thì bỏ công thức BMR đã chọn, hai hồ sơ bằng nhau', () {
+    final other = buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.female);
+
+    expect(other.copyWith(sex: Sex.male).bmrFormulaForOther, isNull);
+    expect(other.copyWith(sex: Sex.male), buildProfile(sex: Sex.male));
   });
 }

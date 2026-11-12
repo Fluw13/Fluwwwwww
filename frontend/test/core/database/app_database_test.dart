@@ -30,7 +30,7 @@ void main() {
         .get();
 
     expect(tables, containsAll(['profiles', 'profile_conditions']));
-    expect(database.schemaVersion, 1);
+    expect(database.schemaVersion, 2);
   });
 
   test('bảng hồ sơ chỉ nhận đúng một dòng có id cố định', () async {

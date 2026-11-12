@@ -65,6 +65,16 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       ),
+      // Filled, borderless fields with rounded corners, like the inputs in the design.
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLow,
+        border: _fieldBorder(Colors.transparent),
+        enabledBorder: _fieldBorder(Colors.transparent),
+        focusedBorder: _fieldBorder(colorScheme.primary),
+        errorBorder: _fieldBorder(colorScheme.error),
+        focusedErrorBorder: _fieldBorder(colorScheme.error),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
@@ -75,4 +85,9 @@ abstract final class AppTheme {
       extensions: [nutrientColors],
     );
   }
+
+  static OutlineInputBorder _fieldBorder(Color color) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.control),
+    borderSide: BorderSide(color: color, width: 2),
+  );
 }

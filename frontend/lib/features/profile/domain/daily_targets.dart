@@ -70,7 +70,12 @@ DailyTargets calculateDailyTargets(HealthProfile profile, {required CalendarDate
     return TeenTargets(protein: protein, waterMl: waterMl);
   }
 
-  final bmr = calculateBmr(sex: profile.sex, weightKg: profile.weightKg, heightCm: profile.heightCm, ageYears: age);
+  final bmr = calculateBmr(
+    formula: profile.bmrFormula!,
+    weightKg: profile.weightKg,
+    heightCm: profile.heightCm,
+    ageYears: age,
+  );
   final tdee = calculateTdee(bmr: bmr, activityLevel: profile.activityLevel);
   final calories = calculateCalorieTarget(
     bmr: bmr,

@@ -1,24 +1,27 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/energy.dart';
-import 'package:fluw/features/profile/domain/sex.dart';
 
 void main() {
   group('BMR Mifflin–St Jeor', () {
     test('nam: 10W + 6.25H - 5A + 5', () {
-      expect(calculateBmr(sex: Sex.male, weightKg: 70, heightCm: 175, ageYears: 20), 1698.75);
+      expect(calculateBmr(formula: BmrFormula.male, weightKg: 70, heightCm: 175, ageYears: 20), 1698.75);
     });
 
     test('nữ: 10W + 6.25H - 5A - 161', () {
-      expect(calculateBmr(sex: Sex.female, weightKg: 55, heightCm: 160, ageYears: 25), 1264);
+      expect(calculateBmr(formula: BmrFormula.female, weightKg: 55, heightCm: 160, ageYears: 25), 1264);
     });
 
     test('18 tuổi được tính', () {
-      expect(calculateBmr(sex: Sex.male, weightKg: 60, heightCm: 170, ageYears: 18), 1577.5);
+      expect(calculateBmr(formula: BmrFormula.male, weightKg: 60, heightCm: 170, ageYears: 18), 1577.5);
     });
 
     test('dưới 18 tuổi thì không tính', () {
-      expect(() => calculateBmr(sex: Sex.male, weightKg: 60, heightCm: 170, ageYears: 17), throwsArgumentError);
+      expect(
+        () => calculateBmr(formula: BmrFormula.male, weightKg: 60, heightCm: 170, ageYears: 17),
+        throwsArgumentError,
+      );
     });
   });
 

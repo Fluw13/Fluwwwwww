@@ -5,6 +5,7 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/data/profile_repository.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
@@ -31,7 +32,9 @@ void main() {
 
   test('lưu rồi đọc lại khớp từng trường', () async {
     final profile = buildProfile(
-      sex: Sex.female,
+      displayName: 'Lê An',
+      sex: Sex.other,
+      bmrFormulaForOther: BmrFormula.female,
       birthDate: CalendarDate(1990, 2, 28),
       heightCm: 158.5,
       weightKg: 52.3,
@@ -113,7 +116,7 @@ void main() {
 
   test('trường bắt buộc không đọc được thì báo hồ sơ hỏng, khác với chưa có hồ sơ, không crash', () async {
     final corruptions = <ProfilesCompanion>[
-      const ProfilesCompanion(sex: Value('other')),
+      const ProfilesCompanion(sex: Value('unknown')),
       const ProfilesCompanion(birthDate: Value('13/05/2006')),
       const ProfilesCompanion(activityLevel: Value('extreme')),
       const ProfilesCompanion(trainingType: Value('crossfit')),
@@ -125,6 +128,13 @@ void main() {
 
       expect(await repository.load(), isA<UnreadableProfile>(), reason: '$corruption');
     }
+  });
+
+  test('khóa công thức BMR lạ đọc thành "chưa chọn", hồ sơ vẫn đọc được', () async {
+    await repository.save(buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.male));
+    await database.update(database.profiles).write(const ProfilesCompanion(bmrFormula: Value('neutral')));
+
+    expect(await repository.load(), _loaded(buildProfile(sex: Sex.other)));
   });
 
   test('watch phát lại mỗi khi lưu, đổi bệnh hoặc xóa', () async {

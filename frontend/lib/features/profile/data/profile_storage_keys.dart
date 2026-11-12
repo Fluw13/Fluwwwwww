@@ -1,11 +1,14 @@
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
 
 /// Stored keys are fixed strings, not `name` or `index`, so renaming or reordering an enum never breaks saved profiles.
 /// Never change an existing key; add new ones instead.
-const Map<Sex, String> sexKeys = {Sex.male: 'male', Sex.female: 'female'};
+const Map<Sex, String> sexKeys = {Sex.male: 'male', Sex.female: 'female', Sex.other: 'other'};
+
+const Map<BmrFormula, String> bmrFormulaKeys = {BmrFormula.male: 'male', BmrFormula.female: 'female'};
 
 const Map<ActivityLevel, String> activityLevelKeys = {
   ActivityLevel.sedentary: 'sedentary',
