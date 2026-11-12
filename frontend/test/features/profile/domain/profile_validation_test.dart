@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
+import 'package:fluw/features/profile/domain/sex.dart';
 
 import 'profile_fixture.dart';
 
@@ -71,5 +73,23 @@ void main() {
 
   test('nhiều lỗi thì báo đủ tất cả', () {
     expect(issuesOf(heightCm: 50, weightKg: 500), {ProfileIssue.heightOutOfRange, ProfileIssue.weightOutOfRange});
+  });
+
+  test('giới tính Khác: người lớn phải chọn công thức BMR, dưới 18 tuổi thì không cần', () {
+    expect(validateProfile(buildProfile(sex: Sex.other), today: fixtureToday), {ProfileIssue.bmrFormulaMissing});
+    expect(
+      validateProfile(
+        buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.male),
+        today: fixtureToday,
+      ),
+      isEmpty,
+    );
+    expect(
+      validateProfile(
+        buildProfile(sex: Sex.other, birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null),
+        today: fixtureToday,
+      ),
+      isEmpty,
+    );
   });
 }

@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -8,7 +9,9 @@ import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 final class HealthProfile {
   HealthProfile({
+    required this.displayName,
     required this.sex,
+    required this.bmrFormulaForOther,
     required this.birthDate,
     required this.heightCm,
     required this.weightKg,
@@ -21,7 +24,14 @@ final class HealthProfile {
     required this.limitsSugar,
   }) : conditions = Set.unmodifiable(conditions);
 
+  /// Optional; only shown in the app.
+  final String? displayName;
+
   final Sex sex;
+
+  /// Only used when [sex] is [Sex.other]; see [bmrFormula].
+  final BmrFormula? bmrFormulaForOther;
+
   final CalendarDate birthDate;
   final double heightCm;
   final double weightKg;
@@ -40,11 +50,20 @@ final class HealthProfile {
   /// The "giảm ngọt" eating preference; lowers the sugar limit like diabetes does.
   final bool limitsSugar;
 
+  /// `null` only for [Sex.other] without a chosen formula, which validation rejects for adults.
+  BmrFormula? get bmrFormula => switch (sex) {
+    Sex.male => BmrFormula.male,
+    Sex.female => BmrFormula.female,
+    Sex.other => bmrFormulaForOther,
+  };
+
   WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
 
   /// Nullable fields take a function so `null` can be set on purpose: `copyWith(weeklyChangeKg: () => null)` clears it.
   HealthProfile copyWith({
+    String? Function()? displayName,
     Sex? sex,
+    BmrFormula? Function()? bmrFormulaForOther,
     CalendarDate? birthDate,
     double? heightCm,
     double? weightKg,
@@ -57,7 +76,9 @@ final class HealthProfile {
     bool? limitsSugar,
   }) {
     return HealthProfile(
+      displayName: displayName == null ? this.displayName : displayName(),
       sex: sex ?? this.sex,
+      bmrFormulaForOther: bmrFormulaForOther == null ? this.bmrFormulaForOther : bmrFormulaForOther(),
       birthDate: birthDate ?? this.birthDate,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
@@ -74,7 +95,9 @@ final class HealthProfile {
   @override
   bool operator ==(Object other) =>
       other is HealthProfile &&
+      other.displayName == displayName &&
       other.sex == sex &&
+      other.bmrFormulaForOther == bmrFormulaForOther &&
       other.birthDate == birthDate &&
       other.heightCm == heightCm &&
       other.weightKg == weightKg &&
@@ -88,7 +111,9 @@ final class HealthProfile {
 
   @override
   int get hashCode => Object.hash(
+    displayName,
     sex,
+    bmrFormulaForOther,
     birthDate,
     heightCm,
     weightKg,

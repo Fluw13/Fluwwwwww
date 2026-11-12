@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/bmi.dart';
+import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
@@ -108,5 +109,25 @@ void main() {
 
     expect(targets, isA<InvalidProfile>());
     expect((targets as InvalidProfile).issues, {ProfileIssue.heightOutOfRange});
+  });
+
+  test('giới tính Khác dùng công thức BMR người dùng chọn', () {
+    final asFemale = calculateDailyTargets(
+      buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.female),
+      today: fixtureToday,
+    );
+    final asMale = calculateDailyTargets(
+      buildProfile(sex: Sex.other, bmrFormulaForOther: BmrFormula.male),
+      today: fixtureToday,
+    );
+
+    expect((asFemale as AdultTargets).bmr, 1698.75 - 166);
+    expect((asMale as AdultTargets).bmr, 1698.75);
+  });
+
+  test('người lớn giới tính Khác chưa chọn công thức BMR thì báo lỗi hồ sơ, không crash', () {
+    final targets = calculateDailyTargets(buildProfile(sex: Sex.other), today: fixtureToday);
+
+    expect((targets as InvalidProfile).issues, {ProfileIssue.bmrFormulaMissing});
   });
 }

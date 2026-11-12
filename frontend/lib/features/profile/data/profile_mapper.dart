@@ -9,7 +9,12 @@ import 'package:fluw/features/profile/domain/health_profile.dart';
 ProfilesCompanion profileToRow(HealthProfile profile) {
   return ProfilesCompanion.insert(
     id: const Value(singleProfileId),
+    displayName: Value(profile.displayName),
     sex: sexKeys[profile.sex]!,
+    bmrFormula: Value(switch (profile.bmrFormulaForOther) {
+      final formula? => bmrFormulaKeys[formula],
+      null => null,
+    }),
     birthDate: profile.birthDate.toString(),
     heightCm: profile.heightCm,
     weightKg: profile.weightKg,
@@ -38,7 +43,13 @@ HealthProfile? profileFromRow(ProfileRow row, Iterable<String> conditionKeys) {
   }
 
   return HealthProfile(
+    displayName: row.displayName,
     sex: sex,
+    // An unknown formula key reads as "not chosen"; validation then asks adults to choose again.
+    bmrFormulaForOther: switch (row.bmrFormula) {
+      final key? => valueForKey(bmrFormulaKeys, key),
+      null => null,
+    },
     birthDate: birthDate,
     heightCm: row.heightCm,
     weightKg: row.weightKg,

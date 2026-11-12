@@ -12,6 +12,7 @@ const double maxWeightKg = 300;
 enum ProfileIssue {
   birthDateInFuture,
   birthDateTooOld,
+  bmrFormulaMissing,
   heightOutOfRange,
   weightOutOfRange,
   targetWeightOutOfRange,
@@ -30,6 +31,7 @@ Set<ProfileIssue> validateProfile(HealthProfile profile, {required CalendarDate 
   return {
     if (profile.birthDate.isAfter(today)) ProfileIssue.birthDateInFuture,
     if (age > maximumAgeYears) ProfileIssue.birthDateTooOld,
+    if (age >= adultAgeYears && profile.bmrFormula == null) ProfileIssue.bmrFormulaMissing,
     if (!_isWithin(profile.heightCm, minHeightCm, maxHeightCm)) ProfileIssue.heightOutOfRange,
     if (!isWeightValid) ProfileIssue.weightOutOfRange,
     if (!isTargetWeightValid) ProfileIssue.targetWeightOutOfRange,

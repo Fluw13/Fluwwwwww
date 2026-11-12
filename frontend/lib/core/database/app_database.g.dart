@@ -17,6 +17,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta('displayName');
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sexMeta = const VerificationMeta('sex');
   @override
   late final GeneratedColumn<String> sex = GeneratedColumn<String>(
@@ -25,6 +34,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bmrFormulaMeta = const VerificationMeta('bmrFormula');
+  @override
+  late final GeneratedColumn<String> bmrFormula = GeneratedColumn<String>(
+    'bmr_formula',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _birthDateMeta = const VerificationMeta('birthDate');
   @override
@@ -111,7 +129,9 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    displayName,
     sex,
+    bmrFormula,
     birthDate,
     heightCm,
     weightKg,
@@ -134,10 +154,16 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('display_name')) {
+      context.handle(_displayNameMeta, displayName.isAcceptableOrUnknown(data['display_name']!, _displayNameMeta));
+    }
     if (data.containsKey('sex')) {
       context.handle(_sexMeta, sex.isAcceptableOrUnknown(data['sex']!, _sexMeta));
     } else if (isInserting) {
       context.missing(_sexMeta);
+    }
+    if (data.containsKey('bmr_formula')) {
+      context.handle(_bmrFormulaMeta, bmrFormula.isAcceptableOrUnknown(data['bmr_formula']!, _bmrFormulaMeta));
     }
     if (data.containsKey('birth_date')) {
       context.handle(_birthDateMeta, birthDate.isAcceptableOrUnknown(data['birth_date']!, _birthDateMeta));
@@ -202,7 +228,9 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ProfileRow(
       id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      displayName: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}display_name']),
       sex: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}sex'])!,
+      bmrFormula: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}bmr_formula']),
       birthDate: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}birth_date'])!,
       heightCm: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}height_cm'])!,
       weightKg: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}weight_kg'])!,
@@ -229,7 +257,11 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
 
 class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   final int id;
+  final String? displayName;
   final String sex;
+
+  /// Added in schema v2; only set when the sex is "other".
+  final String? bmrFormula;
 
   /// `yyyy-MM-dd`, so the birthday never shifts with the time zone.
   final String birthDate;
@@ -243,7 +275,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   final bool limitsSugar;
   const ProfileRow({
     required this.id,
+    this.displayName,
     required this.sex,
+    this.bmrFormula,
     required this.birthDate,
     required this.heightCm,
     required this.weightKg,
@@ -258,7 +292,13 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
     map['sex'] = Variable<String>(sex);
+    if (!nullToAbsent || bmrFormula != null) {
+      map['bmr_formula'] = Variable<String>(bmrFormula);
+    }
     map['birth_date'] = Variable<String>(birthDate);
     map['height_cm'] = Variable<double>(heightCm);
     map['weight_kg'] = Variable<double>(weightKg);
@@ -278,7 +318,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   ProfilesCompanion toCompanion(bool nullToAbsent) {
     return ProfilesCompanion(
       id: Value(id),
+      displayName: displayName == null && nullToAbsent ? const Value.absent() : Value(displayName),
       sex: Value(sex),
+      bmrFormula: bmrFormula == null && nullToAbsent ? const Value.absent() : Value(bmrFormula),
       birthDate: Value(birthDate),
       heightCm: Value(heightCm),
       weightKg: Value(weightKg),
@@ -295,7 +337,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ProfileRow(
       id: serializer.fromJson<int>(json['id']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
       sex: serializer.fromJson<String>(json['sex']),
+      bmrFormula: serializer.fromJson<String?>(json['bmrFormula']),
       birthDate: serializer.fromJson<String>(json['birthDate']),
       heightCm: serializer.fromJson<double>(json['heightCm']),
       weightKg: serializer.fromJson<double>(json['weightKg']),
@@ -312,7 +356,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'displayName': serializer.toJson<String?>(displayName),
       'sex': serializer.toJson<String>(sex),
+      'bmrFormula': serializer.toJson<String?>(bmrFormula),
       'birthDate': serializer.toJson<String>(birthDate),
       'heightCm': serializer.toJson<double>(heightCm),
       'weightKg': serializer.toJson<double>(weightKg),
@@ -327,7 +373,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
 
   ProfileRow copyWith({
     int? id,
+    Value<String?> displayName = const Value.absent(),
     String? sex,
+    Value<String?> bmrFormula = const Value.absent(),
     String? birthDate,
     double? heightCm,
     double? weightKg,
@@ -339,7 +387,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     bool? limitsSugar,
   }) => ProfileRow(
     id: id ?? this.id,
+    displayName: displayName.present ? displayName.value : this.displayName,
     sex: sex ?? this.sex,
+    bmrFormula: bmrFormula.present ? bmrFormula.value : this.bmrFormula,
     birthDate: birthDate ?? this.birthDate,
     heightCm: heightCm ?? this.heightCm,
     weightKg: weightKg ?? this.weightKg,
@@ -353,7 +403,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
     return ProfileRow(
       id: data.id.present ? data.id.value : this.id,
+      displayName: data.displayName.present ? data.displayName.value : this.displayName,
       sex: data.sex.present ? data.sex.value : this.sex,
+      bmrFormula: data.bmrFormula.present ? data.bmrFormula.value : this.bmrFormula,
       birthDate: data.birthDate.present ? data.birthDate.value : this.birthDate,
       heightCm: data.heightCm.present ? data.heightCm.value : this.heightCm,
       weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
@@ -370,7 +422,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   String toString() {
     return (StringBuffer('ProfileRow(')
           ..write('id: $id, ')
+          ..write('displayName: $displayName, ')
           ..write('sex: $sex, ')
+          ..write('bmrFormula: $bmrFormula, ')
           ..write('birthDate: $birthDate, ')
           ..write('heightCm: $heightCm, ')
           ..write('weightKg: $weightKg, ')
@@ -387,7 +441,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   @override
   int get hashCode => Object.hash(
     id,
+    displayName,
     sex,
+    bmrFormula,
     birthDate,
     heightCm,
     weightKg,
@@ -403,7 +459,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       identical(this, other) ||
       (other is ProfileRow &&
           other.id == this.id &&
+          other.displayName == this.displayName &&
           other.sex == this.sex &&
+          other.bmrFormula == this.bmrFormula &&
           other.birthDate == this.birthDate &&
           other.heightCm == this.heightCm &&
           other.weightKg == this.weightKg &&
@@ -417,7 +475,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
 
 class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<int> id;
+  final Value<String?> displayName;
   final Value<String> sex;
+  final Value<String?> bmrFormula;
   final Value<String> birthDate;
   final Value<double> heightCm;
   final Value<double> weightKg;
@@ -429,7 +489,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<bool> limitsSugar;
   const ProfilesCompanion({
     this.id = const Value.absent(),
+    this.displayName = const Value.absent(),
     this.sex = const Value.absent(),
+    this.bmrFormula = const Value.absent(),
     this.birthDate = const Value.absent(),
     this.heightCm = const Value.absent(),
     this.weightKg = const Value.absent(),
@@ -442,7 +504,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
+    this.displayName = const Value.absent(),
     required String sex,
+    this.bmrFormula = const Value.absent(),
     required String birthDate,
     required double heightCm,
     required double weightKg,
@@ -462,7 +526,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
        limitsSugar = Value(limitsSugar);
   static Insertable<ProfileRow> custom({
     Expression<int>? id,
+    Expression<String>? displayName,
     Expression<String>? sex,
+    Expression<String>? bmrFormula,
     Expression<String>? birthDate,
     Expression<double>? heightCm,
     Expression<double>? weightKg,
@@ -475,7 +541,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (displayName != null) 'display_name': displayName,
       if (sex != null) 'sex': sex,
+      if (bmrFormula != null) 'bmr_formula': bmrFormula,
       if (birthDate != null) 'birth_date': birthDate,
       if (heightCm != null) 'height_cm': heightCm,
       if (weightKg != null) 'weight_kg': weightKg,
@@ -490,7 +558,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
 
   ProfilesCompanion copyWith({
     Value<int>? id,
+    Value<String?>? displayName,
     Value<String>? sex,
+    Value<String?>? bmrFormula,
     Value<String>? birthDate,
     Value<double>? heightCm,
     Value<double>? weightKg,
@@ -503,7 +573,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
       sex: sex ?? this.sex,
+      bmrFormula: bmrFormula ?? this.bmrFormula,
       birthDate: birthDate ?? this.birthDate,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
@@ -522,8 +594,14 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
     if (sex.present) {
       map['sex'] = Variable<String>(sex.value);
+    }
+    if (bmrFormula.present) {
+      map['bmr_formula'] = Variable<String>(bmrFormula.value);
     }
     if (birthDate.present) {
       map['birth_date'] = Variable<String>(birthDate.value);
@@ -559,7 +637,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   String toString() {
     return (StringBuffer('ProfilesCompanion(')
           ..write('id: $id, ')
+          ..write('displayName: $displayName, ')
           ..write('sex: $sex, ')
+          ..write('bmrFormula: $bmrFormula, ')
           ..write('birthDate: $birthDate, ')
           ..write('heightCm: $heightCm, ')
           ..write('weightKg: $weightKg, ')
@@ -720,7 +800,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 
 typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
+  Value<String?> displayName,
   required String sex,
+  Value<String?> bmrFormula,
   required String birthDate,
   required double heightCm,
   required double weightKg,
@@ -733,7 +815,9 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
+  Value<String?> displayName,
   Value<String> sex,
+  Value<String?> bmrFormula,
   Value<String> birthDate,
   Value<double> heightCm,
   Value<double> weightKg,
@@ -755,7 +839,13 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
   });
   ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
 
+  ColumnFilters<String> get displayName =>
+      $composableBuilder(column: $table.displayName, builder: (column) => ColumnFilters(column));
+
   ColumnFilters<String> get sex => $composableBuilder(column: $table.sex, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get bmrFormula =>
+      $composableBuilder(column: $table.bmrFormula, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get birthDate =>
       $composableBuilder(column: $table.birthDate, builder: (column) => ColumnFilters(column));
@@ -795,8 +885,14 @@ class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesT
   });
   ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get displayName =>
+      $composableBuilder(column: $table.displayName, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get sex =>
       $composableBuilder(column: $table.sex, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get bmrFormula =>
+      $composableBuilder(column: $table.bmrFormula, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<String> get birthDate =>
       $composableBuilder(column: $table.birthDate, builder: (column) => ColumnOrderings(column));
@@ -836,7 +932,12 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
   });
   GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
 
+  GeneratedColumn<String> get displayName =>
+      $composableBuilder(column: $table.displayName, builder: (column) => column);
+
   GeneratedColumn<String> get sex => $composableBuilder(column: $table.sex, builder: (column) => column);
+
+  GeneratedColumn<String> get bmrFormula => $composableBuilder(column: $table.bmrFormula, builder: (column) => column);
 
   GeneratedColumn<String> get birthDate => $composableBuilder(column: $table.birthDate, builder: (column) => column);
 
@@ -888,7 +989,9 @@ class $$ProfilesTableTableManager
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
                 Value<String> sex = const Value.absent(),
+                Value<String?> bmrFormula = const Value.absent(),
                 Value<String> birthDate = const Value.absent(),
                 Value<double> heightCm = const Value.absent(),
                 Value<double> weightKg = const Value.absent(),
@@ -900,7 +1003,9 @@ class $$ProfilesTableTableManager
                 Value<bool> limitsSugar = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
+                displayName: displayName,
                 sex: sex,
+                bmrFormula: bmrFormula,
                 birthDate: birthDate,
                 heightCm: heightCm,
                 weightKg: weightKg,
@@ -914,7 +1019,9 @@ class $$ProfilesTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
                 required String sex,
+                Value<String?> bmrFormula = const Value.absent(),
                 required String birthDate,
                 required double heightCm,
                 required double weightKg,
@@ -926,7 +1033,9 @@ class $$ProfilesTableTableManager
                 required bool limitsSugar,
               }) => ProfilesCompanion.insert(
                 id: id,
+                displayName: displayName,
                 sex: sex,
+                bmrFormula: bmrFormula,
                 birthDate: birthDate,
                 heightCm: heightCm,
                 weightKg: weightKg,

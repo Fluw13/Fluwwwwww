@@ -4,7 +4,11 @@ import 'package:drift/drift.dart';
 @DataClassName('ProfileRow')
 class Profiles extends Table {
   IntColumn get id => integer()();
+  TextColumn get displayName => text().nullable()();
   TextColumn get sex => text()();
+
+  /// Added in schema v2; only set when the sex is "other".
+  TextColumn get bmrFormula => text().nullable()();
 
   /// `yyyy-MM-dd`, so the birthday never shifts with the time zone.
   TextColumn get birthDate => text()();
