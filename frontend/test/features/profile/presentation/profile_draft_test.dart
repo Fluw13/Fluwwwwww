@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -110,7 +114,18 @@ void main() {
   });
 
   test('mở lại hồ sơ đã lưu thì ra bản nháp tạo lại đúng hồ sơ đó', () {
-    final profile = buildProfile(displayName: 'An', heightCm: 172.55, conditionNote: 'Hen', weeklyChangeKg: 0.25);
+    final profile = buildProfile(
+      displayName: 'An',
+      heightCm: 172.55,
+      conditionNote: 'Hen',
+      weeklyChangeKg: 0.25,
+      dietary: DietaryPreferences(
+        allergies: {Allergen.fish: AllergySeverity.mild},
+        allergyNote: 'Kiwi',
+        dietStyle: DietStyle.vegan,
+        preferences: {FoodPreference.steamedOrBoiled},
+      ),
+    );
 
     expect((ProfileDraft.fromProfile(profile).toProfile(today: fixtureToday) as DraftValid).profile, profile);
   });

@@ -7,15 +7,21 @@ import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_entry.dart';
+import 'package:fluw/features/profile/presentation/allergies_section.dart';
 import 'package:fluw/features/profile/presentation/basic_info_section.dart';
 import 'package:fluw/features/profile/presentation/body_goal_section.dart';
 import 'package:fluw/features/profile/presentation/conditions_section.dart';
 import 'package:fluw/features/profile/presentation/daily_targets_view.dart';
+import 'package:fluw/features/profile/presentation/diet_section.dart';
 import 'package:fluw/features/profile/presentation/profile_draft.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
@@ -31,6 +37,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   late final TextEditingController _weight;
   late final TextEditingController _targetWeight;
   late final TextEditingController _conditionNote;
+  late final TextEditingController _allergyNote;
   Sex? _sex;
   BmrFormula? _bmrFormula;
   CalendarDate? _birthDate;
@@ -39,6 +46,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   double? _weeklyChangeKg;
   Set<HealthCondition> _conditions = const {};
   bool _limitsSugar = false;
+  Map<Allergen, AllergySeverity> _allergies = const {};
+  DietStyle _dietStyle = DietStyle.regular;
+  Set<FoodPreference> _preferences = const {};
 
   /// What the form opened with; leaving asks for confirmation only when the draft really differs from it.
   late final ProfileDraft _initialDraft;
@@ -48,19 +58,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _isSaving = false;
   bool _isSaved = false;
 
+  /// The weight stored before this edit; `null` for a new profile.
+  double? _savedWeightKg;
+
   @override
   void initState() {
     super.initState();
-    final saved = switch (ref.read(storedProfileProvider).value) {
-      LoadedProfile(:final profile) => ProfileDraft.fromProfile(profile),
-      _ => const ProfileDraft(),
-    };
+    final stored = ref.read(storedProfileProvider).value;
+    _savedWeightKg = stored is LoadedProfile ? stored.profile.weightKg : null;
+    final saved = stored is LoadedProfile ? ProfileDraft.fromProfile(stored.profile) : const ProfileDraft();
     _initialDraft = saved;
     _name = _controller(saved.displayName);
     _height = _controller(saved.heightText);
     _weight = _controller(saved.weightText);
     _targetWeight = _controller(saved.targetWeightText);
     _conditionNote = _controller(saved.conditionNote);
+    _allergyNote = _controller(saved.allergyNote);
     _sex = saved.sex;
     _bmrFormula = saved.bmrFormulaForOther;
     _birthDate = saved.birthDate;
@@ -69,6 +82,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _weeklyChangeKg = saved.weeklyChangeKg;
     _conditions = saved.conditions;
     _limitsSugar = saved.limitsSugar;
+    _allergies = saved.allergies;
+    _dietStyle = saved.dietStyle;
+    _preferences = saved.preferences;
   }
 
   // Rebuilds on every edit so the goal, speed and target preview follow what is typed.
@@ -76,7 +92,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   void dispose() {
-    for (final controller in [_name, _height, _weight, _targetWeight, _conditionNote]) {
+    for (final controller in [_name, _height, _weight, _targetWeight, _conditionNote, _allergyNote]) {
       controller.dispose();
     }
     super.dispose();
@@ -96,6 +112,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     conditions: _conditions,
     conditionNote: _conditionNote.text,
     limitsSugar: _limitsSugar,
+    allergies: _allergies,
+    allergyNote: _allergyNote.text,
+    dietStyle: _dietStyle,
+    preferences: _preferences,
   );
 
   void _refresh() => setState(() {});
@@ -160,6 +180,25 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 () => _conditions = selected ? {..._conditions, condition} : ({..._conditions}..remove(condition)),
               ),
               noteController: _conditionNote,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AllergiesSection(
+              allergies: _allergies,
+              onAllergyChanged: (allergen, severity) => _update(
+                () => _allergies = severity == null
+                    ? ({..._allergies}..remove(allergen))
+                    : {..._allergies, allergen: severity},
+              ),
+              noteController: _allergyNote,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            DietSection(
+              dietStyle: _dietStyle,
+              onDietStyleChanged: (style) => _update(() => _dietStyle = style),
+              preferences: _preferences,
+              onPreferenceChanged: (preference, {required selected}) => _update(
+                () => _preferences = selected ? {..._preferences, preference} : ({..._preferences}..remove(preference)),
+              ),
               limitsSugar: _limitsSugar,
               onLimitsSugarChanged: (value) => _update(() => _limitsSugar = value),
             ),
@@ -205,6 +244,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         setState(() => _isSaving = true);
         try {
           await ref.read(profileRepositoryProvider).save(profile);
+          // A new or changed weight is also today's weigh-in, so the history and the profile never disagree.
+          if (profile.weightKg != _savedWeightKg) {
+            await ref
+                .read(weightLogRepositoryProvider)
+                .record(WeightEntry(date: ref.read(todayProvider), weightKg: profile.weightKg));
+          }
         } on Object {
           if (mounted) {
             setState(() => _isSaving = false);
@@ -224,6 +269,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // Scrolls instead of overflowing with very large text.
+        scrollable: true,
         title: const Text('Bỏ các thay đổi?'),
         content: const Text('Những gì bạn vừa nhập sẽ không được lưu.'),
         actions: [

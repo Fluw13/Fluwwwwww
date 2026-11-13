@@ -10,10 +10,13 @@ import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/goal_duration.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
+import 'package:fluw/features/profile/presentation/appearance_card.dart';
 import 'package:fluw/features/profile/presentation/daily_targets_view.dart';
+import 'package:fluw/features/profile/presentation/dietary_summary_card.dart';
 import 'package:fluw/features/profile/presentation/profile_labels.dart';
 import 'package:fluw/features/profile/presentation/target_tile.dart';
 import 'package:fluw/features/profile/presentation/tile_grid.dart';
+import 'package:fluw/features/profile/presentation/weight_log_card.dart';
 
 class ProfileOverview extends StatelessWidget {
   const ProfileOverview({required this.profile, required this.today, required this.onEdit, super.key});
@@ -34,6 +37,10 @@ class ProfileOverview extends StatelessWidget {
       children: [
         _Header(profile: profile, age: age),
         const SizedBox(height: AppSpacing.md),
+        if (profile.hasReachedTarget) ...[
+          _TargetReachedBanner(onUpdate: onEdit),
+          const SizedBox(height: AppSpacing.md),
+        ],
         SectionCard(
           title: 'Thể trạng & mục tiêu',
           children: [
@@ -80,6 +87,12 @@ class ProfileOverview extends StatelessWidget {
             ],
           ),
         ],
+        const SizedBox(height: AppSpacing.md),
+        WeightLogCard(profile: profile),
+        const SizedBox(height: AppSpacing.md),
+        DietarySummaryCard(dietary: profile.dietary),
+        const SizedBox(height: AppSpacing.md),
+        const AppearanceCard(),
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onEdit,
@@ -99,6 +112,9 @@ class ProfileOverview extends StatelessWidget {
   }
 
   String _goalNote() {
+    if (profile.hasReachedTarget) {
+      return 'Đã đạt cân nặng mong muốn';
+    }
     final goal = profile.goal;
     final weeklyChangeKg = profile.weeklyChangeKg;
     if (goal == WeightGoal.maintain) {
@@ -154,6 +170,40 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown once a weigh-in reaches the target; targets are then calculated for maintaining until the user sets a new one.
+class _TargetReachedBanner extends StatelessWidget {
+  const _TargetReachedBanner({required this.onUpdate});
+
+  final VoidCallback onUpdate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      color: theme.colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bạn đã đạt cân nặng mong muốn',
+              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Fluw đang tính chỉ tiêu để giữ cân. Đặt mục tiêu mới nếu bạn muốn tiếp tục tăng hoặc giảm.',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            FilledButton.tonal(onPressed: onUpdate, child: const Text('Cập nhật mục tiêu')),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -21,6 +21,13 @@ class Profiles extends Table {
   TextColumn get conditionNote => text().nullable()();
   BoolColumn get limitsSugar => boolean()();
 
+  /// Added in schema v3. Old rows read as the regular style.
+  TextColumn get dietStyle => text().nullable()();
+  TextColumn get allergyNote => text().nullable()();
+
+  /// Added in schema v3. Old rows derive it from the two weights.
+  TextColumn get plannedGoal => text().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 
@@ -36,4 +43,33 @@ class ProfileConditions extends Table {
 
   @override
   Set<Column<Object>> get primaryKey => {conditionKey};
+}
+
+/// Added in schema v3.
+@DataClassName('ProfileAllergyRow')
+class ProfileAllergies extends Table {
+  TextColumn get allergenKey => text()();
+  TextColumn get severityKey => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {allergenKey};
+}
+
+/// Added in schema v3.
+@DataClassName('ProfilePreferenceRow')
+class ProfilePreferences extends Table {
+  TextColumn get preferenceKey => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {preferenceKey};
+}
+
+/// Added in schema v3. One weigh-in per calendar day (`yyyy-MM-dd`).
+@DataClassName('WeightEntryRow')
+class WeightEntries extends Table {
+  TextColumn get date => text()();
+  RealColumn get weightKg => real()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {date};
 }

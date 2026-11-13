@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -16,12 +17,14 @@ final class HealthProfile {
     required this.heightCm,
     required this.weightKg,
     required this.targetWeightKg,
+    required this.plannedGoal,
     required this.activityLevel,
     required this.trainingType,
     this.weeklyChangeKg,
     required Set<HealthCondition> conditions,
     required this.conditionNote,
     required this.limitsSugar,
+    required this.dietary,
   }) : bmrFormulaForOther = sex == Sex.other ? bmrFormulaForOther : null,
        conditions = Set.unmodifiable(conditions);
 
@@ -37,6 +40,10 @@ final class HealthProfile {
   final double heightCm;
   final double weightKg;
   final double targetWeightKg;
+
+  /// The direction chosen when the target was set. Weigh-ins change [weightKg] but never this, so reaching the
+  /// target cannot silently flip a weight-loss plan into a weight-gain one.
+  final WeightGoal plannedGoal;
   final ActivityLevel activityLevel;
   final TrainingType trainingType;
 
@@ -51,6 +58,8 @@ final class HealthProfile {
   /// The "giảm ngọt" eating preference; lowers the sugar limit like diabetes does.
   final bool limitsSugar;
 
+  final DietaryPreferences dietary;
+
   /// `null` only for [Sex.other] without a chosen formula, which validation rejects for adults.
   BmrFormula? get bmrFormula => switch (sex) {
     Sex.male => BmrFormula.male,
@@ -58,7 +67,13 @@ final class HealthProfile {
     Sex.other => bmrFormulaForOther,
   };
 
-  WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
+  WeightGoal get _goalFromWeights => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
+
+  /// True once the weight has reached or passed the target in the planned direction.
+  bool get hasReachedTarget => plannedGoal != WeightGoal.maintain && _goalFromWeights != plannedGoal;
+
+  /// What the targets are calculated for: after reaching the target the plan becomes maintaining.
+  WeightGoal get goal => hasReachedTarget ? WeightGoal.maintain : _goalFromWeights;
 
   /// Nullable fields take a function so `null` can be set on purpose: `copyWith(weeklyChangeKg: () => null)` clears it.
   HealthProfile copyWith({
@@ -69,12 +84,14 @@ final class HealthProfile {
     double? heightCm,
     double? weightKg,
     double? targetWeightKg,
+    WeightGoal? plannedGoal,
     ActivityLevel? activityLevel,
     TrainingType? trainingType,
     double? Function()? weeklyChangeKg,
     Set<HealthCondition>? conditions,
     String? Function()? conditionNote,
     bool? limitsSugar,
+    DietaryPreferences? dietary,
   }) {
     return HealthProfile(
       displayName: displayName == null ? this.displayName : displayName(),
@@ -84,12 +101,14 @@ final class HealthProfile {
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+      plannedGoal: plannedGoal ?? this.plannedGoal,
       activityLevel: activityLevel ?? this.activityLevel,
       trainingType: trainingType ?? this.trainingType,
       weeklyChangeKg: weeklyChangeKg == null ? this.weeklyChangeKg : weeklyChangeKg(),
       conditions: conditions ?? this.conditions,
       conditionNote: conditionNote == null ? this.conditionNote : conditionNote(),
       limitsSugar: limitsSugar ?? this.limitsSugar,
+      dietary: dietary ?? this.dietary,
     );
   }
 
@@ -103,12 +122,14 @@ final class HealthProfile {
       other.heightCm == heightCm &&
       other.weightKg == weightKg &&
       other.targetWeightKg == targetWeightKg &&
+      other.plannedGoal == plannedGoal &&
       other.activityLevel == activityLevel &&
       other.trainingType == trainingType &&
       other.weeklyChangeKg == weeklyChangeKg &&
       const SetEquality<HealthCondition>().equals(other.conditions, conditions) &&
       other.conditionNote == conditionNote &&
-      other.limitsSugar == limitsSugar;
+      other.limitsSugar == limitsSugar &&
+      other.dietary == dietary;
 
   @override
   int get hashCode => Object.hash(
@@ -119,11 +140,13 @@ final class HealthProfile {
     heightCm,
     weightKg,
     targetWeightKg,
+    plannedGoal,
     activityLevel,
     trainingType,
     weeklyChangeKg,
     Object.hashAllUnordered(conditions),
     conditionNote,
     limitsSugar,
+    dietary,
   );
 }

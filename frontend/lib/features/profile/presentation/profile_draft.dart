@@ -3,7 +3,11 @@ import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/age.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
@@ -43,6 +47,10 @@ final class ProfileDraft {
     this.conditions = const {},
     this.conditionNote = '',
     this.limitsSugar = false,
+    this.allergies = const {},
+    this.allergyNote = '',
+    this.dietStyle = DietStyle.regular,
+    this.preferences = const {},
   });
 
   factory ProfileDraft.fromProfile(HealthProfile profile) {
@@ -61,6 +69,10 @@ final class ProfileDraft {
       conditions: profile.conditions,
       conditionNote: profile.conditionNote ?? '',
       limitsSugar: profile.limitsSugar,
+      allergies: profile.dietary.allergies,
+      allergyNote: profile.dietary.allergyNote ?? '',
+      dietStyle: profile.dietary.dietStyle,
+      preferences: profile.dietary.preferences,
     );
   }
 
@@ -77,6 +89,10 @@ final class ProfileDraft {
   final Set<HealthCondition> conditions;
   final String conditionNote;
   final bool limitsSugar;
+  final Map<Allergen, AllergySeverity> allergies;
+  final String allergyNote;
+  final DietStyle dietStyle;
+  final Set<FoodPreference> preferences;
 
   /// The goal implied by the two weights, once both are valid numbers.
   WeightGoal? get goal {
@@ -113,7 +129,11 @@ final class ProfileDraft {
       other.weeklyChangeKg == weeklyChangeKg &&
       const SetEquality<HealthCondition>().equals(other.conditions, conditions) &&
       other.conditionNote == conditionNote &&
-      other.limitsSugar == limitsSugar;
+      other.limitsSugar == limitsSugar &&
+      const MapEquality<Allergen, AllergySeverity>().equals(other.allergies, allergies) &&
+      other.allergyNote == allergyNote &&
+      other.dietStyle == dietStyle &&
+      const SetEquality<FoodPreference>().equals(other.preferences, preferences);
 
   @override
   int get hashCode => Object.hash(
@@ -130,6 +150,10 @@ final class ProfileDraft {
     Object.hashAllUnordered(conditions),
     conditionNote,
     limitsSugar,
+    Object.hashAllUnordered(allergies.entries.map((entry) => Object.hash(entry.key, entry.value))),
+    allergyNote,
+    dietStyle,
+    Object.hashAllUnordered(preferences),
   );
 
   DraftResult toProfile({required CalendarDate today}) {
@@ -168,6 +192,8 @@ final class ProfileDraft {
       heightCm: heightCm,
       weightKg: weightKg,
       targetWeightKg: targetWeightKg,
+      // Saving the form is setting the target, so the planned direction is taken from the weights entered now.
+      plannedGoal: WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg),
       activityLevel: activityLevel,
       trainingType: trainingType,
       // A speed left over from an earlier goal is dropped so it never comes back unnoticed.
@@ -175,6 +201,12 @@ final class ProfileDraft {
       conditions: conditions,
       conditionNote: _textOrNull(conditionNote),
       limitsSugar: limitsSugar,
+      dietary: DietaryPreferences(
+        allergies: allergies,
+        allergyNote: _textOrNull(allergyNote),
+        dietStyle: dietStyle,
+        preferences: preferences,
+      ),
     );
     final issues = validateProfile(profile, today: today);
     if (issues.isNotEmpty) {

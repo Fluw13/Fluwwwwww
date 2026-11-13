@@ -6,6 +6,7 @@ import 'package:fluw/core/database/app_database.dart';
 import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
+import 'generated/schema_v3.dart' as v3;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -73,6 +74,62 @@ void main() {
           v2.ProfileConditionsData(conditionKey: 'diabetes'),
           v2.ProfileConditionsData(conditionKey: 'gout'),
         ]);
+      },
+    );
+  });
+
+  test('v2 lên v3 giữ nguyên hồ sơ, tên và công thức BMR; cột và bảng mới để trống', () async {
+    const oldProfile = v2.ProfilesData(
+      id: 1,
+      displayName: 'An',
+      sex: 'other',
+      bmrFormula: 'female',
+      birthDate: '1998-03-04',
+      heightCm: 165,
+      weightKg: 58.5,
+      targetWeightKg: 53,
+      activityLevel: 'light',
+      trainingType: 'endurance',
+      weeklyChangeKg: 0.25,
+      conditionNote: null,
+      limitsSugar: 0,
+    );
+    const expectedProfile = v3.ProfilesData(
+      id: 1,
+      displayName: 'An',
+      sex: 'other',
+      bmrFormula: 'female',
+      birthDate: '1998-03-04',
+      heightCm: 165,
+      weightKg: 58.5,
+      targetWeightKg: 53,
+      activityLevel: 'light',
+      trainingType: 'endurance',
+      weeklyChangeKg: 0.25,
+      conditionNote: null,
+      limitsSugar: 0,
+      dietStyle: null,
+      allergyNote: null,
+      plannedGoal: null,
+    );
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 2,
+      newVersion: 3,
+      createOld: v2.DatabaseAtV2.new,
+      createNew: v3.DatabaseAtV3.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.profiles, oldProfile);
+        batch.insert(oldDb.profileConditions, const v2.ProfileConditionsData(conditionKey: 'diabetes'));
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.profiles).get(), [expectedProfile]);
+        expect(await newDb.select(newDb.profileConditions).get(), const [
+          v3.ProfileConditionsData(conditionKey: 'diabetes'),
+        ]);
+        expect(await newDb.select(newDb.profileAllergies).get(), isEmpty);
+        expect(await newDb.select(newDb.weightEntries).get(), isEmpty);
       },
     );
   });

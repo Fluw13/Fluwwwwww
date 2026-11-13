@@ -136,12 +136,22 @@ features/<tên>/
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
   - SQLite lưu dạng chuỗi `yyyy-MM-dd`.
 - **Giới tính và tên (M2c):** `Sex` có `other`; khi đó người lớn phải chọn `BmrFormula` (Nam/Nữ), thiếu thì `ProfileIssue.bmrFormulaMissing`. Constructor tự bỏ `bmrFormulaForOther` khi giới tính không phải Khác. `displayName` để trống được, không có ảnh.
+- **Dị ứng, chế độ ăn, cân nặng (M2d, FLuw chốt 13/11):**
+  - `Allergen`: 14 nhóm theo `allergens_tags` của Open Food Facts (`openFoodFactsTag`), mỗi nhóm `AllergySeverity` Nặng/Nhẹ; thêm mới mặc định Nặng. Dị ứng tự gõ (`allergyNote`) chỉ là ghi chú, không cảnh báo.
+  - `DietStyle` (5) và `FoodPreference` (3) chỉ để gợi ý món, không đổi chỉ tiêu. "Giảm ngọt" vẫn là `limitsSugar` vì đổi giới hạn đường.
+  - Gói trong `DietaryPreferences` (`HealthProfile.dietary`), có `==` theo nội dung.
+  - Đọc SQLite: khóa dị ứng lạ → `UnreadableProfile` (không âm thầm tắt cảnh báo); mức lạ → Nặng; chế độ ăn lạ → Bình thường; thói quen lạ bỏ qua.
+  - `plannedGoal`: hướng mục tiêu lưu lúc thiết lập. Cân chạm hoặc vượt mục tiêu thì `hasReachedTarget`, `goal` thành giữ cân (calo = TDEE) và màn Hồ Sơ báo "đã đạt" (FLuw chọn 13/11). Dòng cũ thiếu cột thì suy từ cân nặng.
+  - `WeightLogRepository`: 1 lần cân/ngày (ghi lại cùng ngày thì thay). Lần cân mới nhất (kể cả cùng ngày) thành cân nặng hồ sơ; ghi bù ngày cũ hơn thì không. Lưu form với cân nặng mới cũng ghi một lần cân hôm nay. `ProfileRepository.clear()` xóa cả lịch sử cân.
+  - Tiến độ (`goalProgress`) tính từ lần cân đầu, chỉ khi lần đó nằm đúng phía của hướng mục tiêu hiện tại.
+  - `AppearanceCard` trên màn Hồ Sơ cho chọn lại "Theo máy".
+  - Widget test: mỗi lần ghi database trong `tester.runAsync` chỉ một thao tác, `pumpAndSettle` giữa các lần; hai lần ghi liền trong một `runAsync` bị khóa chéo với lần đọc lại của app chạy bằng thời gian giả.
 - **`HealthProfile` (M2b):**
   - Có `==`, `hashCode`, `copyWith`. `conditions` so bằng `SetEquality`, `hashCode` bằng `Object.hashAllUnordered`, bọc `Set.unmodifiable`.
   - `conditionNote`: ghi chú "bệnh tự nhập", chỉ để ghi chú.
   - `copyWith` nhận hàm cho trường để trống được, để đặt `null` có chủ ý: `copyWith(weeklyChangeKg: () => null)`.
 - **SQLite (drift) `core/database/` (M2b):**
-  - `AppDatabase` (schema v2 từ M2c: thêm cột `display_name`, `bmr_formula`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
+  - `AppDatabase` schema v3 (v2 ở M2c: `display_name`, `bmr_formula`; v3 ở M2d: `diet_style`, `allergy_note`, `planned_goal`, bảng `profile_allergies`, `profile_preferences`, `weight_entries`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
   - Bảng nằm ở `core/` vì `AppDatabase` phải liệt kê mọi bảng; `core/` vẫn không import `features/`.
   - Code sinh `app_database.g.dart` được commit (CI không chạy build_runner). Sinh lại xem mục 4.
   - Schema mỗi phiên bản lưu ở `frontend/drift_schemas/` (`build.yaml`). Tăng `schemaVersion` thì chạy `dart run drift_dev make-migrations` để có bước migration và test đối chiếu.
@@ -149,7 +159,7 @@ features/<tên>/
 - **`features/profile/data/` (M2b):**
   - `profile_storage_keys`: khóa lưu cố định cho `Sex`, `ActivityLevel`, `TrainingType`, `HealthCondition`, không dùng `name`/`index`. Có test khóa không bao giờ đổi; chỉ được thêm khóa mới.
   - `profile_mapper`: khóa bệnh lạ thì bỏ qua; trường bắt buộc không đọc được thì trả `null`.
-  - `ProfileRepository`: `load`, `watch` (một query join 2 bảng nên phản ứng khi bảng nào đổi), `save`/`clear` trong transaction. `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
+  - `ProfileRepository`: `load` (đọc các bảng trong một transaction), `watch` (`customSelect('SELECT 1', readsFrom: ...)` + `asyncMap(load)`, phát lại khi bảng nào đổi), `save`/`clear` trong transaction. `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
   - Kết quả đọc là `StoredProfile` (sealed): `NoProfile` / `UnreadableProfile` / `LoadedProfile`. UI phải báo người dùng khi hồ sơ hỏng, không âm thầm mở form trống.
   - Provider: `profileRepositoryProvider`, `storedProfileProvider` (StreamProvider).
   - Test: `test/helpers/in_memory_database.dart` (SQLite trong bộ nhớ, `closeStreamsSynchronously`). `pumpFluwApp` tự tạo database theo app (đóng cùng app kể cả khi test fail), lấy qua `appContainer(tester)`; đọc/ghi database trong widget test phải bọc `tester.runAsync`.
@@ -384,6 +394,8 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ### Câu hỏi
 - Không còn câu hỏi mở.
 
+- Môi trường cloud của agent: environment "Fluwwwwww" (personal) mở thêm `world.openfoodfacts.org`, `search.openfoodfacts.org`, `api.nal.usda.gov` (FLuw duyệt 13/11).
+
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
@@ -396,8 +408,8 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | Sẵn sàng (đã có USDA key) |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Công thức (#20, M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập phần 1–3 (M2c) xong; còn M2d: dị ứng có mức độ, chế độ ăn, sở thích, ghi cân nặng, nút "Theo máy" |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | FLuw chốt 13/11: M1a tra cứu + mã vạch, M1b 30 món Việt (Zero viết công thức), M1c Gemini (sau, FLuw kiểm key trước) |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
@@ -425,6 +437,23 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 13/11/2026 — M2d: dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy"
+- **Merge PR #27** (M2c, `fd59787`).
+- **FLuw chốt:** M2d trước, M1 chia 3 PR; dị ứng 14 nhóm + 2 mức; 30 món Việt do Zero viết; Gemini làm sau. Khi cân đạt mục tiêu: coi như giữ cân và báo.
+- **Thêm:** domain `allergen`, `diet_style`, `food_preference`, `dietary_preferences`, `weight_entry`, `goal_progress`; data `dietary_mapper`, `weight_log_repository`; giao diện `allergies_section`, `diet_section`, `dietary_summary_card`, `weight_log_card`, `record_weight_dialog`, `appearance_card`; schema v3 + migration. Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - Ghi cân vượt mục tiêu làm app tự chuyển sang tăng cân (calo TDEE + 550) → `plannedGoal`, đạt thì giữ cân và báo.
+  - Tiến độ báo 100% khi mục tiêu đổi hướng → chỉ tính khi lần cân đầu nằm đúng phía.
+  - Hộp thoại ghi cân và hộp thoại "Bỏ thay đổi?" tràn khi bàn phím mở / cỡ chữ lớn → `scrollable: true`.
+  - Lịch sử cân lệch cân nặng hồ sơ khi sửa ở form; `clear()` để lại lịch sử → form ghi lần cân hôm nay, `clear()` xóa lịch sử.
+  - Lỗi đọc lịch sử hiện thành "chưa ghi lần nào" → báo lỗi riêng.
+  - Test thiếu: lưu lại sau khi bỏ dị ứng/thói quen, `clear()` xóa bảng con, `watch` khi chỉ bảng thói quen đổi, ghi lại cùng ngày đổi cân nặng hồ sơ.
+- **Test:**
+  - `flutter test` 252/252, cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch.
+  - Migration v2→v3 có test đối chiếu dữ liệu. Luồng: thêm/đổi mức dị ứng, chế độ ăn, thói quen; ghi cân (lịch sử, cân nặng hồ sơ, tiến độ 30%); ô cân ngoài giới hạn; "Theo máy"; đạt mục tiêu; đổi hướng; 320×568 cỡ chữ 200%/310% kể cả hộp thoại khi bàn phím mở.
+  - Kiểm 6 đột biến cho phần sửa review, đều bị bắt.
+  - Chưa kiểm: APK (job `android-apk`), điện thoại thật.
 
 ### 12/11/2026 — M2c: màn Hồ Sơ và Thiết lập hồ sơ
 - **Merge PR #26** (M2b, `b0188f0`).

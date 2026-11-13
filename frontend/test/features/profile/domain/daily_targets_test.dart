@@ -9,6 +9,7 @@ import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/protein_target.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 import 'profile_fixture.dart';
 
@@ -129,5 +130,12 @@ void main() {
     final targets = calculateDailyTargets(buildProfile(sex: Sex.other), today: fixtureToday);
 
     expect((targets as InvalidProfile).issues, {ProfileIssue.bmrFormulaMissing});
+  });
+
+  test('đã đạt cân nặng mong muốn khi đang giảm cân thì calo bằng TDEE, không chuyển sang tăng cân', () {
+    final reached = buildProfile(weightKg: 64.8, targetWeightKg: 65, plannedGoal: WeightGoal.lose);
+
+    final adult = calculateDailyTargets(reached, today: fixtureToday) as AdultTargets;
+    expect(adult.calories.kcal, closeTo(adult.tdee, 1e-9));
   });
 }
