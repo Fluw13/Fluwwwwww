@@ -10,10 +10,13 @@ import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/goal_duration.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
+import 'package:fluw/features/profile/presentation/appearance_card.dart';
 import 'package:fluw/features/profile/presentation/daily_targets_view.dart';
+import 'package:fluw/features/profile/presentation/dietary_summary_card.dart';
 import 'package:fluw/features/profile/presentation/profile_labels.dart';
 import 'package:fluw/features/profile/presentation/target_tile.dart';
 import 'package:fluw/features/profile/presentation/tile_grid.dart';
+import 'package:fluw/features/profile/presentation/weight_log_card.dart';
 
 class ProfileOverview extends StatelessWidget {
   const ProfileOverview({required this.profile, required this.today, required this.onEdit, super.key});
@@ -80,6 +83,12 @@ class ProfileOverview extends StatelessWidget {
             ],
           ),
         ],
+        const SizedBox(height: AppSpacing.md),
+        WeightLogCard(profile: profile),
+        const SizedBox(height: AppSpacing.md),
+        DietarySummaryCard(dietary: profile.dietary),
+        const SizedBox(height: AppSpacing.md),
+        const AppearanceCard(),
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onEdit,

@@ -9,8 +9,6 @@ class ConditionsSection extends StatelessWidget {
     required this.conditions,
     required this.onConditionChanged,
     required this.noteController,
-    required this.limitsSugar,
-    required this.onLimitsSugarChanged,
     super.key,
   });
 
@@ -19,8 +17,6 @@ class ConditionsSection extends StatelessWidget {
   final Set<HealthCondition> conditions;
   final void Function(HealthCondition condition, {required bool selected}) onConditionChanged;
   final TextEditingController noteController;
-  final bool limitsSugar;
-  final ValueChanged<bool> onLimitsSugarChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +49,6 @@ class ConditionsSection extends StatelessWidget {
             labelText: 'Bệnh khác (chỉ để ghi chú)',
             prefixIcon: Icon(Icons.note_alt_outlined),
           ),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: limitsSugar,
-          onChanged: onLimitsSugarChanged,
-          title: const Text('Tôi muốn giảm ngọt'),
-          subtitle: const Text('Giới hạn đường tổng dưới 5% năng lượng, giống như khi có tiểu đường.'),
         ),
       ],
     );

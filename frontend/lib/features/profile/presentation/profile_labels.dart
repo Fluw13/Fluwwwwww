@@ -1,8 +1,11 @@
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/age.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmi.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/calorie_target.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
@@ -90,4 +93,40 @@ String profileIssueMessage(ProfileIssue issue) => switch (issue) {
   ProfileIssue.weeklyChangeMissing => 'Chọn tốc độ thay đổi cân nặng mỗi tuần.',
   ProfileIssue.weeklyChangeOutOfRange =>
     'Tốc độ thay đổi cân nặng phải lớn hơn 0 và không quá $maxWeeklyChangeKg kg mỗi tuần.',
+};
+
+String allergenLabel(Allergen allergen) => switch (allergen) {
+  Allergen.gluten => 'Gluten (lúa mì, lúa mạch)',
+  Allergen.crustaceans => 'Tôm, cua (giáp xác)',
+  Allergen.eggs => 'Trứng',
+  Allergen.fish => 'Cá',
+  Allergen.peanuts => 'Đậu phộng (lạc)',
+  Allergen.soybeans => 'Đậu nành',
+  Allergen.milk => 'Sữa',
+  Allergen.treeNuts => 'Hạt cây (hạnh nhân, óc chó, điều...)',
+  Allergen.celery => 'Cần tây',
+  Allergen.mustard => 'Mù tạt',
+  Allergen.sesame => 'Mè (vừng)',
+  Allergen.sulphites => 'Sulfit',
+  Allergen.lupin => 'Đậu lupin',
+  Allergen.molluscs => 'Nhuyễn thể (mực, nghêu, sò...)',
+};
+
+String allergySeverityLabel(AllergySeverity severity) => switch (severity) {
+  AllergySeverity.severe => 'Nặng',
+  AllergySeverity.mild => 'Nhẹ',
+};
+
+String dietStyleLabel(DietStyle style) => switch (style) {
+  DietStyle.regular => 'Ăn bình thường',
+  DietStyle.eatClean => 'Eat Clean',
+  DietStyle.keto => 'Keto',
+  DietStyle.vegan => 'Thuần chay (Vegan)',
+  DietStyle.mediterranean => 'Địa Trung Hải',
+};
+
+String foodPreferenceLabel(FoodPreference preference) => switch (preference) {
+  FoodPreference.noOrganMeat => 'Không ăn nội tạng động vật',
+  FoodPreference.steamedOrBoiled => 'Ưu tiên đồ hấp, luộc, áp chảo ít dầu',
+  FoodPreference.likesNuts => 'Thích hạt dinh dưỡng (óc chó, hạnh nhân)',
 };

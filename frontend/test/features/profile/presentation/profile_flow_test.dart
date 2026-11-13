@@ -4,14 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_tab.dart';
 import 'package:fluw/core/database/app_database.dart';
 import 'package:fluw/core/database/database_provider.dart';
+import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/data/profile_repository.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
+import 'package:fluw/features/profile/domain/weight_entry.dart';
 
 import '../../../helpers/load_app_fonts.dart';
 import '../../../helpers/pump_fluw_app.dart';
@@ -111,6 +116,90 @@ void main() {
 
     expect(find.text('Bỏ các thay đổi?'), findsNothing);
     expect(find.text('1. Thông tin cơ bản'), findsNothing);
+  });
+
+  testWidgets('thêm dị ứng, đổi mức, chọn chế độ ăn và thói quen rồi lưu', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Tôm, cua (giáp xác)'));
+    await tester.tap(find.text('Tôm, cua (giáp xác)'));
+    await tester.pumpAndSettle();
+    await scrollTo(tester, find.text('Đậu phộng (lạc)'));
+    await tester.tap(find.text('Đậu phộng (lạc)'));
+    await tester.pumpAndSettle();
+    await scrollTo(tester, find.text('Nhẹ').last);
+    await tester.tap(find.text('Nhẹ').last);
+    await tester.pumpAndSettle();
+    await scrollTo(tester, find.text('Keto'));
+    await tester.tap(find.text('Keto'));
+    await scrollTo(tester, find.text('Không ăn nội tạng động vật'));
+    await tester.tap(find.text('Không ăn nội tạng động vật'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    final dietary = ((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile.dietary;
+    expect(dietary.allergies, {Allergen.crustaceans: AllergySeverity.severe, Allergen.peanuts: AllergySeverity.mild});
+    expect(dietary.dietStyle, DietStyle.keto);
+    expect(dietary.preferences, {FoodPreference.noOrganMeat});
+    await scrollTo(tester, find.text('Mức: Nặng'));
+    expect(find.text('Mức: Nặng'), findsOneWidget);
+    expect(find.text('Mức: Nhẹ'), findsOneWidget);
+  });
+
+  testWidgets('ghi cân nặng hôm nay: lưu lịch sử, đổi cân nặng hồ sơ và hiện tiến độ từ lần đầu', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(weightKg: 70, targetWeightKg: 65));
+    await tester.runAsync(
+      () =>
+          appContainer(tester)
+              .read(weightLogRepositoryProvider)
+              .record(WeightEntry(date: CalendarDate(2026, 11, 1), weightKg: 70)),
+    );
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
+    await tester.tap(find.text('Ghi cân nặng hôm nay'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng').last, '68,5');
+    await tester.tap(find.widgetWithText(TextButton, 'Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã ghi cân nặng.'), findsOneWidget);
+    expect(((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile.weightKg, 68.5);
+    await scrollTo(tester, find.textContaining('đã đi được 30%'), delta: -200);
+    expect(find.textContaining('đã đi được 30%'), findsOneWidget);
+  });
+
+  testWidgets('ô cân nặng trong hộp thoại báo lỗi khi ngoài giới hạn, không ghi gì', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+    await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
+    await tester.tap(find.text('Ghi cân nặng hôm nay'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng').last, '5');
+    await tester.tap(find.widgetWithText(TextButton, 'Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cân nặng từ 20 đến 300 kg.'), findsOneWidget);
+    expect(await tester.runAsync(() => appContainer(tester).read(weightLogRepositoryProvider).watch().first), isEmpty);
+  });
+
+  testWidgets('chọn lại "Theo máy" sau khi đã đổi Sáng/Tối', (tester) async {
+    final settings = await pumpFluwApp(tester, storedSettings: {'theme_mode': 'dark'});
+    await tester.runAsync(() => repositoryOf(tester).save(buildProfile()));
+    await tester.tap(find.text(AppTab.profile.label).last);
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Theo máy'));
+    await tester.tap(find.text('Theo máy'));
+    await tester.pumpAndSettle();
+
+    expect(appContainer(tester).read(themeModeProvider), ThemeMode.system);
+    expect(settings.getString('theme_mode'), 'system');
   });
 
   testWidgets('sửa cân nặng rồi lưu thì lưu vào máy và màn Hồ Sơ cập nhật ngay', (tester) async {
