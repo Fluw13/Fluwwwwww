@@ -37,6 +37,10 @@ class ProfileOverview extends StatelessWidget {
       children: [
         _Header(profile: profile, age: age),
         const SizedBox(height: AppSpacing.md),
+        if (profile.hasReachedTarget) ...[
+          _TargetReachedBanner(onUpdate: onEdit),
+          const SizedBox(height: AppSpacing.md),
+        ],
         SectionCard(
           title: 'Thể trạng & mục tiêu',
           children: [
@@ -108,6 +112,9 @@ class ProfileOverview extends StatelessWidget {
   }
 
   String _goalNote() {
+    if (profile.hasReachedTarget) {
+      return 'Đã đạt cân nặng mong muốn';
+    }
     final goal = profile.goal;
     final weeklyChangeKg = profile.weeklyChangeKg;
     if (goal == WeightGoal.maintain) {
@@ -163,6 +170,40 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown once a weigh-in reaches the target; targets are then calculated for maintaining until the user sets a new one.
+class _TargetReachedBanner extends StatelessWidget {
+  const _TargetReachedBanner({required this.onUpdate});
+
+  final VoidCallback onUpdate;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      color: theme.colorScheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Bạn đã đạt cân nặng mong muốn',
+              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Fluw đang tính chỉ tiêu để giữ cân. Đặt mục tiêu mới nếu bạn muốn tiếp tục tăng hoặc giảm.',
+              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            FilledButton.tonal(onPressed: onUpdate, child: const Text('Cập nhật mục tiêu')),
+          ],
+        ),
+      ),
     );
   }
 }

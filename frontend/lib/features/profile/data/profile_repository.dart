@@ -64,9 +64,11 @@ final class ProfileRepository {
     });
   }
 
+  /// Also drops the weight history: a new profile must not measure progress from someone else's weigh-ins.
   Future<void> clear() {
     return _database.transaction(() async {
       await _deleteChildRows();
+      await _database.delete(_database.weightEntries).go();
       await _database.delete(_database.profiles).go();
     });
   }

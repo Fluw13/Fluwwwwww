@@ -168,6 +168,16 @@
             "default_dart": null,
             "default_client_dart": null,
             "dsl_features": []
+          },
+          {
+            "name": "planned_goal",
+            "getter_name": "plannedGoal",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
           }
         ],
         "is_virtual": false,
@@ -313,7 +323,7 @@
       "sql": [
         {
           "dialect": "sqlite",
-          "sql": "CREATE TABLE IF NOT EXISTS \"profiles\" (\"id\" INTEGER NOT NULL, \"display_name\" TEXT NULL, \"sex\" TEXT NOT NULL, \"bmr_formula\" TEXT NULL, \"birth_date\" TEXT NOT NULL, \"height_cm\" REAL NOT NULL, \"weight_kg\" REAL NOT NULL, \"target_weight_kg\" REAL NOT NULL, \"activity_level\" TEXT NOT NULL, \"training_type\" TEXT NOT NULL, \"weekly_change_kg\" REAL NULL, \"condition_note\" TEXT NULL, \"limits_sugar\" INTEGER NOT NULL CHECK (\"limits_sugar\" IN (0, 1)), \"diet_style\" TEXT NULL, \"allergy_note\" TEXT NULL, PRIMARY KEY (\"id\"));"
+          "sql": "CREATE TABLE IF NOT EXISTS \"profiles\" (\"id\" INTEGER NOT NULL, \"display_name\" TEXT NULL, \"sex\" TEXT NOT NULL, \"bmr_formula\" TEXT NULL, \"birth_date\" TEXT NOT NULL, \"height_cm\" REAL NOT NULL, \"weight_kg\" REAL NOT NULL, \"target_weight_kg\" REAL NOT NULL, \"activity_level\" TEXT NOT NULL, \"training_type\" TEXT NOT NULL, \"weekly_change_kg\" REAL NULL, \"condition_note\" TEXT NULL, \"limits_sugar\" INTEGER NOT NULL CHECK (\"limits_sugar\" IN (0, 1)), \"diet_style\" TEXT NULL, \"allergy_note\" TEXT NULL, \"planned_goal\" TEXT NULL, PRIMARY KEY (\"id\"));"
         }
       ]
     },

@@ -14,6 +14,7 @@ import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 import '../../../helpers/in_memory_database.dart';
 import '../domain/profile_fixture.dart';
@@ -183,6 +184,77 @@ void main() {
     await subscription.cancel();
 
     expect((emitted.last as LoadedProfile).profile.dietary.allergies, {Allergen.eggs: AllergySeverity.mild});
+  });
+
+  test('hướng mục tiêu đã lưu được giữ khi cân nặng vượt mục tiêu; dòng cũ thiếu cột thì suy từ cân nặng', () async {
+    final reached = buildProfile(weightKg: 64.8, targetWeightKg: 65, plannedGoal: WeightGoal.lose);
+    await repository.save(reached);
+    expect(await repository.load(), _loaded(reached));
+
+    await database.update(database.profiles).write(const ProfilesCompanion(plannedGoal: Value(null)));
+    expect(((await repository.load()) as LoadedProfile).profile.plannedGoal, WeightGoal.gain);
+  });
+
+  test('lưu lại sau khi bỏ dị ứng và thói quen thì dòng cũ mất hẳn', () async {
+    await repository.save(
+      buildProfile(
+        dietary: DietaryPreferences(
+          allergies: {Allergen.fish: AllergySeverity.severe, Allergen.milk: AllergySeverity.mild},
+          allergyNote: null,
+          dietStyle: DietStyle.keto,
+          preferences: {FoodPreference.likesNuts, FoodPreference.noOrganMeat},
+        ),
+      ),
+    );
+    final trimmed = buildProfile(
+      dietary: DietaryPreferences(
+        allergies: {Allergen.milk: AllergySeverity.mild},
+        allergyNote: null,
+        dietStyle: DietStyle.keto,
+        preferences: {FoodPreference.likesNuts},
+      ),
+    );
+
+    await repository.save(trimmed);
+
+    expect(await repository.load(), _loaded(trimmed));
+    expect(await database.select(database.profileAllergies).get(), hasLength(1));
+    expect(await database.select(database.profilePreferences).get(), hasLength(1));
+  });
+
+  test('xóa hồ sơ thì xóa cả dị ứng, thói quen và lịch sử cân', () async {
+    await repository.save(
+      buildProfile(
+        dietary: DietaryPreferences(
+          allergies: {Allergen.fish: AllergySeverity.severe},
+          allergyNote: null,
+          dietStyle: DietStyle.regular,
+          preferences: {FoodPreference.likesNuts},
+        ),
+      ),
+    );
+    await database.into(database.weightEntries).insert(WeightEntriesCompanion.insert(date: '2026-11-11', weightKg: 70));
+
+    await repository.clear();
+
+    expect(await database.select(database.profileAllergies).get(), isEmpty);
+    expect(await database.select(database.profilePreferences).get(), isEmpty);
+    expect(await database.select(database.weightEntries).get(), isEmpty);
+  });
+
+  test('watch phát lại khi chỉ bảng thói quen đổi', () async {
+    await repository.save(buildProfile());
+    final emitted = <StoredProfile>[];
+    final subscription = repository.watch().listen(emitted.add);
+    await pumpEventQueue();
+
+    await database
+        .into(database.profilePreferences)
+        .insert(ProfilePreferencesCompanion.insert(preferenceKey: 'likes_nuts'));
+    await pumpEventQueue();
+    await subscription.cancel();
+
+    expect((emitted.last as LoadedProfile).profile.dietary.preferences, {FoodPreference.likesNuts});
   });
 
   test('watch phát lại mỗi khi lưu, đổi bệnh hoặc xóa', () async {

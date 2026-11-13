@@ -202,6 +202,50 @@ void main() {
     expect(settings.getString('theme_mode'), 'system');
   });
 
+  testWidgets('ghi cân chạm mục tiêu: báo đã đạt, chỉ tiêu chuyển sang giữ cân thay vì tăng cân', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(weightKg: 65.4, targetWeightKg: 65));
+    await tester.runAsync(
+      () =>
+          appContainer(tester)
+              .read(weightLogRepositoryProvider)
+              .record(WeightEntry(date: appTestToday, weightKg: 64.8)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bạn đã đạt cân nặng mong muốn'), findsOneWidget);
+    await scrollTo(tester, find.text('Bằng mức tiêu hao ước tính (TDEE)'));
+    expect(find.text('Bằng mức tiêu hao ước tính (TDEE)'), findsOneWidget);
+  });
+
+  testWidgets('mục tiêu đổi hướng so với lần cân đầu thì không hiện tiến độ sai', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(weightKg: 70, targetWeightKg: 75));
+    // One write per runAsync: the app's own reload runs in fake time, and a second real-time write would wait for
+    // its database lock forever.
+    final weightLog = appContainer(tester).read(weightLogRepositoryProvider);
+    await tester.runAsync(() => weightLog.record(WeightEntry(date: CalendarDate(2026, 10, 1), weightKg: 80)));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => weightLog.record(WeightEntry(date: appTestToday, weightKg: 70)));
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
+    expect(find.textContaining('đã đi được'), findsNothing);
+  });
+
+  testWidgets('đổi cân nặng trong Thiết lập thì cũng ghi vào lịch sử cân hôm nay', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '69');
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(await tester.runAsync(() => appContainer(tester).read(weightLogRepositoryProvider).watch().first), [
+      WeightEntry(date: appTestToday, weightKg: 69),
+    ]);
+  });
+
   testWidgets('sửa cân nặng rồi lưu thì lưu vào máy và màn Hồ Sơ cập nhật ngay', (tester) async {
     await openProfileTab(tester, saved: buildProfile());
     await scrollTo(tester, find.text('Cập nhật hồ sơ'));
@@ -322,6 +366,19 @@ void main() {
       await tester.tap(find.text('Khác'));
       await tester.pumpAndSettle();
       await scrollTo(tester, find.text('Lưu hồ sơ'), delta: 100);
+      expect(tester.takeException(), isNull);
+
+      // The weigh-in dialog opens with the keyboard up.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Bỏ thay đổi'));
+      await tester.pumpAndSettle();
+      // The profile page keeps its scroll position at the bottom, below the weight card.
+      await scrollTo(tester, find.text('Ghi cân nặng hôm nay'), delta: -100);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 280);
+      await tester.tap(find.text('Ghi cân nặng hôm nay'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ghi cân nặng hôm nay').last, findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

@@ -192,6 +192,8 @@ final class ProfileDraft {
       heightCm: heightCm,
       weightKg: weightKg,
       targetWeightKg: targetWeightKg,
+      // Saving the form is setting the target, so the planned direction is taken from the weights entered now.
+      plannedGoal: WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg),
       activityLevel: activityLevel,
       trainingType: trainingType,
       // A speed left over from an earlier goal is dropped so it never comes back unnoticed.

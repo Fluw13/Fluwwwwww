@@ -6,6 +6,7 @@ import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 /// Stored keys are fixed strings, not `name` or `index`, so renaming or reordering an enum never breaks saved profiles.
 /// Never change an existing key; add new ones instead.
@@ -70,6 +71,12 @@ const Map<FoodPreference, String> foodPreferenceKeys = {
   FoodPreference.noOrganMeat: 'no_organ_meat',
   FoodPreference.steamedOrBoiled: 'steamed_or_boiled',
   FoodPreference.likesNuts: 'likes_nuts',
+};
+
+const Map<WeightGoal, String> weightGoalKeys = {
+  WeightGoal.lose: 'lose',
+  WeightGoal.maintain: 'maintain',
+  WeightGoal.gain: 'gain',
 };
 
 /// Returns `null` for a key this app version does not know, e.g. one written by a newer version.

@@ -25,6 +25,9 @@ class Profiles extends Table {
   TextColumn get dietStyle => text().nullable()();
   TextColumn get allergyNote => text().nullable()();
 
+  /// Added in schema v3. Old rows derive it from the two weights.
+  TextColumn get plannedGoal => text().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 

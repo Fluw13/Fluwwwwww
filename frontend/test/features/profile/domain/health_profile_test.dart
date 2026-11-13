@@ -5,6 +5,7 @@ import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 import 'profile_fixture.dart';
 
@@ -71,5 +72,25 @@ void main() {
 
     expect(other.copyWith(sex: Sex.male).bmrFormulaForOther, isNull);
     expect(other.copyWith(sex: Sex.male), buildProfile(sex: Sex.male));
+  });
+
+  test('đang giảm cân mà cân chạm hoặc vượt mục tiêu thì coi là đã đạt và chuyển sang giữ cân', () {
+    final losing = buildProfile(weightKg: 70, targetWeightKg: 65);
+
+    expect(losing.goal, WeightGoal.lose);
+    expect(losing.hasReachedTarget, isFalse);
+    for (final weightKg in [65.0, 64.8]) {
+      final reached = losing.copyWith(weightKg: weightKg);
+      expect(reached.hasReachedTarget, isTrue, reason: '$weightKg');
+      expect(reached.goal, WeightGoal.maintain, reason: '$weightKg');
+    }
+  });
+
+  test('đang tăng cân mà vượt mục tiêu cũng chuyển sang giữ cân; kế hoạch giữ cân thì không bao giờ "đã đạt"', () {
+    final gaining = buildProfile(weightKg: 60, targetWeightKg: 64);
+
+    expect(gaining.copyWith(weightKg: 64.2).goal, WeightGoal.maintain);
+    expect(buildProfile(weightKg: 60, targetWeightKg: 60).copyWith(weightKg: 62).hasReachedTarget, isFalse);
+    expect(buildProfile(weightKg: 60, targetWeightKg: 60).copyWith(weightKg: 62).goal, WeightGoal.lose);
   });
 }

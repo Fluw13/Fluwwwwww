@@ -144,6 +144,15 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _plannedGoalMeta = const VerificationMeta('plannedGoal');
+  @override
+  late final GeneratedColumn<String> plannedGoal = GeneratedColumn<String>(
+    'planned_goal',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -161,6 +170,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     limitsSugar,
     dietStyle,
     allergyNote,
+    plannedGoal,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -244,6 +254,9 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     if (data.containsKey('allergy_note')) {
       context.handle(_allergyNoteMeta, allergyNote.isAcceptableOrUnknown(data['allergy_note']!, _allergyNoteMeta));
     }
+    if (data.containsKey('planned_goal')) {
+      context.handle(_plannedGoalMeta, plannedGoal.isAcceptableOrUnknown(data['planned_goal']!, _plannedGoalMeta));
+    }
     return context;
   }
 
@@ -274,6 +287,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
       limitsSugar: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}limits_sugar'])!,
       dietStyle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}diet_style']),
       allergyNote: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}allergy_note']),
+      plannedGoal: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}planned_goal']),
     );
   }
 
@@ -305,6 +319,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   /// Added in schema v3. Old rows read as the regular style.
   final String? dietStyle;
   final String? allergyNote;
+
+  /// Added in schema v3. Old rows derive it from the two weights.
+  final String? plannedGoal;
   const ProfileRow({
     required this.id,
     this.displayName,
@@ -321,6 +338,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     required this.limitsSugar,
     this.dietStyle,
     this.allergyNote,
+    this.plannedGoal,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -352,6 +370,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     if (!nullToAbsent || allergyNote != null) {
       map['allergy_note'] = Variable<String>(allergyNote);
     }
+    if (!nullToAbsent || plannedGoal != null) {
+      map['planned_goal'] = Variable<String>(plannedGoal);
+    }
     return map;
   }
 
@@ -372,6 +393,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       limitsSugar: Value(limitsSugar),
       dietStyle: dietStyle == null && nullToAbsent ? const Value.absent() : Value(dietStyle),
       allergyNote: allergyNote == null && nullToAbsent ? const Value.absent() : Value(allergyNote),
+      plannedGoal: plannedGoal == null && nullToAbsent ? const Value.absent() : Value(plannedGoal),
     );
   }
 
@@ -393,6 +415,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       limitsSugar: serializer.fromJson<bool>(json['limitsSugar']),
       dietStyle: serializer.fromJson<String?>(json['dietStyle']),
       allergyNote: serializer.fromJson<String?>(json['allergyNote']),
+      plannedGoal: serializer.fromJson<String?>(json['plannedGoal']),
     );
   }
   @override
@@ -414,6 +437,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       'limitsSugar': serializer.toJson<bool>(limitsSugar),
       'dietStyle': serializer.toJson<String?>(dietStyle),
       'allergyNote': serializer.toJson<String?>(allergyNote),
+      'plannedGoal': serializer.toJson<String?>(plannedGoal),
     };
   }
 
@@ -433,6 +457,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     bool? limitsSugar,
     Value<String?> dietStyle = const Value.absent(),
     Value<String?> allergyNote = const Value.absent(),
+    Value<String?> plannedGoal = const Value.absent(),
   }) => ProfileRow(
     id: id ?? this.id,
     displayName: displayName.present ? displayName.value : this.displayName,
@@ -449,6 +474,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     limitsSugar: limitsSugar ?? this.limitsSugar,
     dietStyle: dietStyle.present ? dietStyle.value : this.dietStyle,
     allergyNote: allergyNote.present ? allergyNote.value : this.allergyNote,
+    plannedGoal: plannedGoal.present ? plannedGoal.value : this.plannedGoal,
   );
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
     return ProfileRow(
@@ -467,6 +493,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       limitsSugar: data.limitsSugar.present ? data.limitsSugar.value : this.limitsSugar,
       dietStyle: data.dietStyle.present ? data.dietStyle.value : this.dietStyle,
       allergyNote: data.allergyNote.present ? data.allergyNote.value : this.allergyNote,
+      plannedGoal: data.plannedGoal.present ? data.plannedGoal.value : this.plannedGoal,
     );
   }
 
@@ -487,7 +514,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           ..write('conditionNote: $conditionNote, ')
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
-          ..write('allergyNote: $allergyNote')
+          ..write('allergyNote: $allergyNote, ')
+          ..write('plannedGoal: $plannedGoal')
           ..write(')'))
         .toString();
   }
@@ -509,6 +537,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     limitsSugar,
     dietStyle,
     allergyNote,
+    plannedGoal,
   );
   @override
   bool operator ==(Object other) =>
@@ -528,7 +557,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           other.conditionNote == this.conditionNote &&
           other.limitsSugar == this.limitsSugar &&
           other.dietStyle == this.dietStyle &&
-          other.allergyNote == this.allergyNote);
+          other.allergyNote == this.allergyNote &&
+          other.plannedGoal == this.plannedGoal);
 }
 
 class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
@@ -547,6 +577,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<bool> limitsSugar;
   final Value<String?> dietStyle;
   final Value<String?> allergyNote;
+  final Value<String?> plannedGoal;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -563,6 +594,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.limitsSugar = const Value.absent(),
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
+    this.plannedGoal = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -580,6 +612,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     required bool limitsSugar,
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
+    this.plannedGoal = const Value.absent(),
   }) : sex = Value(sex),
        birthDate = Value(birthDate),
        heightCm = Value(heightCm),
@@ -604,6 +637,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Expression<bool>? limitsSugar,
     Expression<String>? dietStyle,
     Expression<String>? allergyNote,
+    Expression<String>? plannedGoal,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -621,6 +655,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       if (limitsSugar != null) 'limits_sugar': limitsSugar,
       if (dietStyle != null) 'diet_style': dietStyle,
       if (allergyNote != null) 'allergy_note': allergyNote,
+      if (plannedGoal != null) 'planned_goal': plannedGoal,
     });
   }
 
@@ -640,6 +675,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Value<bool>? limitsSugar,
     Value<String?>? dietStyle,
     Value<String?>? allergyNote,
+    Value<String?>? plannedGoal,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
@@ -657,6 +693,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       limitsSugar: limitsSugar ?? this.limitsSugar,
       dietStyle: dietStyle ?? this.dietStyle,
       allergyNote: allergyNote ?? this.allergyNote,
+      plannedGoal: plannedGoal ?? this.plannedGoal,
     );
   }
 
@@ -708,6 +745,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (allergyNote.present) {
       map['allergy_note'] = Variable<String>(allergyNote.value);
     }
+    if (plannedGoal.present) {
+      map['planned_goal'] = Variable<String>(plannedGoal.value);
+    }
     return map;
   }
 
@@ -728,7 +768,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
           ..write('conditionNote: $conditionNote, ')
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
-          ..write('allergyNote: $allergyNote')
+          ..write('allergyNote: $allergyNote, ')
+          ..write('plannedGoal: $plannedGoal')
           ..write(')'))
         .toString();
   }
@@ -1401,6 +1442,7 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   required bool limitsSugar,
   Value<String?> dietStyle,
   Value<String?> allergyNote,
+  Value<String?> plannedGoal,
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
@@ -1418,6 +1460,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<bool> limitsSugar,
   Value<String?> dietStyle,
   Value<String?> allergyNote,
+  Value<String?> plannedGoal,
 });
 
 class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -1470,6 +1513,9 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
 
   ColumnFilters<String> get allergyNote =>
       $composableBuilder(column: $table.allergyNote, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get plannedGoal =>
+      $composableBuilder(column: $table.plannedGoal, builder: (column) => ColumnFilters(column));
 }
 
 class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -1523,6 +1569,9 @@ class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesT
 
   ColumnOrderings<String> get allergyNote =>
       $composableBuilder(column: $table.allergyNote, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get plannedGoal =>
+      $composableBuilder(column: $table.plannedGoal, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -1569,6 +1618,9 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
 
   GeneratedColumn<String> get allergyNote =>
       $composableBuilder(column: $table.allergyNote, builder: (column) => column);
+
+  GeneratedColumn<String> get plannedGoal =>
+      $composableBuilder(column: $table.plannedGoal, builder: (column) => column);
 }
 
 class $$ProfilesTableTableManager
@@ -1611,6 +1663,7 @@ class $$ProfilesTableTableManager
                 Value<bool> limitsSugar = const Value.absent(),
                 Value<String?> dietStyle = const Value.absent(),
                 Value<String?> allergyNote = const Value.absent(),
+                Value<String?> plannedGoal = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
                 displayName: displayName,
@@ -1627,6 +1680,7 @@ class $$ProfilesTableTableManager
                 limitsSugar: limitsSugar,
                 dietStyle: dietStyle,
                 allergyNote: allergyNote,
+                plannedGoal: plannedGoal,
               ),
           createCompanionCallback:
               ({
@@ -1645,6 +1699,7 @@ class $$ProfilesTableTableManager
                 required bool limitsSugar,
                 Value<String?> dietStyle = const Value.absent(),
                 Value<String?> allergyNote = const Value.absent(),
+                Value<String?> plannedGoal = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 id: id,
                 displayName: displayName,
@@ -1661,6 +1716,7 @@ class $$ProfilesTableTableManager
                 limitsSugar: limitsSugar,
                 dietStyle: dietStyle,
                 allergyNote: allergyNote,
+                plannedGoal: plannedGoal,
               ),
           withReferenceMapper: (p0) => p0
               .map(

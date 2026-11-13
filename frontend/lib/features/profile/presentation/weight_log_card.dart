@@ -9,6 +9,7 @@ import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/domain/goal_progress.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/weight_entry.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 import 'package:fluw/features/profile/presentation/record_weight_dialog.dart';
 
 class WeightLogCard extends ConsumerWidget {
@@ -21,17 +22,22 @@ class WeightLogCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final entries = ref.watch(weightLogProvider).value ?? const <WeightEntry>[];
-    // Progress starts from the first weigh-in, so it needs at least one earlier entry to compare against.
-    final progress = entries.length < 2
-        ? null
-        : goalProgress(startKg: entries.first.weightKg, currentKg: profile.weightKg, targetKg: profile.targetWeightKg);
+    final log = ref.watch(weightLogProvider);
+    final entries = log.value ?? const <WeightEntry>[];
+    final progress = _progress(entries);
 
     return SectionCard(
       title: 'Theo dõi cân nặng',
       accentColor: theme.colorScheme.secondary,
       children: [
-        if (entries.isEmpty)
+        if (log.hasError && !log.hasValue)
+          Text(
+            'Không đọc được lịch sử cân nặng trên máy. Hãy đóng hẳn app rồi mở lại.',
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+          )
+        else if (log.isLoading && !log.hasValue)
+          const LinearProgressIndicator()
+        else if (entries.isEmpty)
           Text('Chưa ghi lần nào. Ghi đều để thấy tiến độ đến cân nặng mong muốn.', style: theme.textTheme.bodyMedium)
         else ...[
           if (progress != null) ...[
@@ -60,6 +66,19 @@ class WeightLogCard extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Measured from the first weigh-in, and only while that weigh-in lies on the planned side of the target: after
+  /// the target changes direction the old history says nothing about the new plan.
+  double? _progress(List<WeightEntry> entries) {
+    if (entries.length < 2 || profile.plannedGoal == WeightGoal.maintain) {
+      return null;
+    }
+    final start = entries.first.weightKg;
+    if (WeightGoal.fromWeights(currentKg: start, targetKg: profile.targetWeightKg) != profile.plannedGoal) {
+      return null;
+    }
+    return goalProgress(startKg: start, currentKg: profile.weightKg, targetKg: profile.targetWeightKg);
   }
 
   Future<void> _record(BuildContext context, WidgetRef ref) async {

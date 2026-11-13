@@ -110,6 +110,7 @@ void main() {
       limitsSugar: 0,
       dietStyle: null,
       allergyNote: null,
+      plannedGoal: null,
     );
 
     await verifier.testWithDataIntegrity(

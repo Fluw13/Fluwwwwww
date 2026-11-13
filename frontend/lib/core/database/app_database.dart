@@ -23,6 +23,7 @@ class AppDatabase extends _$AppDatabase {
       from2To3: (migrator, schema) async {
         await migrator.addColumn(schema.profiles, schema.profiles.dietStyle);
         await migrator.addColumn(schema.profiles, schema.profiles.allergyNote);
+        await migrator.addColumn(schema.profiles, schema.profiles.plannedGoal);
         await migrator.createTable(schema.profileAllergies);
         await migrator.createTable(schema.profilePreferences);
         await migrator.createTable(schema.weightEntries);

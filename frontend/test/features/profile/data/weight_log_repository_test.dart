@@ -42,6 +42,7 @@ void main() {
       WeightEntry(date: CalendarDate(2026, 11, 4), weightKg: 70.2),
       WeightEntry(date: CalendarDate(2026, 11, 11), weightKg: 69.1),
     ]);
+    expect(await profileWeight(), 69.1);
   });
 
   test('ghi bù một ngày cũ hơn thì không đổi cân nặng hiện tại', () async {

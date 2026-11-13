@@ -129,6 +129,14 @@ class Profiles extends Table with TableInfo<Profiles, ProfilesData> {
     requiredDuringInsert: false,
     $customConstraints: 'NULL',
   );
+  late final GeneratedColumn<String> plannedGoal = GeneratedColumn<String>(
+    'planned_goal',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: 'NULL',
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -146,6 +154,7 @@ class Profiles extends Table with TableInfo<Profiles, ProfilesData> {
     limitsSugar,
     dietStyle,
     allergyNote,
+    plannedGoal,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -218,6 +227,10 @@ class Profiles extends Table with TableInfo<Profiles, ProfilesData> {
         DriftSqlType.string,
         data['${effectivePrefix}allergy_note'],
       ),
+      plannedGoal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}planned_goal'],
+      ),
     );
   }
 
@@ -248,6 +261,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
   final int limitsSugar;
   final String? dietStyle;
   final String? allergyNote;
+  final String? plannedGoal;
   const ProfilesData({
     required this.id,
     this.displayName,
@@ -264,6 +278,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
     required this.limitsSugar,
     this.dietStyle,
     this.allergyNote,
+    this.plannedGoal,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -294,6 +309,9 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
     }
     if (!nullToAbsent || allergyNote != null) {
       map['allergy_note'] = Variable<String>(allergyNote);
+    }
+    if (!nullToAbsent || plannedGoal != null) {
+      map['planned_goal'] = Variable<String>(plannedGoal);
     }
     return map;
   }
@@ -327,6 +345,9 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
       allergyNote: allergyNote == null && nullToAbsent
           ? const Value.absent()
           : Value(allergyNote),
+      plannedGoal: plannedGoal == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plannedGoal),
     );
   }
 
@@ -351,6 +372,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
       limitsSugar: serializer.fromJson<int>(json['limitsSugar']),
       dietStyle: serializer.fromJson<String?>(json['dietStyle']),
       allergyNote: serializer.fromJson<String?>(json['allergyNote']),
+      plannedGoal: serializer.fromJson<String?>(json['plannedGoal']),
     );
   }
   @override
@@ -372,6 +394,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
       'limitsSugar': serializer.toJson<int>(limitsSugar),
       'dietStyle': serializer.toJson<String?>(dietStyle),
       'allergyNote': serializer.toJson<String?>(allergyNote),
+      'plannedGoal': serializer.toJson<String?>(plannedGoal),
     };
   }
 
@@ -391,6 +414,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
     int? limitsSugar,
     Value<String?> dietStyle = const Value.absent(),
     Value<String?> allergyNote = const Value.absent(),
+    Value<String?> plannedGoal = const Value.absent(),
   }) => ProfilesData(
     id: id ?? this.id,
     displayName: displayName.present ? displayName.value : this.displayName,
@@ -411,6 +435,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
     limitsSugar: limitsSugar ?? this.limitsSugar,
     dietStyle: dietStyle.present ? dietStyle.value : this.dietStyle,
     allergyNote: allergyNote.present ? allergyNote.value : this.allergyNote,
+    plannedGoal: plannedGoal.present ? plannedGoal.value : this.plannedGoal,
   );
   ProfilesData copyWithCompanion(ProfilesCompanion data) {
     return ProfilesData(
@@ -447,6 +472,9 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
       allergyNote: data.allergyNote.present
           ? data.allergyNote.value
           : this.allergyNote,
+      plannedGoal: data.plannedGoal.present
+          ? data.plannedGoal.value
+          : this.plannedGoal,
     );
   }
 
@@ -467,7 +495,8 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
           ..write('conditionNote: $conditionNote, ')
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
-          ..write('allergyNote: $allergyNote')
+          ..write('allergyNote: $allergyNote, ')
+          ..write('plannedGoal: $plannedGoal')
           ..write(')'))
         .toString();
   }
@@ -489,6 +518,7 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
     limitsSugar,
     dietStyle,
     allergyNote,
+    plannedGoal,
   );
   @override
   bool operator ==(Object other) =>
@@ -508,7 +538,8 @@ class ProfilesData extends DataClass implements Insertable<ProfilesData> {
           other.conditionNote == this.conditionNote &&
           other.limitsSugar == this.limitsSugar &&
           other.dietStyle == this.dietStyle &&
-          other.allergyNote == this.allergyNote);
+          other.allergyNote == this.allergyNote &&
+          other.plannedGoal == this.plannedGoal);
 }
 
 class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
@@ -527,6 +558,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
   final Value<int> limitsSugar;
   final Value<String?> dietStyle;
   final Value<String?> allergyNote;
+  final Value<String?> plannedGoal;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -543,6 +575,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
     this.limitsSugar = const Value.absent(),
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
+    this.plannedGoal = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -560,6 +593,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
     required int limitsSugar,
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
+    this.plannedGoal = const Value.absent(),
   }) : sex = Value(sex),
        birthDate = Value(birthDate),
        heightCm = Value(heightCm),
@@ -584,6 +618,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
     Expression<int>? limitsSugar,
     Expression<String>? dietStyle,
     Expression<String>? allergyNote,
+    Expression<String>? plannedGoal,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -601,6 +636,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
       if (limitsSugar != null) 'limits_sugar': limitsSugar,
       if (dietStyle != null) 'diet_style': dietStyle,
       if (allergyNote != null) 'allergy_note': allergyNote,
+      if (plannedGoal != null) 'planned_goal': plannedGoal,
     });
   }
 
@@ -620,6 +656,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
     Value<int>? limitsSugar,
     Value<String?>? dietStyle,
     Value<String?>? allergyNote,
+    Value<String?>? plannedGoal,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
@@ -637,6 +674,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
       limitsSugar: limitsSugar ?? this.limitsSugar,
       dietStyle: dietStyle ?? this.dietStyle,
       allergyNote: allergyNote ?? this.allergyNote,
+      plannedGoal: plannedGoal ?? this.plannedGoal,
     );
   }
 
@@ -688,6 +726,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
     if (allergyNote.present) {
       map['allergy_note'] = Variable<String>(allergyNote.value);
     }
+    if (plannedGoal.present) {
+      map['planned_goal'] = Variable<String>(plannedGoal.value);
+    }
     return map;
   }
 
@@ -708,7 +749,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfilesData> {
           ..write('conditionNote: $conditionNote, ')
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
-          ..write('allergyNote: $allergyNote')
+          ..write('allergyNote: $allergyNote, ')
+          ..write('plannedGoal: $plannedGoal')
           ..write(')'))
         .toString();
   }

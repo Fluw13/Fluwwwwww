@@ -17,6 +17,7 @@ final class HealthProfile {
     required this.heightCm,
     required this.weightKg,
     required this.targetWeightKg,
+    required this.plannedGoal,
     required this.activityLevel,
     required this.trainingType,
     this.weeklyChangeKg,
@@ -39,6 +40,10 @@ final class HealthProfile {
   final double heightCm;
   final double weightKg;
   final double targetWeightKg;
+
+  /// The direction chosen when the target was set. Weigh-ins change [weightKg] but never this, so reaching the
+  /// target cannot silently flip a weight-loss plan into a weight-gain one.
+  final WeightGoal plannedGoal;
   final ActivityLevel activityLevel;
   final TrainingType trainingType;
 
@@ -62,7 +67,13 @@ final class HealthProfile {
     Sex.other => bmrFormulaForOther,
   };
 
-  WeightGoal get goal => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
+  WeightGoal get _goalFromWeights => WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
+
+  /// True once the weight has reached or passed the target in the planned direction.
+  bool get hasReachedTarget => plannedGoal != WeightGoal.maintain && _goalFromWeights != plannedGoal;
+
+  /// What the targets are calculated for: after reaching the target the plan becomes maintaining.
+  WeightGoal get goal => hasReachedTarget ? WeightGoal.maintain : _goalFromWeights;
 
   /// Nullable fields take a function so `null` can be set on purpose: `copyWith(weeklyChangeKg: () => null)` clears it.
   HealthProfile copyWith({
@@ -73,6 +84,7 @@ final class HealthProfile {
     double? heightCm,
     double? weightKg,
     double? targetWeightKg,
+    WeightGoal? plannedGoal,
     ActivityLevel? activityLevel,
     TrainingType? trainingType,
     double? Function()? weeklyChangeKg,
@@ -89,6 +101,7 @@ final class HealthProfile {
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
       targetWeightKg: targetWeightKg ?? this.targetWeightKg,
+      plannedGoal: plannedGoal ?? this.plannedGoal,
       activityLevel: activityLevel ?? this.activityLevel,
       trainingType: trainingType ?? this.trainingType,
       weeklyChangeKg: weeklyChangeKg == null ? this.weeklyChangeKg : weeklyChangeKg(),
@@ -109,6 +122,7 @@ final class HealthProfile {
       other.heightCm == heightCm &&
       other.weightKg == weightKg &&
       other.targetWeightKg == targetWeightKg &&
+      other.plannedGoal == plannedGoal &&
       other.activityLevel == activityLevel &&
       other.trainingType == trainingType &&
       other.weeklyChangeKg == weeklyChangeKg &&
@@ -126,6 +140,7 @@ final class HealthProfile {
     heightCm,
     weightKg,
     targetWeightKg,
+    plannedGoal,
     activityLevel,
     trainingType,
     weeklyChangeKg,

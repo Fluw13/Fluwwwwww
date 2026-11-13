@@ -6,6 +6,7 @@ import 'package:fluw/features/profile/data/profile_storage_keys.dart';
 import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 ProfilesCompanion profileToRow(HealthProfile profile) {
   return ProfilesCompanion.insert(
@@ -27,6 +28,7 @@ ProfilesCompanion profileToRow(HealthProfile profile) {
     limitsSugar: profile.limitsSugar,
     dietStyle: Value(dietStyleKeys[profile.dietary.dietStyle]),
     allergyNote: Value(profile.dietary.allergyNote),
+    plannedGoal: Value(weightGoalKeys[profile.plannedGoal]),
   );
 }
 
@@ -58,6 +60,13 @@ HealthProfile? profileFromRow(ProfileRow row, Iterable<String> conditionKeys, Di
     heightCm: row.heightCm,
     weightKg: row.weightKg,
     targetWeightKg: row.targetWeightKg,
+    // Rows from before schema v3, or with an unknown key, take the direction the weights imply.
+    plannedGoal:
+        switch (row.plannedGoal) {
+          final key? => valueForKey(weightGoalKeys, key),
+          null => null,
+        } ??
+        WeightGoal.fromWeights(currentKg: row.weightKg, targetKg: row.targetWeightKg),
     activityLevel: activityLevel,
     trainingType: trainingType,
     weeklyChangeKg: row.weeklyChangeKg,

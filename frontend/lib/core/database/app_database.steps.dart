@@ -232,6 +232,7 @@ final class Schema3 extends i0.VersionedSchema {
         _column_12,
         _column_14,
         _column_15,
+        _column_16,
       ],
       attachedDatabase: database,
     ),
@@ -254,7 +255,7 @@ final class Schema3 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['PRIMARY KEY(allergen_key)'],
-      columns: [_column_16, _column_17],
+      columns: [_column_17, _column_18],
       attachedDatabase: database,
     ),
     alias: null,
@@ -265,7 +266,7 @@ final class Schema3 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['PRIMARY KEY(preference_key)'],
-      columns: [_column_18],
+      columns: [_column_19],
       attachedDatabase: database,
     ),
     alias: null,
@@ -276,7 +277,7 @@ final class Schema3 extends i0.VersionedSchema {
       withoutRowId: false,
       isStrict: false,
       tableConstraints: ['PRIMARY KEY(date)'],
-      columns: [_column_19, _column_6],
+      columns: [_column_20, _column_6],
       attachedDatabase: database,
     ),
     alias: null,
@@ -315,6 +316,8 @@ class Shape2 extends i0.VersionedTable {
       columnsByName['diet_style']! as i1.GeneratedColumn<String>;
   i1.GeneratedColumn<String> get allergyNote =>
       columnsByName['allergy_note']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get plannedGoal =>
+      columnsByName['planned_goal']! as i1.GeneratedColumn<String>;
 }
 
 i1.GeneratedColumn<String> _column_14(String aliasedName) =>
@@ -333,6 +336,14 @@ i1.GeneratedColumn<String> _column_15(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NULL',
     );
+i1.GeneratedColumn<String> _column_16(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'planned_goal',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL',
+    );
 
 class Shape3 extends i0.VersionedTable {
   Shape3({required super.source, required super.alias}) : super.aliased();
@@ -342,7 +353,7 @@ class Shape3 extends i0.VersionedTable {
       columnsByName['severity_key']! as i1.GeneratedColumn<String>;
 }
 
-i1.GeneratedColumn<String> _column_16(String aliasedName) =>
+i1.GeneratedColumn<String> _column_17(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'allergen_key',
       aliasedName,
@@ -350,7 +361,7 @@ i1.GeneratedColumn<String> _column_16(String aliasedName) =>
       type: i1.DriftSqlType.string,
       $customConstraints: 'NOT NULL',
     );
-i1.GeneratedColumn<String> _column_17(String aliasedName) =>
+i1.GeneratedColumn<String> _column_18(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'severity_key',
       aliasedName,
@@ -365,7 +376,7 @@ class Shape4 extends i0.VersionedTable {
       columnsByName['preference_key']! as i1.GeneratedColumn<String>;
 }
 
-i1.GeneratedColumn<String> _column_18(String aliasedName) =>
+i1.GeneratedColumn<String> _column_19(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'preference_key',
       aliasedName,
@@ -382,7 +393,7 @@ class Shape5 extends i0.VersionedTable {
       columnsByName['weight_kg']! as i1.GeneratedColumn<double>;
 }
 
-i1.GeneratedColumn<String> _column_19(String aliasedName) =>
+i1.GeneratedColumn<String> _column_20(String aliasedName) =>
     i1.GeneratedColumn<String>(
       'date',
       aliasedName,

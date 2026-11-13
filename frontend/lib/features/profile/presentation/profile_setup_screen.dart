@@ -15,6 +15,7 @@ import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_entry.dart';
 import 'package:fluw/features/profile/presentation/allergies_section.dart';
 import 'package:fluw/features/profile/presentation/basic_info_section.dart';
 import 'package:fluw/features/profile/presentation/body_goal_section.dart';
@@ -57,13 +58,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _isSaving = false;
   bool _isSaved = false;
 
+  /// The weight stored before this edit; `null` for a new profile.
+  double? _savedWeightKg;
+
   @override
   void initState() {
     super.initState();
-    final saved = switch (ref.read(storedProfileProvider).value) {
-      LoadedProfile(:final profile) => ProfileDraft.fromProfile(profile),
-      _ => const ProfileDraft(),
-    };
+    final stored = ref.read(storedProfileProvider).value;
+    _savedWeightKg = stored is LoadedProfile ? stored.profile.weightKg : null;
+    final saved = stored is LoadedProfile ? ProfileDraft.fromProfile(stored.profile) : const ProfileDraft();
     _initialDraft = saved;
     _name = _controller(saved.displayName);
     _height = _controller(saved.heightText);
@@ -241,6 +244,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         setState(() => _isSaving = true);
         try {
           await ref.read(profileRepositoryProvider).save(profile);
+          // A new or changed weight is also today's weigh-in, so the history and the profile never disagree.
+          if (profile.weightKg != _savedWeightKg) {
+            await ref
+                .read(weightLogRepositoryProvider)
+                .record(WeightEntry(date: ref.read(todayProvider), weightKg: profile.weightKg));
+          }
         } on Object {
           if (mounted) {
             setState(() => _isSaving = false);
@@ -260,6 +269,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // Scrolls instead of overflowing with very large text.
+        scrollable: true,
         title: const Text('Bỏ các thay đổi?'),
         content: const Text('Những gì bạn vừa nhập sẽ không được lưu.'),
         actions: [

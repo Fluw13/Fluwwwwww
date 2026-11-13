@@ -44,6 +44,8 @@ class _RecordWeightDialogState extends State<_RecordWeightDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // The keyboard opens at once (autofocus); with large text the dialog must scroll instead of overflowing.
+      scrollable: true,
       title: const Text('Ghi cân nặng hôm nay'),
       content: TextField(
         controller: _controller,
