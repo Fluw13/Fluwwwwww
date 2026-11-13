@@ -53,3 +53,20 @@ test('lỗi 4xx của bộ đọc body (JSON hỏng, body quá lớn) giữ nguy
     assert.equal(tooLarge.status, 413);
     assert.equal((await broken.json()).error.code, 'BAD_REQUEST');
 });
+
+test('lỗi có status 5xx (vd 502) vẫn là 500, không thành BAD_REQUEST, và được ghi log', async () => {
+    const logged = mock.method(console, 'error', () => {});
+    const app = express();
+    app.get('/x', () => {
+        throw Object.assign(new Error('upstream'), { status: 502 });
+    });
+    app.use(errorHandler);
+    const local = await startServer(app);
+
+    const response = await fetch(`${local.baseUrl}/x`);
+    await local.close();
+
+    assert.equal(response.status, 500);
+    assert.equal((await response.json()).error.code, 'INTERNAL_ERROR');
+    assert.equal(logged.mock.callCount(), 1);
+});

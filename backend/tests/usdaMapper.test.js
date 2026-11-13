@@ -46,12 +46,25 @@ test('món SR Legacy: đủ 7 chỉ số theo 100 g, dị ứng là chưa biết
     });
 });
 
-test('Foundation thiếu năng lượng 1008 thì dùng năng lượng Atwater (2047, rồi 2048)', () => {
-    const food = (nutrients) => ({ fdcId: 1, description: 'X', foodNutrients: nutrients });
+const food = (nutrients) => ({ fdcId: 1, description: 'X', foodNutrients: nutrients });
 
-    assert.equal(toFoodItem(food([{ nutrientId: 2048, value: 120 }, { nutrientId: 2047, value: 118 }])).nutrients.energyKcal, 118);
-    assert.equal(toFoodItem(food([{ nutrientId: 2048, value: 120 }])).nutrients.energyKcal, 120);
+test('Foundation thiếu năng lượng 1008 thì dùng Atwater riêng (2048), rồi Atwater chung (2047)', () => {
+    assert.equal(toFoodItem(food([{ nutrientId: 2048, value: 120 }, { nutrientId: 2047, value: 118 }])).nutrients.energyKcal, 120);
+    assert.equal(toFoodItem(food([{ nutrientId: 2047, value: 118 }])).nutrients.energyKcal, 118);
+    assert.equal(toFoodItem(food([{ nutrientId: 1008, value: 89 }, { nutrientId: 2048, value: 120 }])).nutrients.energyKcal, 89);
     assert.equal(toFoodItem(food([])).nutrients.energyKcal, null);
+});
+
+test('Foundation ghi đường tổng ở id 1063 (vd chuối chín 15,8 g) thì vẫn đọc được', () => {
+    assert.equal(toFoodItem(food([{ nutrientId: 1063, value: 15.8 }])).nutrients.sugarsG, 15.8);
+    assert.equal(toFoodItem(food([{ nutrientId: 2000, value: 12 }, { nutrientId: 1063, value: 15.8 }])).nutrients.sugarsG, 12);
+});
+
+test('số vô lý thì là chưa có dữ liệu', () => {
+    const item = toFoodItem(food([{ nutrientId: 1003, value: 150 }, { nutrientId: 1008, value: 1200 }]));
+
+    assert.equal(item.nutrients.proteinG, null);
+    assert.equal(item.nutrients.energyKcal, null);
 });
 
 test('thiếu chỉ số thì null; dữ liệu hỏng thì bỏ món', () => {

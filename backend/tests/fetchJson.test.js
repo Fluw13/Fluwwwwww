@@ -61,3 +61,12 @@ test('hết giờ thật thì hủy request', async () => {
     await assert.rejects(fetchJson('src', 'https://example.test'), UpstreamError);
     clearTimeout(keepAlive);
 });
+
+test('status lỗi thì hủy body để trả kết nối', async () => {
+    let cancelled = false;
+    const body = new ReadableStream({ cancel: () => (cancelled = true) });
+    const fetchJson = createFetchJson({ fetch: async () => new Response(body, { status: 500 }), timeoutMs: 100, userAgent: 'x' });
+
+    await assert.rejects(fetchJson('src', 'https://example.test'), UpstreamError);
+    assert.ok(cancelled);
+});

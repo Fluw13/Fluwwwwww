@@ -1,14 +1,13 @@
 const HttpError = require('../errors/httpError');
+const isValidGtin = require('../lib/gtin');
 
-// EAN-8, UPC-A (12), EAN-13 and GTIN-14.
-const BARCODE_PATTERN = /^\d{8,14}$/;
 const FOUND_TTL_MS = 24 * 60 * 60 * 1000;
 const NOT_FOUND_TTL_MS = 60 * 60 * 1000;
 
 const createBarcodeService = ({ openFoodFacts, cache, logger = console }) => {
     const lookUp = async (barcode) => {
-        if (typeof barcode !== 'string' || !BARCODE_PATTERN.test(barcode)) {
-            throw new HttpError(400, 'INVALID_BARCODE', 'Mã vạch phải gồm 8 đến 14 chữ số.');
+        if (!isValidGtin(barcode)) {
+            throw new HttpError(400, 'INVALID_BARCODE', 'Mã vạch không hợp lệ. Hãy quét lại hoặc kiểm tra các chữ số.');
         }
         let item = cache.get(barcode);
         if (item === undefined) {

@@ -10,6 +10,9 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
  * tell the user that some results may be missing. Only a search where every source failed is an error.
  */
 const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console }) => {
+    // Identical searches arriving together share one round of upstream calls.
+    const inFlight = new Map();
+
     const searchSource = async (name, run) => {
         try {
             return { name, status: 'ok', items: await run() };
@@ -33,7 +36,16 @@ const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console 
         if (cached) {
             return cached;
         }
+        const pending = inFlight.get(cacheKey);
+        if (pending) {
+            return pending;
+        }
+        const request = searchAllSources(query, cacheKey).finally(() => inFlight.delete(cacheKey));
+        inFlight.set(cacheKey, request);
+        return request;
+    };
 
+    const searchAllSources = async (query, cacheKey) => {
         const results = await Promise.all([
             searchSource('openFoodFacts', () => openFoodFacts.search(query, RESULTS_PER_SOURCE)),
             usda.isConfigured

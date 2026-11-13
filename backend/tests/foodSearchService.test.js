@@ -73,3 +73,13 @@ test('từ khóa ngắn hơn 2 hoặc dài hơn 100 ký tự, hoặc không ph�
     }
     assert.equal(openFoodFacts.search.mock.callCount(), 0);
 });
+
+test('hai lần tìm cùng từ khóa đến cùng lúc chỉ gọi mỗi nguồn một lần', async () => {
+    const { service, openFoodFacts, usdaClient } = build();
+
+    const [first, second] = await Promise.all([service.search('rice'), service.search('Rice')]);
+
+    assert.deepEqual(first, second);
+    assert.equal(openFoodFacts.search.mock.callCount(), 1);
+    assert.equal(usdaClient.search.mock.callCount(), 1);
+});

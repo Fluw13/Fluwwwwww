@@ -1,14 +1,16 @@
-const { toNutrientValue } = require('../../models/nutrients');
+const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, toNutrientValue } = require('../../models/nutrients');
 
-// FoodData Central nutrient ids. Foundation foods often report energy only as Atwater factors, hence the fallbacks.
-const ENERGY_IDS = [1008, 2047, 2048];
+// FoodData Central nutrient ids, first match wins. Foundation foods often report energy only through Atwater
+// factors (2048 "specific" fits the food better than 2047 "general") and total sugars under 1063 instead of 2000.
 const NUTRIENT_IDS = {
-    proteinG: 1003,
-    carbohydratesG: 1005,
-    sugarsG: 2000,
-    fatG: 1004,
-    saturatedFatG: 1258,
-    sodiumMg: 1093,
+    energyKcal: { ids: [1008, 2048, 2047], max: MAX_KCAL_PER_100 },
+    proteinG: { ids: [1003], max: MAX_GRAMS_PER_100 },
+    carbohydratesG: { ids: [1005], max: MAX_GRAMS_PER_100 },
+    sugarsG: { ids: [2000, 1063], max: MAX_GRAMS_PER_100 },
+    fatG: { ids: [1004], max: MAX_GRAMS_PER_100 },
+    saturatedFatG: { ids: [1258], max: MAX_GRAMS_PER_100 },
+    // mg per 100 g, so at most 100,000.
+    sodiumMg: { ids: [1093], max: MAX_GRAMS_PER_100 * 1000 },
 };
 
 const valuesById = (foodNutrients) => {
@@ -28,10 +30,10 @@ const toFoodItem = (food) => {
         return null;
     }
     const values = valuesById(food.foodNutrients);
-    const energyId = ENERGY_IDS.find((id) => values.has(id));
-    const nutrients = { energyKcal: energyId === undefined ? null : values.get(energyId) };
-    for (const [key, id] of Object.entries(NUTRIENT_IDS)) {
-        nutrients[key] = values.get(id) ?? null;
+    const nutrients = {};
+    for (const [key, { ids, max }] of Object.entries(NUTRIENT_IDS)) {
+        const id = ids.find((candidate) => values.has(candidate));
+        nutrients[key] = id === undefined ? null : toNutrientValue(values.get(id), max);
     }
 
     return {

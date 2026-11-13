@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { toFoodItem } = require('../src/providers/openFoodFacts/mapper');
+const drinkFixture = require('./fixtures/off-product-drink.json');
 const productFixture = require('./fixtures/off-product.json');
 const searchFixture = require('./fixtures/off-search.json');
 
@@ -29,6 +30,7 @@ test('sản phẩm thật (sữa chua Vinamilk): đúng tên tiếng Việt, đ�
         attribution: {
             source: 'Open Food Facts',
             license: 'ODbL',
+            imageLicense: 'CC BY-SA',
             url: 'https://world.openfoodfacts.org/product/8934673607827',
         },
     });
@@ -67,10 +69,37 @@ test('thiếu kcal thì đổi từ kJ; số âm, chữ hoặc NaN thì là chư
     assert.equal(item.nutrients.sodiumMg, null);
 });
 
-test('số liệu theo khẩu phần thay vì 100 g thì không dùng, để khỏi lệch đơn vị', () => {
-    const item = toFoodItem({ code: '1', nutrition_data_per: 'serving', nutriments: { proteins_100g: 5 } });
+test('đồ uống thật (Coca-Cola, nutrition_data_per 100ml): đủ số liệu, tính theo 100 ml', () => {
+    const item = toFoodItem(drinkFixture.product);
 
-    assert.equal(item.nutrients.proteinG, null);
+    assert.deepEqual(item.basis, { amount: 100, unit: 'ml' });
+    assert.ok(Math.abs(item.nutrients.energyKcal - 42.2535211267606) < 1e-9);
+    assert.ok(Math.abs(item.nutrients.sugarsG - 10.9859154929577) < 1e-9);
+    assert.equal(item.nutrients.fatG, 0);
+    assert.deepEqual(item.allergenTags, []);
+});
+
+test('nutrition_data_per quyết định đơn vị trước số lượng ghi trên bao bì', () => {
+    assert.equal(toFoodItem({ code: '1', nutrition_data_per: '100g', quantity: '500 ml' }).basis.unit, 'g');
+    assert.equal(toFoodItem({ code: '1', nutrition_data_per: '100ml', quantity: '500 g' }).basis.unit, 'ml');
+});
+
+test('số vô lý (trên 100 g/100 g, trên 900 kcal) coi là chưa có dữ liệu; energy_100g (kJ) là dự phòng cuối', () => {
+    const impossible = toFoodItem({
+        code: '1',
+        nutriments: { 'energy-kcal_100g': 4000, proteins_100g: 500, sodium_100g: 120, fat_100g: 100 },
+    });
+    const fromEnergy = toFoodItem({ code: '1', nutriments: { energy_100g: 418.4 } });
+
+    assert.equal(impossible.nutrients.energyKcal, null);
+    assert.equal(impossible.nutrients.proteinG, null);
+    assert.equal(impossible.nutrients.sodiumMg, null);
+    assert.equal(impossible.nutrients.fatG, 100);
+    assert.ok(Math.abs(fromEnergy.nutrients.energyKcal - 100) < 1e-9);
+});
+
+test('không có ảnh thì không ghi giấy phép ảnh', () => {
+    assert.equal(toFoodItem({ code: '1' }).attribution.imageLicense, null);
 });
 
 test('không có mã thì bỏ; không có tên tiếng Việt thì dùng tên chung; tên rỗng thành null', () => {
