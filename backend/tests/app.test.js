@@ -1,10 +1,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
-const app = require('../src/app');
+const createApp = require('../src/app');
 const errorHandler = require('../src/middlewares/errorHandler');
 const notFound = require('../src/middlewares/notFound');
 const startServer = require('./helpers/startServer');
 
+const app = createApp({ foodSearchService: {}, barcodeService: {} });
 let server;
 
 before(async () => {
