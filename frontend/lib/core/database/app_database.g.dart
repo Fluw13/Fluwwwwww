@@ -126,6 +126,24 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("limits_sugar" IN (0, 1))'),
   );
+  static const VerificationMeta _dietStyleMeta = const VerificationMeta('dietStyle');
+  @override
+  late final GeneratedColumn<String> dietStyle = GeneratedColumn<String>(
+    'diet_style',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _allergyNoteMeta = const VerificationMeta('allergyNote');
+  @override
+  late final GeneratedColumn<String> allergyNote = GeneratedColumn<String>(
+    'allergy_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -141,6 +159,8 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     weeklyChangeKg,
     conditionNote,
     limitsSugar,
+    dietStyle,
+    allergyNote,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -218,6 +238,12 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     } else if (isInserting) {
       context.missing(_limitsSugarMeta);
     }
+    if (data.containsKey('diet_style')) {
+      context.handle(_dietStyleMeta, dietStyle.isAcceptableOrUnknown(data['diet_style']!, _dietStyleMeta));
+    }
+    if (data.containsKey('allergy_note')) {
+      context.handle(_allergyNoteMeta, allergyNote.isAcceptableOrUnknown(data['allergy_note']!, _allergyNoteMeta));
+    }
     return context;
   }
 
@@ -246,6 +272,8 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
       ),
       conditionNote: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}condition_note']),
       limitsSugar: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}limits_sugar'])!,
+      dietStyle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}diet_style']),
+      allergyNote: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}allergy_note']),
     );
   }
 
@@ -273,6 +301,10 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   final double? weeklyChangeKg;
   final String? conditionNote;
   final bool limitsSugar;
+
+  /// Added in schema v3. Old rows read as the regular style.
+  final String? dietStyle;
+  final String? allergyNote;
   const ProfileRow({
     required this.id,
     this.displayName,
@@ -287,6 +319,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     this.weeklyChangeKg,
     this.conditionNote,
     required this.limitsSugar,
+    this.dietStyle,
+    this.allergyNote,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -312,6 +346,12 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       map['condition_note'] = Variable<String>(conditionNote);
     }
     map['limits_sugar'] = Variable<bool>(limitsSugar);
+    if (!nullToAbsent || dietStyle != null) {
+      map['diet_style'] = Variable<String>(dietStyle);
+    }
+    if (!nullToAbsent || allergyNote != null) {
+      map['allergy_note'] = Variable<String>(allergyNote);
+    }
     return map;
   }
 
@@ -330,6 +370,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       weeklyChangeKg: weeklyChangeKg == null && nullToAbsent ? const Value.absent() : Value(weeklyChangeKg),
       conditionNote: conditionNote == null && nullToAbsent ? const Value.absent() : Value(conditionNote),
       limitsSugar: Value(limitsSugar),
+      dietStyle: dietStyle == null && nullToAbsent ? const Value.absent() : Value(dietStyle),
+      allergyNote: allergyNote == null && nullToAbsent ? const Value.absent() : Value(allergyNote),
     );
   }
 
@@ -349,6 +391,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       weeklyChangeKg: serializer.fromJson<double?>(json['weeklyChangeKg']),
       conditionNote: serializer.fromJson<String?>(json['conditionNote']),
       limitsSugar: serializer.fromJson<bool>(json['limitsSugar']),
+      dietStyle: serializer.fromJson<String?>(json['dietStyle']),
+      allergyNote: serializer.fromJson<String?>(json['allergyNote']),
     );
   }
   @override
@@ -368,6 +412,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       'weeklyChangeKg': serializer.toJson<double?>(weeklyChangeKg),
       'conditionNote': serializer.toJson<String?>(conditionNote),
       'limitsSugar': serializer.toJson<bool>(limitsSugar),
+      'dietStyle': serializer.toJson<String?>(dietStyle),
+      'allergyNote': serializer.toJson<String?>(allergyNote),
     };
   }
 
@@ -385,6 +431,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     Value<double?> weeklyChangeKg = const Value.absent(),
     Value<String?> conditionNote = const Value.absent(),
     bool? limitsSugar,
+    Value<String?> dietStyle = const Value.absent(),
+    Value<String?> allergyNote = const Value.absent(),
   }) => ProfileRow(
     id: id ?? this.id,
     displayName: displayName.present ? displayName.value : this.displayName,
@@ -399,6 +447,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     weeklyChangeKg: weeklyChangeKg.present ? weeklyChangeKg.value : this.weeklyChangeKg,
     conditionNote: conditionNote.present ? conditionNote.value : this.conditionNote,
     limitsSugar: limitsSugar ?? this.limitsSugar,
+    dietStyle: dietStyle.present ? dietStyle.value : this.dietStyle,
+    allergyNote: allergyNote.present ? allergyNote.value : this.allergyNote,
   );
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
     return ProfileRow(
@@ -415,6 +465,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       weeklyChangeKg: data.weeklyChangeKg.present ? data.weeklyChangeKg.value : this.weeklyChangeKg,
       conditionNote: data.conditionNote.present ? data.conditionNote.value : this.conditionNote,
       limitsSugar: data.limitsSugar.present ? data.limitsSugar.value : this.limitsSugar,
+      dietStyle: data.dietStyle.present ? data.dietStyle.value : this.dietStyle,
+      allergyNote: data.allergyNote.present ? data.allergyNote.value : this.allergyNote,
     );
   }
 
@@ -433,7 +485,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           ..write('trainingType: $trainingType, ')
           ..write('weeklyChangeKg: $weeklyChangeKg, ')
           ..write('conditionNote: $conditionNote, ')
-          ..write('limitsSugar: $limitsSugar')
+          ..write('limitsSugar: $limitsSugar, ')
+          ..write('dietStyle: $dietStyle, ')
+          ..write('allergyNote: $allergyNote')
           ..write(')'))
         .toString();
   }
@@ -453,6 +507,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     weeklyChangeKg,
     conditionNote,
     limitsSugar,
+    dietStyle,
+    allergyNote,
   );
   @override
   bool operator ==(Object other) =>
@@ -470,7 +526,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           other.trainingType == this.trainingType &&
           other.weeklyChangeKg == this.weeklyChangeKg &&
           other.conditionNote == this.conditionNote &&
-          other.limitsSugar == this.limitsSugar);
+          other.limitsSugar == this.limitsSugar &&
+          other.dietStyle == this.dietStyle &&
+          other.allergyNote == this.allergyNote);
 }
 
 class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
@@ -487,6 +545,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<double?> weeklyChangeKg;
   final Value<String?> conditionNote;
   final Value<bool> limitsSugar;
+  final Value<String?> dietStyle;
+  final Value<String?> allergyNote;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -501,6 +561,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.weeklyChangeKg = const Value.absent(),
     this.conditionNote = const Value.absent(),
     this.limitsSugar = const Value.absent(),
+    this.dietStyle = const Value.absent(),
+    this.allergyNote = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -516,6 +578,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.weeklyChangeKg = const Value.absent(),
     this.conditionNote = const Value.absent(),
     required bool limitsSugar,
+    this.dietStyle = const Value.absent(),
+    this.allergyNote = const Value.absent(),
   }) : sex = Value(sex),
        birthDate = Value(birthDate),
        heightCm = Value(heightCm),
@@ -538,6 +602,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Expression<double>? weeklyChangeKg,
     Expression<String>? conditionNote,
     Expression<bool>? limitsSugar,
+    Expression<String>? dietStyle,
+    Expression<String>? allergyNote,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -553,6 +619,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       if (weeklyChangeKg != null) 'weekly_change_kg': weeklyChangeKg,
       if (conditionNote != null) 'condition_note': conditionNote,
       if (limitsSugar != null) 'limits_sugar': limitsSugar,
+      if (dietStyle != null) 'diet_style': dietStyle,
+      if (allergyNote != null) 'allergy_note': allergyNote,
     });
   }
 
@@ -570,6 +638,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Value<double?>? weeklyChangeKg,
     Value<String?>? conditionNote,
     Value<bool>? limitsSugar,
+    Value<String?>? dietStyle,
+    Value<String?>? allergyNote,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
@@ -585,6 +655,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       weeklyChangeKg: weeklyChangeKg ?? this.weeklyChangeKg,
       conditionNote: conditionNote ?? this.conditionNote,
       limitsSugar: limitsSugar ?? this.limitsSugar,
+      dietStyle: dietStyle ?? this.dietStyle,
+      allergyNote: allergyNote ?? this.allergyNote,
     );
   }
 
@@ -630,6 +702,12 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (limitsSugar.present) {
       map['limits_sugar'] = Variable<bool>(limitsSugar.value);
     }
+    if (dietStyle.present) {
+      map['diet_style'] = Variable<String>(dietStyle.value);
+    }
+    if (allergyNote.present) {
+      map['allergy_note'] = Variable<String>(allergyNote.value);
+    }
     return map;
   }
 
@@ -648,7 +726,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
           ..write('trainingType: $trainingType, ')
           ..write('weeklyChangeKg: $weeklyChangeKg, ')
           ..write('conditionNote: $conditionNote, ')
-          ..write('limitsSugar: $limitsSugar')
+          ..write('limitsSugar: $limitsSugar, ')
+          ..write('dietStyle: $dietStyle, ')
+          ..write('allergyNote: $allergyNote')
           ..write(')'))
         .toString();
   }
@@ -787,15 +867,522 @@ class ProfileConditionsCompanion extends UpdateCompanion<ProfileConditionRow> {
   }
 }
 
+class $ProfileAllergiesTable extends ProfileAllergies with TableInfo<$ProfileAllergiesTable, ProfileAllergyRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfileAllergiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _allergenKeyMeta = const VerificationMeta('allergenKey');
+  @override
+  late final GeneratedColumn<String> allergenKey = GeneratedColumn<String>(
+    'allergen_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _severityKeyMeta = const VerificationMeta('severityKey');
+  @override
+  late final GeneratedColumn<String> severityKey = GeneratedColumn<String>(
+    'severity_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [allergenKey, severityKey];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profile_allergies';
+  @override
+  VerificationContext validateIntegrity(Insertable<ProfileAllergyRow> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('allergen_key')) {
+      context.handle(_allergenKeyMeta, allergenKey.isAcceptableOrUnknown(data['allergen_key']!, _allergenKeyMeta));
+    } else if (isInserting) {
+      context.missing(_allergenKeyMeta);
+    }
+    if (data.containsKey('severity_key')) {
+      context.handle(_severityKeyMeta, severityKey.isAcceptableOrUnknown(data['severity_key']!, _severityKeyMeta));
+    } else if (isInserting) {
+      context.missing(_severityKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {allergenKey};
+  @override
+  ProfileAllergyRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfileAllergyRow(
+      allergenKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}allergen_key'])!,
+      severityKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}severity_key'])!,
+    );
+  }
+
+  @override
+  $ProfileAllergiesTable createAlias(String alias) {
+    return $ProfileAllergiesTable(attachedDatabase, alias);
+  }
+}
+
+class ProfileAllergyRow extends DataClass implements Insertable<ProfileAllergyRow> {
+  final String allergenKey;
+  final String severityKey;
+  const ProfileAllergyRow({required this.allergenKey, required this.severityKey});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['allergen_key'] = Variable<String>(allergenKey);
+    map['severity_key'] = Variable<String>(severityKey);
+    return map;
+  }
+
+  ProfileAllergiesCompanion toCompanion(bool nullToAbsent) {
+    return ProfileAllergiesCompanion(allergenKey: Value(allergenKey), severityKey: Value(severityKey));
+  }
+
+  factory ProfileAllergyRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfileAllergyRow(
+      allergenKey: serializer.fromJson<String>(json['allergenKey']),
+      severityKey: serializer.fromJson<String>(json['severityKey']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'allergenKey': serializer.toJson<String>(allergenKey),
+      'severityKey': serializer.toJson<String>(severityKey),
+    };
+  }
+
+  ProfileAllergyRow copyWith({String? allergenKey, String? severityKey}) =>
+      ProfileAllergyRow(allergenKey: allergenKey ?? this.allergenKey, severityKey: severityKey ?? this.severityKey);
+  ProfileAllergyRow copyWithCompanion(ProfileAllergiesCompanion data) {
+    return ProfileAllergyRow(
+      allergenKey: data.allergenKey.present ? data.allergenKey.value : this.allergenKey,
+      severityKey: data.severityKey.present ? data.severityKey.value : this.severityKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileAllergyRow(')
+          ..write('allergenKey: $allergenKey, ')
+          ..write('severityKey: $severityKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(allergenKey, severityKey);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProfileAllergyRow && other.allergenKey == this.allergenKey && other.severityKey == this.severityKey);
+}
+
+class ProfileAllergiesCompanion extends UpdateCompanion<ProfileAllergyRow> {
+  final Value<String> allergenKey;
+  final Value<String> severityKey;
+  final Value<int> rowid;
+  const ProfileAllergiesCompanion({
+    this.allergenKey = const Value.absent(),
+    this.severityKey = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfileAllergiesCompanion.insert({
+    required String allergenKey,
+    required String severityKey,
+    this.rowid = const Value.absent(),
+  }) : allergenKey = Value(allergenKey),
+       severityKey = Value(severityKey);
+  static Insertable<ProfileAllergyRow> custom({
+    Expression<String>? allergenKey,
+    Expression<String>? severityKey,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (allergenKey != null) 'allergen_key': allergenKey,
+      if (severityKey != null) 'severity_key': severityKey,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfileAllergiesCompanion copyWith({Value<String>? allergenKey, Value<String>? severityKey, Value<int>? rowid}) {
+    return ProfileAllergiesCompanion(
+      allergenKey: allergenKey ?? this.allergenKey,
+      severityKey: severityKey ?? this.severityKey,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (allergenKey.present) {
+      map['allergen_key'] = Variable<String>(allergenKey.value);
+    }
+    if (severityKey.present) {
+      map['severity_key'] = Variable<String>(severityKey.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileAllergiesCompanion(')
+          ..write('allergenKey: $allergenKey, ')
+          ..write('severityKey: $severityKey, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProfilePreferencesTable extends ProfilePreferences
+    with TableInfo<$ProfilePreferencesTable, ProfilePreferenceRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfilePreferencesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _preferenceKeyMeta = const VerificationMeta('preferenceKey');
+  @override
+  late final GeneratedColumn<String> preferenceKey = GeneratedColumn<String>(
+    'preference_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [preferenceKey];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profile_preferences';
+  @override
+  VerificationContext validateIntegrity(Insertable<ProfilePreferenceRow> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('preference_key')) {
+      context.handle(
+        _preferenceKeyMeta,
+        preferenceKey.isAcceptableOrUnknown(data['preference_key']!, _preferenceKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_preferenceKeyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {preferenceKey};
+  @override
+  ProfilePreferenceRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfilePreferenceRow(
+      preferenceKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}preference_key'])!,
+    );
+  }
+
+  @override
+  $ProfilePreferencesTable createAlias(String alias) {
+    return $ProfilePreferencesTable(attachedDatabase, alias);
+  }
+}
+
+class ProfilePreferenceRow extends DataClass implements Insertable<ProfilePreferenceRow> {
+  final String preferenceKey;
+  const ProfilePreferenceRow({required this.preferenceKey});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['preference_key'] = Variable<String>(preferenceKey);
+    return map;
+  }
+
+  ProfilePreferencesCompanion toCompanion(bool nullToAbsent) {
+    return ProfilePreferencesCompanion(preferenceKey: Value(preferenceKey));
+  }
+
+  factory ProfilePreferenceRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfilePreferenceRow(preferenceKey: serializer.fromJson<String>(json['preferenceKey']));
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'preferenceKey': serializer.toJson<String>(preferenceKey)};
+  }
+
+  ProfilePreferenceRow copyWith({String? preferenceKey}) =>
+      ProfilePreferenceRow(preferenceKey: preferenceKey ?? this.preferenceKey);
+  ProfilePreferenceRow copyWithCompanion(ProfilePreferencesCompanion data) {
+    return ProfilePreferenceRow(
+      preferenceKey: data.preferenceKey.present ? data.preferenceKey.value : this.preferenceKey,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfilePreferenceRow(')
+          ..write('preferenceKey: $preferenceKey')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => preferenceKey.hashCode;
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is ProfilePreferenceRow && other.preferenceKey == this.preferenceKey);
+}
+
+class ProfilePreferencesCompanion extends UpdateCompanion<ProfilePreferenceRow> {
+  final Value<String> preferenceKey;
+  final Value<int> rowid;
+  const ProfilePreferencesCompanion({this.preferenceKey = const Value.absent(), this.rowid = const Value.absent()});
+  ProfilePreferencesCompanion.insert({required String preferenceKey, this.rowid = const Value.absent()})
+    : preferenceKey = Value(preferenceKey);
+  static Insertable<ProfilePreferenceRow> custom({Expression<String>? preferenceKey, Expression<int>? rowid}) {
+    return RawValuesInsertable({
+      if (preferenceKey != null) 'preference_key': preferenceKey,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfilePreferencesCompanion copyWith({Value<String>? preferenceKey, Value<int>? rowid}) {
+    return ProfilePreferencesCompanion(preferenceKey: preferenceKey ?? this.preferenceKey, rowid: rowid ?? this.rowid);
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (preferenceKey.present) {
+      map['preference_key'] = Variable<String>(preferenceKey.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfilePreferencesCompanion(')
+          ..write('preferenceKey: $preferenceKey, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $WeightEntriesTable extends WeightEntries with TableInfo<$WeightEntriesTable, WeightEntryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WeightEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _weightKgMeta = const VerificationMeta('weightKg');
+  @override
+  late final GeneratedColumn<double> weightKg = GeneratedColumn<double>(
+    'weight_kg',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [date, weightKg];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'weight_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<WeightEntryRow> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('date')) {
+      context.handle(_dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('weight_kg')) {
+      context.handle(_weightKgMeta, weightKg.isAcceptableOrUnknown(data['weight_kg']!, _weightKgMeta));
+    } else if (isInserting) {
+      context.missing(_weightKgMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {date};
+  @override
+  WeightEntryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WeightEntryRow(
+      date: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}date'])!,
+      weightKg: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}weight_kg'])!,
+    );
+  }
+
+  @override
+  $WeightEntriesTable createAlias(String alias) {
+    return $WeightEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class WeightEntryRow extends DataClass implements Insertable<WeightEntryRow> {
+  final String date;
+  final double weightKg;
+  const WeightEntryRow({required this.date, required this.weightKg});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['date'] = Variable<String>(date);
+    map['weight_kg'] = Variable<double>(weightKg);
+    return map;
+  }
+
+  WeightEntriesCompanion toCompanion(bool nullToAbsent) {
+    return WeightEntriesCompanion(date: Value(date), weightKg: Value(weightKg));
+  }
+
+  factory WeightEntryRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WeightEntryRow(
+      date: serializer.fromJson<String>(json['date']),
+      weightKg: serializer.fromJson<double>(json['weightKg']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{'date': serializer.toJson<String>(date), 'weightKg': serializer.toJson<double>(weightKg)};
+  }
+
+  WeightEntryRow copyWith({String? date, double? weightKg}) =>
+      WeightEntryRow(date: date ?? this.date, weightKg: weightKg ?? this.weightKg);
+  WeightEntryRow copyWithCompanion(WeightEntriesCompanion data) {
+    return WeightEntryRow(
+      date: data.date.present ? data.date.value : this.date,
+      weightKg: data.weightKg.present ? data.weightKg.value : this.weightKg,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeightEntryRow(')
+          ..write('date: $date, ')
+          ..write('weightKg: $weightKg')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(date, weightKg);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is WeightEntryRow && other.date == this.date && other.weightKg == this.weightKg);
+}
+
+class WeightEntriesCompanion extends UpdateCompanion<WeightEntryRow> {
+  final Value<String> date;
+  final Value<double> weightKg;
+  final Value<int> rowid;
+  const WeightEntriesCompanion({
+    this.date = const Value.absent(),
+    this.weightKg = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WeightEntriesCompanion.insert({required String date, required double weightKg, this.rowid = const Value.absent()})
+    : date = Value(date),
+      weightKg = Value(weightKg);
+  static Insertable<WeightEntryRow> custom({
+    Expression<String>? date,
+    Expression<double>? weightKg,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (date != null) 'date': date,
+      if (weightKg != null) 'weight_kg': weightKg,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WeightEntriesCompanion copyWith({Value<String>? date, Value<double>? weightKg, Value<int>? rowid}) {
+    return WeightEntriesCompanion(
+      date: date ?? this.date,
+      weightKg: weightKg ?? this.weightKg,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (weightKg.present) {
+      map['weight_kg'] = Variable<double>(weightKg.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WeightEntriesCompanion(')
+          ..write('date: $date, ')
+          ..write('weightKg: $weightKg, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $ProfileConditionsTable profileConditions = $ProfileConditionsTable(this);
+  late final $ProfileAllergiesTable profileAllergies = $ProfileAllergiesTable(this);
+  late final $ProfilePreferencesTable profilePreferences = $ProfilePreferencesTable(this);
+  late final $WeightEntriesTable weightEntries = $WeightEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [profiles, profileConditions];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    profiles,
+    profileConditions,
+    profileAllergies,
+    profilePreferences,
+    weightEntries,
+  ];
 }
 
 typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
@@ -812,6 +1399,8 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<double?> weeklyChangeKg,
   Value<String?> conditionNote,
   required bool limitsSugar,
+  Value<String?> dietStyle,
+  Value<String?> allergyNote,
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
@@ -827,6 +1416,8 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<double?> weeklyChangeKg,
   Value<String?> conditionNote,
   Value<bool> limitsSugar,
+  Value<String?> dietStyle,
+  Value<String?> allergyNote,
 });
 
 class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -873,6 +1464,12 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
 
   ColumnFilters<bool> get limitsSugar =>
       $composableBuilder(column: $table.limitsSugar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get dietStyle =>
+      $composableBuilder(column: $table.dietStyle, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get allergyNote =>
+      $composableBuilder(column: $table.allergyNote, builder: (column) => ColumnFilters(column));
 }
 
 class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -920,6 +1517,12 @@ class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesT
 
   ColumnOrderings<bool> get limitsSugar =>
       $composableBuilder(column: $table.limitsSugar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get dietStyle =>
+      $composableBuilder(column: $table.dietStyle, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get allergyNote =>
+      $composableBuilder(column: $table.allergyNote, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -961,6 +1564,11 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
       $composableBuilder(column: $table.conditionNote, builder: (column) => column);
 
   GeneratedColumn<bool> get limitsSugar => $composableBuilder(column: $table.limitsSugar, builder: (column) => column);
+
+  GeneratedColumn<String> get dietStyle => $composableBuilder(column: $table.dietStyle, builder: (column) => column);
+
+  GeneratedColumn<String> get allergyNote =>
+      $composableBuilder(column: $table.allergyNote, builder: (column) => column);
 }
 
 class $$ProfilesTableTableManager
@@ -1001,6 +1609,8 @@ class $$ProfilesTableTableManager
                 Value<double?> weeklyChangeKg = const Value.absent(),
                 Value<String?> conditionNote = const Value.absent(),
                 Value<bool> limitsSugar = const Value.absent(),
+                Value<String?> dietStyle = const Value.absent(),
+                Value<String?> allergyNote = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
                 displayName: displayName,
@@ -1015,6 +1625,8 @@ class $$ProfilesTableTableManager
                 weeklyChangeKg: weeklyChangeKg,
                 conditionNote: conditionNote,
                 limitsSugar: limitsSugar,
+                dietStyle: dietStyle,
+                allergyNote: allergyNote,
               ),
           createCompanionCallback:
               ({
@@ -1031,6 +1643,8 @@ class $$ProfilesTableTableManager
                 Value<double?> weeklyChangeKg = const Value.absent(),
                 Value<String?> conditionNote = const Value.absent(),
                 required bool limitsSugar,
+                Value<String?> dietStyle = const Value.absent(),
+                Value<String?> allergyNote = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 id: id,
                 displayName: displayName,
@@ -1045,6 +1659,8 @@ class $$ProfilesTableTableManager
                 weeklyChangeKg: weeklyChangeKg,
                 conditionNote: conditionNote,
                 limitsSugar: limitsSugar,
+                dietStyle: dietStyle,
+                allergyNote: allergyNote,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -1174,6 +1790,336 @@ typedef $$ProfileConditionsTableProcessedTableManager =
       ProfileConditionRow,
       PrefetchHooks Function()
     >;
+typedef $$ProfileAllergiesTableCreateCompanionBuilder = ProfileAllergiesCompanion Function({
+  required String allergenKey,
+  required String severityKey,
+  Value<int> rowid,
+});
+typedef $$ProfileAllergiesTableUpdateCompanionBuilder = ProfileAllergiesCompanion Function({
+  Value<String> allergenKey,
+  Value<String> severityKey,
+  Value<int> rowid,
+});
+
+class $$ProfileAllergiesTableFilterComposer extends Composer<_$AppDatabase, $ProfileAllergiesTable> {
+  $$ProfileAllergiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get allergenKey =>
+      $composableBuilder(column: $table.allergenKey, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get severityKey =>
+      $composableBuilder(column: $table.severityKey, builder: (column) => ColumnFilters(column));
+}
+
+class $$ProfileAllergiesTableOrderingComposer extends Composer<_$AppDatabase, $ProfileAllergiesTable> {
+  $$ProfileAllergiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get allergenKey =>
+      $composableBuilder(column: $table.allergenKey, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get severityKey =>
+      $composableBuilder(column: $table.severityKey, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ProfileAllergiesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfileAllergiesTable> {
+  $$ProfileAllergiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get allergenKey =>
+      $composableBuilder(column: $table.allergenKey, builder: (column) => column);
+
+  GeneratedColumn<String> get severityKey =>
+      $composableBuilder(column: $table.severityKey, builder: (column) => column);
+}
+
+class $$ProfileAllergiesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfileAllergiesTable,
+          ProfileAllergyRow,
+          $$ProfileAllergiesTableFilterComposer,
+          $$ProfileAllergiesTableOrderingComposer,
+          $$ProfileAllergiesTableAnnotationComposer,
+          $$ProfileAllergiesTableCreateCompanionBuilder,
+          $$ProfileAllergiesTableUpdateCompanionBuilder,
+          (ProfileAllergyRow, BaseReferences<_$AppDatabase, $ProfileAllergiesTable, ProfileAllergyRow>),
+          ProfileAllergyRow,
+          PrefetchHooks Function()
+        > {
+  $$ProfileAllergiesTableTableManager(_$AppDatabase db, $ProfileAllergiesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$ProfileAllergiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$ProfileAllergiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$ProfileAllergiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> allergenKey = const Value.absent(),
+            Value<String> severityKey = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => ProfileAllergiesCompanion(allergenKey: allergenKey, severityKey: severityKey, rowid: rowid),
+          createCompanionCallback: ({
+            required String allergenKey,
+            required String severityKey,
+            Value<int> rowid = const Value.absent(),
+          }) => ProfileAllergiesCompanion.insert(allergenKey: allergenKey, severityKey: severityKey, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProfileAllergiesTable, ProfileAllergyRow>(table),
+                  BaseReferences<_$AppDatabase, $ProfileAllergiesTable, ProfileAllergyRow>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProfileAllergiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfileAllergiesTable,
+      ProfileAllergyRow,
+      $$ProfileAllergiesTableFilterComposer,
+      $$ProfileAllergiesTableOrderingComposer,
+      $$ProfileAllergiesTableAnnotationComposer,
+      $$ProfileAllergiesTableCreateCompanionBuilder,
+      $$ProfileAllergiesTableUpdateCompanionBuilder,
+      (ProfileAllergyRow, BaseReferences<_$AppDatabase, $ProfileAllergiesTable, ProfileAllergyRow>),
+      ProfileAllergyRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ProfilePreferencesTableCreateCompanionBuilder = ProfilePreferencesCompanion Function({
+  required String preferenceKey,
+  Value<int> rowid,
+});
+typedef $$ProfilePreferencesTableUpdateCompanionBuilder = ProfilePreferencesCompanion Function({
+  Value<String> preferenceKey,
+  Value<int> rowid,
+});
+
+class $$ProfilePreferencesTableFilterComposer extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get preferenceKey =>
+      $composableBuilder(column: $table.preferenceKey, builder: (column) => ColumnFilters(column));
+}
+
+class $$ProfilePreferencesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get preferenceKey =>
+      $composableBuilder(column: $table.preferenceKey, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ProfilePreferencesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfilePreferencesTable> {
+  $$ProfilePreferencesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get preferenceKey =>
+      $composableBuilder(column: $table.preferenceKey, builder: (column) => column);
+}
+
+class $$ProfilePreferencesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfilePreferencesTable,
+          ProfilePreferenceRow,
+          $$ProfilePreferencesTableFilterComposer,
+          $$ProfilePreferencesTableOrderingComposer,
+          $$ProfilePreferencesTableAnnotationComposer,
+          $$ProfilePreferencesTableCreateCompanionBuilder,
+          $$ProfilePreferencesTableUpdateCompanionBuilder,
+          (ProfilePreferenceRow, BaseReferences<_$AppDatabase, $ProfilePreferencesTable, ProfilePreferenceRow>),
+          ProfilePreferenceRow,
+          PrefetchHooks Function()
+        > {
+  $$ProfilePreferencesTableTableManager(_$AppDatabase db, $ProfilePreferencesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$ProfilePreferencesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$ProfilePreferencesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$ProfilePreferencesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> preferenceKey = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => ProfilePreferencesCompanion(preferenceKey: preferenceKey, rowid: rowid),
+          createCompanionCallback: ({required String preferenceKey, Value<int> rowid = const Value.absent()}) =>
+              ProfilePreferencesCompanion.insert(preferenceKey: preferenceKey, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ProfilePreferencesTable, ProfilePreferenceRow>(table),
+                  BaseReferences<_$AppDatabase, $ProfilePreferencesTable, ProfilePreferenceRow>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProfilePreferencesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfilePreferencesTable,
+      ProfilePreferenceRow,
+      $$ProfilePreferencesTableFilterComposer,
+      $$ProfilePreferencesTableOrderingComposer,
+      $$ProfilePreferencesTableAnnotationComposer,
+      $$ProfilePreferencesTableCreateCompanionBuilder,
+      $$ProfilePreferencesTableUpdateCompanionBuilder,
+      (ProfilePreferenceRow, BaseReferences<_$AppDatabase, $ProfilePreferencesTable, ProfilePreferenceRow>),
+      ProfilePreferenceRow,
+      PrefetchHooks Function()
+    >;
+typedef $$WeightEntriesTableCreateCompanionBuilder = WeightEntriesCompanion Function({
+  required String date,
+  required double weightKg,
+  Value<int> rowid,
+});
+typedef $$WeightEntriesTableUpdateCompanionBuilder = WeightEntriesCompanion Function({
+  Value<String> date,
+  Value<double> weightKg,
+  Value<int> rowid,
+});
+
+class $$WeightEntriesTableFilterComposer extends Composer<_$AppDatabase, $WeightEntriesTable> {
+  $$WeightEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get date => $composableBuilder(column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get weightKg =>
+      $composableBuilder(column: $table.weightKg, builder: (column) => ColumnFilters(column));
+}
+
+class $$WeightEntriesTableOrderingComposer extends Composer<_$AppDatabase, $WeightEntriesTable> {
+  $$WeightEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get weightKg =>
+      $composableBuilder(column: $table.weightKg, builder: (column) => ColumnOrderings(column));
+}
+
+class $$WeightEntriesTableAnnotationComposer extends Composer<_$AppDatabase, $WeightEntriesTable> {
+  $$WeightEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get date => $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<double> get weightKg => $composableBuilder(column: $table.weightKg, builder: (column) => column);
+}
+
+class $$WeightEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WeightEntriesTable,
+          WeightEntryRow,
+          $$WeightEntriesTableFilterComposer,
+          $$WeightEntriesTableOrderingComposer,
+          $$WeightEntriesTableAnnotationComposer,
+          $$WeightEntriesTableCreateCompanionBuilder,
+          $$WeightEntriesTableUpdateCompanionBuilder,
+          (WeightEntryRow, BaseReferences<_$AppDatabase, $WeightEntriesTable, WeightEntryRow>),
+          WeightEntryRow,
+          PrefetchHooks Function()
+        > {
+  $$WeightEntriesTableTableManager(_$AppDatabase db, $WeightEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$WeightEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$WeightEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$WeightEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> date = const Value.absent(),
+            Value<double> weightKg = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => WeightEntriesCompanion(date: date, weightKg: weightKg, rowid: rowid),
+          createCompanionCallback: ({
+            required String date,
+            required double weightKg,
+            Value<int> rowid = const Value.absent(),
+          }) => WeightEntriesCompanion.insert(date: date, weightKg: weightKg, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WeightEntriesTable, WeightEntryRow>(table),
+                  BaseReferences<_$AppDatabase, $WeightEntriesTable, WeightEntryRow>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WeightEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WeightEntriesTable,
+      WeightEntryRow,
+      $$WeightEntriesTableFilterComposer,
+      $$WeightEntriesTableOrderingComposer,
+      $$WeightEntriesTableAnnotationComposer,
+      $$WeightEntriesTableCreateCompanionBuilder,
+      $$WeightEntriesTableUpdateCompanionBuilder,
+      (WeightEntryRow, BaseReferences<_$AppDatabase, $WeightEntriesTable, WeightEntryRow>),
+      WeightEntryRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1181,4 +2127,9 @@ class $AppDatabaseManager {
   $$ProfilesTableTableManager get profiles => $$ProfilesTableTableManager(_db, _db.profiles);
   $$ProfileConditionsTableTableManager get profileConditions =>
       $$ProfileConditionsTableTableManager(_db, _db.profileConditions);
+  $$ProfileAllergiesTableTableManager get profileAllergies =>
+      $$ProfileAllergiesTableTableManager(_db, _db.profileAllergies);
+  $$ProfilePreferencesTableTableManager get profilePreferences =>
+      $$ProfilePreferencesTableTableManager(_db, _db.profilePreferences);
+  $$WeightEntriesTableTableManager get weightEntries => $$WeightEntriesTableTableManager(_db, _db.weightEntries);
 }

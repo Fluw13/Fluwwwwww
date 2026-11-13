@@ -1,5 +1,5 @@
-import 'package:drift/drift.dart';
 import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/features/profile/data/dietary_mapper.dart';
 import 'package:fluw/features/profile/data/profile_mapper.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
@@ -9,10 +9,38 @@ final class ProfileRepository {
 
   final AppDatabase _database;
 
-  Future<StoredProfile> load() async => _toStoredProfile(await _profileQuery().get());
+  /// Reads every profile table in one transaction, so a reader never sees a half-saved profile.
+  Future<StoredProfile> load() => _database.transaction(() async {
+    final row = await _database.select(_database.profiles).getSingleOrNull();
+    if (row == null) {
+      return const NoProfile();
+    }
+    final conditionRows = await _database.select(_database.profileConditions).get();
+    final allergyRows = await _database.select(_database.profileAllergies).get();
+    final preferenceRows = await _database.select(_database.profilePreferences).get();
+    final dietary = dietaryFromRows(
+      dietStyleKey: row.dietStyle,
+      allergyNote: row.allergyNote,
+      allergyRows: allergyRows,
+      preferenceKeys: [for (final preference in preferenceRows) preference.preferenceKey],
+    );
+    final profile = profileFromRow(row, [for (final condition in conditionRows) condition.conditionKey], dietary);
+    return profile == null ? const UnreadableProfile() : LoadedProfile(profile);
+  });
 
-  /// Emits again whenever the profile or its conditions change.
-  Stream<StoredProfile> watch() => _profileQuery().watch().map(_toStoredProfile);
+  /// Emits now and again after any change to the profile tables.
+  Stream<StoredProfile> watch() => _database
+      .customSelect(
+        'SELECT 1',
+        readsFrom: {
+          _database.profiles,
+          _database.profileConditions,
+          _database.profileAllergies,
+          _database.profilePreferences,
+        },
+      )
+      .watch()
+      .asyncMap((_) => load());
 
   /// SQLite turns NaN into NULL, so a non-finite number would either break a NOT NULL column or silently come back
   /// as "not set"; it is rejected here instead.
@@ -23,38 +51,29 @@ final class ProfileRepository {
     }
     await _database.transaction(() async {
       await _database.into(_database.profiles).insertOnConflictUpdate(profileToRow(profile));
-      await _database.delete(_database.profileConditions).go();
+      await _deleteChildRows();
       await _database.batch((batch) {
-        batch.insertAll(_database.profileConditions, [
-          for (final key in conditionsToKeys(profile.conditions)) ProfileConditionsCompanion.insert(conditionKey: key),
-        ]);
+        batch
+          ..insertAll(_database.profileConditions, [
+            for (final key in conditionsToKeys(profile.conditions))
+              ProfileConditionsCompanion.insert(conditionKey: key),
+          ])
+          ..insertAll(_database.profileAllergies, allergiesToRows(profile.dietary))
+          ..insertAll(_database.profilePreferences, preferencesToRows(profile.dietary));
       });
     });
   }
 
   Future<void> clear() {
     return _database.transaction(() async {
-      await _database.delete(_database.profileConditions).go();
+      await _deleteChildRows();
       await _database.delete(_database.profiles).go();
     });
   }
 
-  /// One query over both tables, so a reader never sees a profile with half-saved conditions and the stream reacts
-  /// to changes in either table.
-  JoinedSelectStatement<HasResultSet, dynamic> _profileQuery() {
-    return _database.select(_database.profiles).join([
-      leftOuterJoin(_database.profileConditions, const Constant(true)),
-    ]);
-  }
-
-  StoredProfile _toStoredProfile(List<TypedResult> rows) {
-    if (rows.isEmpty) {
-      return const NoProfile();
-    }
-    final profile = profileFromRow(rows.first.readTable(_database.profiles), [
-      for (final row in rows)
-        if (row.readTableOrNull(_database.profileConditions) case final condition?) condition.conditionKey,
-    ]);
-    return profile == null ? const UnreadableProfile() : LoadedProfile(profile);
+  Future<void> _deleteChildRows() async {
+    await _database.delete(_database.profileConditions).go();
+    await _database.delete(_database.profileAllergies).go();
+    await _database.delete(_database.profilePreferences).go();
   }
 }

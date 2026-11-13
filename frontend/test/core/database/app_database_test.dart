@@ -29,8 +29,11 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(tables, containsAll(['profiles', 'profile_conditions']));
-    expect(database.schemaVersion, 2);
+    expect(
+      tables,
+      containsAll(['profiles', 'profile_conditions', 'profile_allergies', 'profile_preferences', 'weight_entries']),
+    );
+    expect(database.schemaVersion, 3);
   });
 
   test('bảng hồ sơ chỉ nhận đúng một dòng có id cố định', () async {

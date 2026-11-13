@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -22,6 +23,7 @@ final class HealthProfile {
     required Set<HealthCondition> conditions,
     required this.conditionNote,
     required this.limitsSugar,
+    required this.dietary,
   }) : bmrFormulaForOther = sex == Sex.other ? bmrFormulaForOther : null,
        conditions = Set.unmodifiable(conditions);
 
@@ -51,6 +53,8 @@ final class HealthProfile {
   /// The "giảm ngọt" eating preference; lowers the sugar limit like diabetes does.
   final bool limitsSugar;
 
+  final DietaryPreferences dietary;
+
   /// `null` only for [Sex.other] without a chosen formula, which validation rejects for adults.
   BmrFormula? get bmrFormula => switch (sex) {
     Sex.male => BmrFormula.male,
@@ -75,6 +79,7 @@ final class HealthProfile {
     Set<HealthCondition>? conditions,
     String? Function()? conditionNote,
     bool? limitsSugar,
+    DietaryPreferences? dietary,
   }) {
     return HealthProfile(
       displayName: displayName == null ? this.displayName : displayName(),
@@ -90,6 +95,7 @@ final class HealthProfile {
       conditions: conditions ?? this.conditions,
       conditionNote: conditionNote == null ? this.conditionNote : conditionNote(),
       limitsSugar: limitsSugar ?? this.limitsSugar,
+      dietary: dietary ?? this.dietary,
     );
   }
 
@@ -108,7 +114,8 @@ final class HealthProfile {
       other.weeklyChangeKg == weeklyChangeKg &&
       const SetEquality<HealthCondition>().equals(other.conditions, conditions) &&
       other.conditionNote == conditionNote &&
-      other.limitsSugar == limitsSugar;
+      other.limitsSugar == limitsSugar &&
+      other.dietary == dietary;
 
   @override
   int get hashCode => Object.hash(
@@ -125,5 +132,6 @@ final class HealthProfile {
     Object.hashAllUnordered(conditions),
     conditionNote,
     limitsSugar,
+    dietary,
   );
 }

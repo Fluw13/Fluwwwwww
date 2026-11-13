@@ -1,6 +1,7 @@
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
@@ -22,6 +23,7 @@ HealthProfile buildProfile({
   Set<HealthCondition> conditions = const {},
   String? conditionNote,
   bool limitsSugar = false,
+  DietaryPreferences? dietary,
 }) {
   return HealthProfile(
     displayName: displayName,
@@ -37,5 +39,6 @@ HealthProfile buildProfile({
     conditions: conditions,
     conditionNote: conditionNote,
     limitsSugar: limitsSugar,
+    dietary: dietary ?? DietaryPreferences.none(),
   );
 }

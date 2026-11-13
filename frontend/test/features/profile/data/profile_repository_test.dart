@@ -5,7 +5,11 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/data/profile_repository.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
+import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/dietary_preferences.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
@@ -45,6 +49,12 @@ void main() {
       conditions: {HealthCondition.diabetes, HealthCondition.lowBloodPressure, HealthCondition.gout},
       conditionNote: 'Hen suyễn nhẹ',
       limitsSugar: true,
+      dietary: DietaryPreferences(
+        allergies: {Allergen.crustaceans: AllergySeverity.severe, Allergen.peanuts: AllergySeverity.mild},
+        allergyNote: 'Kiwi',
+        dietStyle: DietStyle.mediterranean,
+        preferences: {FoodPreference.noOrganMeat, FoodPreference.likesNuts},
+      ),
     );
 
     await repository.save(profile);
@@ -135,6 +145,44 @@ void main() {
     await database.update(database.profiles).write(const ProfilesCompanion(bmrFormula: Value('neutral')));
 
     expect(await repository.load(), _loaded(buildProfile(sex: Sex.other)));
+  });
+
+  test('dị ứng lạ (vd từ bản app mới hơn) thì báo hồ sơ hỏng, không âm thầm tắt cảnh báo', () async {
+    await repository.save(buildProfile());
+    await database
+        .into(database.profileAllergies)
+        .insert(ProfileAllergiesCompanion.insert(allergenKey: 'kiwi', severityKey: 'severe'));
+
+    expect(await repository.load(), isA<UnreadableProfile>());
+  });
+
+  test('mức dị ứng lạ đọc thành Nặng; chế độ ăn lạ thành Bình thường; sở thích lạ bị bỏ qua', () async {
+    await repository.save(buildProfile());
+    await database
+        .into(database.profileAllergies)
+        .insert(ProfileAllergiesCompanion.insert(allergenKey: 'milk', severityKey: 'extreme'));
+    await database.into(database.profilePreferences).insert(ProfilePreferencesCompanion.insert(preferenceKey: 'raw'));
+    await database.update(database.profiles).write(const ProfilesCompanion(dietStyle: Value('paleo')));
+
+    final dietary = ((await repository.load()) as LoadedProfile).profile.dietary;
+    expect(dietary.allergies, {Allergen.milk: AllergySeverity.severe});
+    expect(dietary.dietStyle, DietStyle.regular);
+    expect(dietary.preferences, isEmpty);
+  });
+
+  test('watch phát lại khi chỉ bảng dị ứng đổi', () async {
+    await repository.save(buildProfile());
+    final emitted = <StoredProfile>[];
+    final subscription = repository.watch().listen(emitted.add);
+    await pumpEventQueue();
+
+    await database
+        .into(database.profileAllergies)
+        .insert(ProfileAllergiesCompanion.insert(allergenKey: 'eggs', severityKey: 'mild'));
+    await pumpEventQueue();
+    await subscription.cancel();
+
+    expect((emitted.last as LoadedProfile).profile.dietary.allergies, {Allergen.eggs: AllergySeverity.mild});
   });
 
   test('watch phát lại mỗi khi lưu, đổi bệnh hoặc xóa', () async {
