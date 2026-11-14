@@ -7,6 +7,7 @@ import 'generated/schema.dart';
 import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
+import 'generated/schema_v4.dart' as v4;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -130,6 +131,25 @@ void main() {
         ]);
         expect(await newDb.select(newDb.profileAllergies).get(), isEmpty);
         expect(await newDb.select(newDb.weightEntries).get(), isEmpty);
+      },
+    );
+  });
+
+  test('v3 lên v4 giữ nguyên lịch sử cân, bảng Nhật ký mới để trống', () async {
+    await verifier.testWithDataIntegrity(
+      oldVersion: 3,
+      newVersion: 4,
+      createOld: v3.DatabaseAtV3.new,
+      createNew: v4.DatabaseAtV4.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch.insert(oldDb.weightEntries, const v3.WeightEntriesData(date: '2026-11-10', weightKg: 60.5));
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.weightEntries).get(), const [
+          v4.WeightEntriesData(date: '2026-11-10', weightKg: 60.5),
+        ]);
+        expect(await newDb.select(newDb.noteEntries).get(), isEmpty);
       },
     );
   });

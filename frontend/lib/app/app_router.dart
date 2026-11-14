@@ -63,7 +63,7 @@ Widget _screenFor(BuildContext context, AppTab tab) {
     AppTab.home => const HomeScreen(),
     AppTab.search => SearchScreen(onOpenFood: (item) => context.push(AppRoutes.foodDetail, extra: item)),
     AppTab.scan => const ScanScreen(),
-    AppTab.note => const NoteScreen(),
+    AppTab.note => NoteScreen(onAddFood: () => context.go(AppTab.search.path)),
     AppTab.profile => ProfileScreen(onEditProfile: () => context.push(AppRoutes.profileSetup)),
   };
 }

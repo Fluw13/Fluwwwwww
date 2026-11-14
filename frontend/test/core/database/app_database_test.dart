@@ -31,9 +31,16 @@ void main() {
 
     expect(
       tables,
-      containsAll(['profiles', 'profile_conditions', 'profile_allergies', 'profile_preferences', 'weight_entries']),
+      containsAll([
+        'profiles',
+        'profile_conditions',
+        'profile_allergies',
+        'profile_preferences',
+        'weight_entries',
+        'note_entries',
+      ]),
     );
-    expect(database.schemaVersion, 3);
+    expect(database.schemaVersion, 4);
   });
 
   test('bảng hồ sơ chỉ nhận đúng một dòng có id cố định', () async {

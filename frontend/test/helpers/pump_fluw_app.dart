@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_overrides.dart';
 import 'package:fluw/app/fluw_app.dart';
@@ -23,10 +24,12 @@ final CalendarDate appTestToday = CalendarDate(2026, 11, 11);
 /// Starts the real app with in-memory settings and database, and returns the settings so tests can check what was
 /// saved. The database closes with the app, also when a test fails; reach it through [appContainer].
 /// Pass [httpClient] (a `MockClient`) to answer backend calls; without one any call fails the test as a network error.
+/// [overrides] apply in a child scope, so they replace the defaults above.
 Future<SharedPreferences> pumpFluwApp(
   WidgetTester tester, {
   Map<String, Object> storedSettings = const {},
   http.Client? httpClient,
+  List<Override> overrides = const [],
 }) async {
   SharedPreferences.setMockInitialValues(storedSettings);
   final preferences = await SharedPreferences.getInstance();
@@ -52,7 +55,8 @@ Future<SharedPreferences> pumpFluwApp(
           return database;
         }),
       ],
-      child: const FluwApp(),
+      // A nested scope, because Riverpod rejects overriding the same provider twice in one container.
+      child: overrides.isEmpty ? const FluwApp() : ProviderScope(overrides: overrides, child: const FluwApp()),
     ),
   );
   await tester.pumpAndSettle();

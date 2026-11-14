@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluw/core/diary/meal_placement.dart';
+import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/time/calendar_date.dart';
-import 'package:fluw/features/note/domain/meal_slot.dart';
-import 'package:fluw/features/note/domain/note_placement.dart';
 
 void main() {
   final today = CalendarDate(2026, 11, 11);
 
-  NotePlacement at(int hour, int minute, [int second = 0]) => placeInNote(DateTime(2026, 11, 11, hour, minute, second));
+  MealPlacement at(int hour, int minute, [int second = 0]) => placeMeal(DateTime(2026, 11, 11, hour, minute, second));
 
   const expectedSlots = {
     (6, 0): MealSlot.morning,
@@ -36,7 +36,7 @@ void main() {
 
   test('giờ dạng UTC được đổi về giờ địa phương trước khi xếp', () {
     for (final local in [DateTime(2026, 11, 12), DateTime(2026, 11, 11, 6), DateTime(2026, 11, 11, 23, 59)]) {
-      expect(placeInNote(local.toUtc()), placeInNote(local));
+      expect(placeMeal(local.toUtc()), placeMeal(local));
     }
   });
 
@@ -45,8 +45,8 @@ void main() {
   });
 
   test('00:00 ngày 1/1 thuộc Tối 31/12 năm trước; 00:00 ngày 1/3/2028 thuộc Tối 29/2', () {
-    expect(placeInNote(DateTime(2027, 1, 1)), (day: CalendarDate(2026, 12, 31), slot: MealSlot.evening));
-    expect(placeInNote(DateTime(2028, 3, 1)), (day: CalendarDate(2028, 2, 29), slot: MealSlot.evening));
+    expect(placeMeal(DateTime(2027, 1, 1)), (day: CalendarDate(2026, 12, 31), slot: MealSlot.evening));
+    expect(placeMeal(DateTime(2028, 3, 1)), (day: CalendarDate(2028, 2, 29), slot: MealSlot.evening));
   });
 
   test('thứ tự khung trong một ngày: Đêm, Sáng, Chiều, Tối', () {

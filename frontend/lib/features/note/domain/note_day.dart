@@ -1,6 +1,6 @@
+import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/time/calendar_date.dart';
-import 'package:fluw/features/note/domain/meal_slot.dart';
 import 'package:fluw/features/note/domain/note_entry.dart';
 
 final class NoteDay {

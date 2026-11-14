@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/core/time/calendar_date.dart';
-import 'package:fluw/features/note/domain/meal_slot.dart';
 import 'package:fluw/features/note/domain/note_day.dart';
 import 'package:fluw/features/note/domain/note_entry.dart';
 
@@ -19,6 +19,7 @@ NoteEntry _entry(
   return NoteEntry(
     id: id ?? name,
     name: name,
+    sourceFoodId: null,
     facts: NutritionFacts(
       per100: Nutrients({Nutrient.energyKcal: kcalPer100, Nutrient.proteinG: ?proteinPer100}),
       unit: QuantityUnit.gram,

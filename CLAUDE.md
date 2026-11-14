@@ -88,7 +88,8 @@ features/<tên>/
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
   presentation/           màn hình và widget riêng của tính năng
 ```
-- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
+- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`.
+- Widget test cần thay provider đã override mặc định thì truyền `pumpFluwApp(overrides:)`; chúng nằm ở `ProviderScope` con vì Riverpod không cho override một provider hai lần trong cùng container. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
 - **Shell (UI0):**
   - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
   - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, avatar mở Hồ Sơ. Chưa có chuông thông báo; thêm ở M6/M8 khi có nhắc nhở.
@@ -151,7 +152,7 @@ features/<tên>/
   - `conditionNote`: ghi chú "bệnh tự nhập", chỉ để ghi chú.
   - `copyWith` nhận hàm cho trường để trống được, để đặt `null` có chủ ý: `copyWith(weeklyChangeKg: () => null)`.
 - **SQLite (drift) `core/database/` (M2b):**
-  - `AppDatabase` schema v3 (v2 ở M2c: `display_name`, `bmr_formula`; v3 ở M2d: `diet_style`, `allergy_note`, `planned_goal`, bảng `profile_allergies`, `profile_preferences`, `weight_entries`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
+  - `AppDatabase` schema v4 (v2 ở M2c: `display_name`, `bmr_formula`; v3 ở M2d: `diet_style`, `allergy_note`, `planned_goal`, bảng `profile_allergies`, `profile_preferences`, `weight_entries`; v4 ở M4: bảng `note_entries`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
   - Bảng nằm ở `core/` vì `AppDatabase` phải liệt kê mọi bảng; `core/` vẫn không import `features/`.
   - Code sinh `app_database.g.dart` được commit (CI không chạy build_runner). Sinh lại xem mục 4.
   - Schema mỗi phiên bản lưu ở `frontend/drift_schemas/` (`build.yaml`). Tăng `schemaVersion` thì chạy `dart run drift_dev make-migrations` để có bước migration và test đối chiếu.
@@ -169,7 +170,7 @@ features/<tên>/
   - `ProfileDraft`: chữ người dùng gõ → `HealthProfile`, lỗi theo từng ô (`ProfileField`). Tốc độ chỉ giữ khi người lớn muốn đổi cân. Có `==` để biết form có thay đổi thật không (hỏi trước khi bỏ).
   - Số nhập nhận `58,5` và `58.5`, tối đa 2 chữ số thập phân (`core/format/decimal_text.dart`); hiển thị theo thiết kế: `58.5`, `1,850`.
   - BMI trên màn Hồ Sơ lấy từ `AdultTargets`, nên hồ sơ không hợp lệ không hiện BMI và không crash.
-  - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình; test cố định ngày `appTestToday`.
+  - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình và tự làm mới sau nửa đêm (Timer); test cố định ngày `appTestToday`.
   - App chạy locale `vi` (`flutter_localizations`); iOS khai báo `CFBundleLocalizations`. `tester.pageBack()` tìm tooltip tiếng Anh nên test bấm `find.byType(BackButton)`.
   - Ô nhập dùng `inputDecorationTheme` (nền `surfaceContainerLow`, bo 16, không viền) như thiết kế.
 - **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng.
@@ -178,18 +179,24 @@ features/<tên>/
   - `data/`: `food_item_json` (đọc hợp đồng M1a; món sai hợp đồng thì bỏ riêng; chỉ nhận link https), `food_api` (`PRODUCT_NOT_FOUND` và `INVALID_BARCODE` → null), `recent_searches_storage` (shared_preferences key `recent_searches`, tối đa 8, lỗi đọc/ghi nào cũng bỏ qua — không phải dữ liệu sức khỏe).
   - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `QuickFilter` (ít đường <5 g, giàu protein >20 g, dưới 200 kcal theo 100 g/ml; thiếu số liệu thì không đạt), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
   - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt; người dùng tự nhập khẩu phần 1–2.000), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn.
-  - Chưa làm: "Thêm vào Nhật ký" (sau M4), "Đã lưu" và nhập món thủ công (M3b).
+  - Chưa làm: "Đã lưu" và nhập món thủ công (M3b).
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
   - `NutritionFacts`: số liệu cho mỗi 100 g hoặc 100 ml kèm `QuantityUnit`, nên lượng ăn luôn cùng đơn vị với số liệu.
   - `NutrientTotals`: tổng các giá trị đã biết kèm số món thiếu dữ liệu. Món nào cũng thiếu thì `knownSum` là `null`; không có món nào thì là 0.
-- `features/note/domain/` (M4):
-  - `MealSlot` (`night`, `morning`, `afternoon`, `evening`, xếp theo giờ trong ngày). Màn Nhật ký hiện theo thứ tự thiết kế: Sáng, Trưa/Chiều, Tối, Khuya/Đêm, nên thứ tự hiển thị khác thứ tự enum. Tiêu đề mỗi khung luôn in giờ (vd "00:01 - 05:59") để không hiểu nhầm Khuya là sau Tối.
-  - `placeInNote`: đổi giờ về giờ địa phương trước khi xếp, bỏ giây; 00:00 thuộc Tối hôm trước.
-  - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
-  - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
-  - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
+- `core/diary/` (M4, dùng chung cho Nhật ký, Tra cứu, sau này Quét):
+  - `MealSlot` (`night`, `morning`, `afternoon`, `evening`, xếp theo giờ trong ngày). `meal_slot_labels`: thứ tự hiển thị theo thiết kế (Sáng, Trưa / Chiều, Tối, Khuya / Đêm), tên và giờ mỗi khung; tên khung luôn đi kèm giờ để không hiểu nhầm Khuya là sau Tối.
+  - `placeMeal` (`MealPlacement`): đổi giờ về giờ địa phương, bỏ giây; 00:00 thuộc Tối hôm trước.
+  - `DiaryTarget` (ngày + khung). `DiaryTarget.current(now)` lấy ngày nhật ký từ **cùng một đồng hồ** với giờ ăn (lúc 00:00:30 là Tối hôm trước); không trộn `todayProvider` với `DateTime.now()`. `diaryTargetProvider`: Nhật ký đặt khi bấm "Thêm món" ở một khung, màn Chi tiết đọc làm mặc định, ghi xong thì xóa.
+  - `eatenAtFor(day, slot, now)`: đúng khung đang diễn ra thì giữ giờ thật; khung khác thì giờ cố định trong khung (03:00, 09:00, 15:00, 21:00).
+  - `FoodLogger` (interface) + `foodLoggerProvider`: tính năng khác ghi món vào Nhật ký mà không import `features/note`; `app_overrides` nối bằng `NoteFoodLogger`. `LoggedFood` chép số liệu, nên nguồn đổi sau này không sửa món đã ăn.
+- `features/note/` (M4):
+  - `domain/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `week` (tuần bắt đầu thứ Hai).
+  - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
+  - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`.
+  - Màn Chi tiết (search) có `AddToNoteCard`: chọn khung, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo.
+  - Giờ cố định khi thêm vào khung khác (vd 21:00) hiện như giờ thật trên thẻ món; chưa đánh dấu là ước tính.
 - Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
@@ -432,8 +439,8 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
 | M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1b 30 món Việt chờ key USDA chạy được; M1c Gemini (sau, FLuw kiểm key trước) |
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
-| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong; M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau; nút "Thêm vào Nhật ký" sau M4 |
-| M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
+| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
+| M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
 | M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Chờ M2–M4 |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
@@ -459,6 +466,26 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 14/11/2026 — M4: Nhật ký ăn uống
+- **Merge PR #30** (M3a, `ce7c57f`). APK run #71 có Tra Cứu và Chi tiết.
+- **Thêm:** `core/diary/` (chuyển `meal_slot`, `meal_placement` từ `features/note/domain`; thêm `meal_slot_labels`, `meal_time`, `diary_target`, `logged_food`, `food_logger`), `core/database/note_tables.dart` + schema v4, `features/note/data/` (6 file), `domain/week`, `presentation/` (6 file), `search/presentation/add_to_note_card`; `PersonalLimits.proteinMinG`; `pumpFluwApp(overrides:)`. Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** thêm món lúc 00:00 thì ngày lấy từ `todayProvider`, khung lấy từ giờ thật → lưu 21:00 ngày mới (tương lai) → `DiaryTarget.current(now)` lấy cả ngày và khung từ một đồng hồ.
+  - **Cao:** `todayProvider` cũ khi để màn mở qua nửa đêm → tự làm mới bằng Timer.
+  - Nút "Thêm món vào buổi X" bỏ qua ngày và khung đang xem → `diaryTargetProvider`.
+  - Hoàn tác lỗi bị nuốt; xóa liền hai món mất hoàn tác của món đầu → báo lỗi, snackbar xếp hàng.
+  - Có huyết áp cao / mỡ máu cao mà tổng ngày không hiện natri / béo bão hòa; vượt giới hạn không báo → thêm dòng theo cờ theo dõi, báo vượt theo % làm tròn.
+  - Dòng hỏng bị bỏ im lặng → `NoteWindow.unreadableCount`, màn báo số món hỏng.
+  - Thanh tiến độ vẽ ở 0 khi chưa có dữ liệu; thiếu semantics; "Đạm" → "Protein (đạm)"; provider tuần thành autoDispose.
+  - Bỏ kiểm số không hữu hạn trong `NoteRepository.add` (code chết: `NoteEntry`, `Nutrients` đã chặn).
+  - Đột biến "mở rộng cửa sổ tuần" lọt test → cửa sổ thu đúng [00:00 thứ Hai, 00:01 thứ Hai sau), có test món 00:00:59 và 00:01.
+  - Chưa làm (thấp): giờ cố định chưa đánh dấu ước tính; chưa chọn ngày khác ngoài ngày nhật ký từ màn Chi tiết (trừ khi đi từ Nhật ký).
+- **Test:**
+  - `flutter test` 334/334 (từ 301), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch.
+  - Migration v3→v4 có test đối chiếu dữ liệu. Luồng: Nhật ký trống, món theo ngày/khung, tổng so với hồ sơ, natri khi huyết áp cao, vượt mục tiêu/giới hạn, hồ sơ hỏng, dòng hỏng, thiếu số liệu, xóa + hoàn tác (cả xóa liền hai món), thêm từ Chi tiết (khung hiện tại và từ một khung của ngày đang xem), ghi lỗi, ranh giới tuần, 320×568 cỡ chữ 200%/310%.
+  - Review chạy 9 đột biến (7 lọt); sau khi sửa, kiểm lại 13 đột biến, đều bị bắt.
+  - Chưa kiểm: APK (job `android-apk`), điện thoại thật.
 
 ### 14/11/2026 — M3a: màn Tra Cứu và Chi tiết sản phẩm
 - **Merge PR #29** (M1a, `0a29380`), FLuw duyệt. **Deploy (VERIFIED qua log Render):** `dep-dbs17uff3r2c73dscfm0` live 07:56 UTC, Node 22.23.5, `npm install` 0 lỗ hổng, log `Server is running on port 5000`, không lỗi. Chưa gọi thử `/api/foods/*` từ ngoài (mạng agent chặn `fluw.onrender.com`).

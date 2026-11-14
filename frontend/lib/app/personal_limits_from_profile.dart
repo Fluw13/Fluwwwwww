@@ -14,9 +14,11 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
     for (final MapEntry(key: allergen, value: level) in profile.dietary.allergies.entries)
       if (level == severity) allergen.openFoodFactsTag,
   };
-  final adult = switch (calculateDailyTargets(profile, today: today)) {
-    final AdultTargets targets => targets,
-    _ => null,
+  final targets = calculateDailyTargets(profile, today: today);
+  final adult = targets is AdultTargets ? targets : null;
+  final proteinMinG = switch (targets) {
+    AdultTargets(:final protein) || TeenTargets(:final protein) => protein.minGrams,
+    InvalidProfile() || BelowMinimumAge() => null,
   };
 
   return PersonalLimits(
@@ -27,6 +29,7 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
       for (final allergen in profile.dietary.allergies.keys) allergen.openFoodFactsTag: allergenLabel(allergen),
     },
     dailyKcal: adult?.calories.kcal,
+    proteinMinG: proteinMinG,
     sugarsMaxG: adult?.nutrients.sugarsMaxGrams,
     saturatedFatMaxG: adult?.nutrients.saturatedFatMaxGrams,
     sodiumMaxMg: adult == null ? null : dailySodiumMaxMg,
