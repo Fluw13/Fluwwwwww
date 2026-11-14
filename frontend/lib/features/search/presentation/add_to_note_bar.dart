@@ -147,7 +147,9 @@ class _SlotSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foreground = isSelected ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onSurfaceVariant;
+    // Same as the selected day in the diary's week row: a strong fill, not a pale tint, so the choice never depends
+    // on telling two light colours apart.
+    final foreground = isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant;
 
     return Semantics(
       button: true,
@@ -156,7 +158,7 @@ class _SlotSegment extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       child: Material(
-        color: isSelected ? theme.colorScheme.secondaryContainer : theme.colorScheme.surfaceContainerLow,
+        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.control),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.control),
@@ -169,7 +171,13 @@ class _SlotSegment extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: Text(mealSlotShortHours(slot), style: theme.textTheme.labelLarge?.copyWith(color: foreground)),
+                  child: Text(
+                    mealSlotShortHours(slot),
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: foreground,
+                      fontWeight: isSelected ? FontWeight.w700 : null,
+                    ),
+                  ),
                 ),
               ),
             ),

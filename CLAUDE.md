@@ -195,11 +195,12 @@ features/<tên>/
   - `domain/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `week` (tuần bắt đầu thứ Hai).
   - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
   - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`.
-  - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo. Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang.
+  - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo. Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang. Ô khung đang chọn nền `primary` chữ `onPrimary` đậm (như ngày đang chọn ở dải tuần), không dùng màu nhạt khó phân biệt.
+  - Thanh nằm sau bàn phím (Scaffold không đẩy `bottomNavigationBar` lên), mà bàn phím số của iPhone không có nút Xong → ô khẩu phần có `onTapOutside` bỏ focus, danh sách có `keyboardDismissBehavior.onDrag`.
   - `WeekStrip` tự cuộn ngang tới ngày đang chọn (thứ Bảy, Chủ nhật bị khuất trên màn hẹp). Chỉ cuộn hàng ngày bằng `getOffsetToReveal`, không dùng `Scrollable.ensureVisible` vì nó cuộn cả trang.
   - Giờ cố định khi thêm vào khung khác (vd 21:00) hiện như giờ thật trên thẻ món; chưa đánh dấu là ước tính.
-- **Khởi động (`main.dart`):** đăng ký giấy phép phông và dữ liệu (`core/licenses/`), tạo `ProviderContainer` rồi gọi `wakeUpBackend` (`core/network/backend_warm_up.dart`, GET `/health`, lỗi thì bỏ qua) để Render free thức dậy trước khi người dùng tìm. Test không chạy `main()` nên không có lượt gọi này.
-- **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage` (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
+- **Khởi động:** `main.dart` khóa màn dọc (thiết kế chỉ có màn dọc; màn ngang thì thanh ghim đáy chiếm gần hết chỗ), đăng ký giấy phép phông và dữ liệu (`core/licenses/`). `FluwApp` gọi `backendWarmUpProvider` (GET `/health`, lỗi thì bỏ qua) lúc mở app và mỗi lần quay lại app, để Render free thức dậy trước khi người dùng tìm. `pumpFluwApp` thay bằng hàm rỗng để `MockClient` của test chỉ thấy lượt gọi test mong đợi.
+- **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
 - Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
@@ -502,9 +503,17 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
 - **Chưa làm (báo FLuw):**
   - Trang Chủ (M6) và Quét Món (M5) vẫn là màn "Đang xây dựng"; app mở vào Trang Chủ.
   - Muốn Render không ngủ: ping định kỳ (sửa workflow, cần FLuw duyệt) hoặc gói trả phí; khuyên giữ free.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** thanh thêm món ghim đáy bị bàn phím số che, iPhone không có nút Xong nên không thêm được với khẩu phần đã sửa → `onTapOutside` + `keyboardDismissBehavior.onDrag`, có test.
+  - Trang giấy phép mở lồng trong tab Hồ Sơ (2 thanh tiêu đề, còn thanh tab) → `useRootNavigator: true`, có test.
+  - Ô khung đang chọn chỉ khác nền nhạt (tương phản 1,17:1) → nền `primary`.
+  - Màn ngang trên máy nhỏ còn rất ít chỗ cho nội dung → khóa màn dọc.
+  - Đánh thức máy chủ chỉ lúc mở app lạnh, không test được → chuyển vào `FluwApp`, gọi cả khi quay lại app, có test.
+  - README mục quyền riêng tư ghi tính năng chưa có như đã có, thiếu `/health` và ảnh tải từ OFF → tách "Đang áp dụng" / "Dự kiến".
+  - Thêm test semantics và chiều cao 48 dp cho ô khung giờ.
   - User-Agent gửi OFF chưa có thông tin liên hệ (chờ FLuw).
   - Trước khi lên Google Play/App Store: chính sách quyền riêng tư, tài khoản nhà phát triển (Google $25 một lần, Apple $99/năm).
-- **Test:** `flutter test` 342/342 (từ 334), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `npm test` 55/55; `flutter analyze`, `dart format` sạch. Đã chụp màn Nhật Ký và Chi tiết (test tạm, không commit). Chưa kiểm: APK và icon trên máy thật (job `android-apk`).
+- **Test:** `flutter test` 346/346 (từ 334), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `npm test` 55/55; `flutter analyze`, `dart format` sạch. Đã chụp màn Nhật Ký và Chi tiết (test tạm, không commit). Chưa kiểm: APK và icon trên máy thật (job `android-apk`).
 
 ### 14/11/2026 — M4: Nhật ký ăn uống
 - **Merge PR #30** (M3a, `ce7c57f`). APK run #71 có Tra Cứu và Chi tiết.

@@ -87,6 +87,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
       appBar: AppBar(title: const Text('Chi tiết dinh dưỡng')),
       bottomNavigationBar: AddToNoteBar(item: _item, portion: portionAmount),
       body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           if (imageUrl != null) ...[

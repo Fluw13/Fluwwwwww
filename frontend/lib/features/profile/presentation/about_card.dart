@@ -28,7 +28,8 @@ class LicensesButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton.icon(
-      onPressed: () => showLicensePage(context: context, applicationName: 'Fluw'),
+      // Full screen above the tabs, like the other pages opened from a tab.
+      onPressed: () => showLicensePage(context: context, applicationName: 'Fluw', useRootNavigator: true),
       icon: const Icon(Icons.description_outlined),
       label: const Text('Nguồn dữ liệu và giấy phép'),
     );

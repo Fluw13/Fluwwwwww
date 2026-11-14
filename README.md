@@ -67,11 +67,17 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 
 ## Quyền riêng tư
 
-- Hồ sơ sức khỏe, Nhật ký, lịch sử tra cứu, đã lưu, món nhập thủ công, sở thích, nước uống và cân nặng **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
-- Khi tra cứu, app chỉ gửi từ khóa hoặc mã vạch lên máy chủ Fluw, không kèm dữ liệu sức khỏe.
-- Tài khoản chỉ dùng để chấm sao cho sản phẩm. Dữ liệu sức khỏe không gắn với tài khoản.
-- *(Dự kiến, chưa làm)* Ảnh chụp để nhận diện sẽ đi qua máy chủ Fluw tới Google Gemini để nhận ra tên thực phẩm. Máy chủ Fluw không lưu ảnh; Google xử lý ảnh theo điều khoản Gemini API (với gói miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm).
-- Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL) và [USDA FoodData Central](https://fdc.nal.usda.gov) (phạm vi công cộng); món Việt từ bảng dữ liệu do Fluw tự xây.
+Đang áp dụng:
+- Hồ sơ sức khỏe, Nhật ký và cân nặng **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
+- Khi tra cứu, app chỉ gửi từ khóa hoặc mã vạch lên máy chủ Fluw, không kèm dữ liệu sức khỏe. Mỗi lần mở app, app gọi máy chủ một lần (`/health`, không kèm dữ liệu) để máy chủ gói miễn phí thức dậy sớm.
+- Ảnh sản phẩm tải thẳng từ máy chủ của Open Food Facts, nên Open Food Facts thấy địa chỉ IP của bạn như khi mở trang web của họ.
+- Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL) và [USDA FoodData Central](https://fdc.nal.usda.gov) (phạm vi công cộng). Xem đủ nguồn và giấy phép trong app: Hồ Sơ → Về Fluw → Nguồn dữ liệu và giấy phép.
+
+Dự kiến, chưa làm:
+- Lịch sử tra cứu, đã lưu, món nhập thủ công, nước uống cũng chỉ lưu trên điện thoại.
+- Tài khoản chỉ dùng để chấm sao cho sản phẩm; dữ liệu sức khỏe không gắn với tài khoản.
+- Ảnh chụp để nhận diện đi qua máy chủ Fluw tới Google Gemini để nhận ra tên thực phẩm. Máy chủ Fluw không lưu ảnh; Google xử lý ảnh theo điều khoản Gemini API (với gói miễn phí, Google có thể dùng nội dung gửi lên để cải thiện sản phẩm). App hỏi bạn đồng ý trước lần gửi ảnh đầu tiên.
+- Món Việt lấy từ bảng dữ liệu do Fluw tự xây.
 
 ## Kiến trúc
 
