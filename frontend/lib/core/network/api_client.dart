@@ -20,7 +20,8 @@ final class ApiClient {
       response = await httpClient.get(uri, headers: {'Accept': 'application/json'}).timeout(timeout);
     } on TimeoutException {
       throw const TimeoutFailure();
-    } on SocketException {
+    } on IOException {
+      // Covers sockets and TLS (HandshakeException): captive Wi-Fi portals, intercepting proxies, a wrong clock.
       throw const NetworkFailure();
     } on http.ClientException {
       throw const NetworkFailure();

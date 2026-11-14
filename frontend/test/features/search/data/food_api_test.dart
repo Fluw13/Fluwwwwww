@@ -58,4 +58,17 @@ void main() {
 
     await expectLater(api.lookUpBarcode('96385074'), throwsA(isA<InvalidResponseFailure>()));
   });
+
+  test(
+    'mã vạch bị máy chủ coi là sai dạng (mã lỗi trong Open Food Facts) cũng là không có, không cho thử lại vô ích',
+    () async {
+      final api = _api(
+        (request) async => _json({
+          'error': {'code': 'INVALID_BARCODE', 'message': 'Mã vạch không hợp lệ.'},
+        }, 400),
+      );
+
+      expect(await api.lookUpBarcode('12345'), isNull);
+    },
+  );
 }

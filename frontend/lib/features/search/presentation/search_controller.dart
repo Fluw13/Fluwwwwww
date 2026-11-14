@@ -5,6 +5,9 @@ import 'package:fluw/features/search/presentation/search_state.dart';
 
 const int minSearchLength = 2;
 
+/// Same limit as the backend, so a long query never costs a request that can only fail.
+const int maxSearchLength = 100;
+
 /// Trims and collapses inner spaces, so "sữa   chua" and "sữa chua" are one search and one recent entry.
 String normalizeQuery(String text) => text.trim().replaceAll(RegExp(r'\s+'), ' ');
 
@@ -19,7 +22,7 @@ final class SearchController extends Notifier<SearchState> {
 
   Future<void> search(String rawQuery) async {
     final query = normalizeQuery(rawQuery);
-    if (query.length < minSearchLength) {
+    if (query.length < minSearchLength || query.length > maxSearchLength) {
       return;
     }
     final request = ++_latestRequest;

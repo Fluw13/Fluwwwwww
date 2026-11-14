@@ -32,7 +32,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _search(String text) async {
     final query = normalizeQuery(text);
-    if (query.length < minSearchLength) {
+    if (query.length < minSearchLength || query.length > maxSearchLength) {
       return;
     }
     _query.text = query;
@@ -53,9 +53,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         TextField(
           controller: _query,
           textInputAction: TextInputAction.search,
+          maxLength: maxSearchLength,
           onSubmitted: _search,
           decoration: InputDecoration(
             hintText: 'Tìm thực phẩm, đồ đóng gói...',
+            counterText: '',
             prefixIcon: const Icon(Icons.search),
             suffixIcon: IconButton(
               tooltip: 'Tìm',

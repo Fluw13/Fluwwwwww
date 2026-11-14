@@ -8,7 +8,7 @@ import 'package:fluw/features/search/domain/food_assessment.dart';
 import 'package:fluw/features/search/presentation/search_labels.dart';
 
 /// Compares the food with the user's profile. Every statement says what the data allows and no more: an empty
-/// allergen list is never presented as "safe".
+/// allergen list is never presented as "safe", and an unreadable profile is said out loud.
 class PersonalCheckCard extends StatelessWidget {
   const PersonalCheckCard({
     required this.allergens,
@@ -28,27 +28,27 @@ class PersonalCheckCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasAllergies = limits.severeAllergenTags.isNotEmpty || limits.mildAllergenTags.isNotEmpty;
-    final hasLimits = limits.dailyKcal != null || limits.sodiumMaxMg != null;
+    final muted = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     return SectionCard(
       title: 'Đối chiếu hồ sơ của bạn',
       children: [
-        if (isLoadingAllergens) const LinearProgressIndicator() else if (hasAllergies) _allergenMessage(theme),
-        if (hasAllergies) const SizedBox(height: AppSpacing.sm),
-        if (shares.isNotEmpty) ...[
-          Text('Khẩu phần này chiếm trong chỉ tiêu cả ngày:', style: theme.textTheme.bodyMedium),
-          for (final share in shares) _ShareRow(share: share),
-        ] else if (!hasLimits)
-          Text(
-            'Thiết lập hồ sơ (từ 18 tuổi) để xem món này chiếm bao nhiêu chỉ tiêu mỗi ngày.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          )
-        else
-          Text(
-            'Chưa đủ số liệu của món để so với chỉ tiêu.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
+        ...switch (limits.profileStatus) {
+          ProfileStatus.loading => [const LinearProgressIndicator()],
+          ProfileStatus.unreadable => [
+            _Notice(
+              icon: Icons.error_outline,
+              color: theme.colorScheme.error,
+              text:
+                  'Không đọc được hồ sơ trên máy nên chưa đối chiếu được dị ứng và chỉ tiêu. Hãy mở tab Hồ Sơ để '
+                  'nhập lại; trong lúc đó hãy tự đọc nhãn sản phẩm.',
+            ),
+          ],
+          ProfileStatus.none => [
+            Text('Thiết lập hồ sơ để Fluw cảnh báo dị ứng và tính phần trăm chỉ tiêu mỗi ngày.', style: muted),
+          ],
+          ProfileStatus.loaded => _loadedContent(theme, muted),
+        },
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Ước tính từ dữ liệu nguồn, không thay thế tư vấn y tế.',
@@ -58,29 +58,73 @@ class PersonalCheckCard extends StatelessWidget {
     );
   }
 
-  Widget _allergenMessage(ThemeData theme) {
-    final (icon, color, text) = switch (allergens) {
-      AllergensUnknown() => (
-        Icons.help_outline,
-        theme.colorScheme.onSurfaceVariant,
-        'Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.',
+  List<Widget> _loadedContent(ThemeData theme, TextStyle? muted) {
+    final hasAllergies = limits.severeAllergenTags.isNotEmpty || limits.mildAllergenTags.isNotEmpty;
+    final hasLimits = limits.dailyKcal != null || limits.sodiumMaxMg != null;
+    return [
+      if (hasAllergies) ...[
+        if (isLoadingAllergens)
+          Semantics(
+            liveRegion: true,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Đang tải thông tin dị ứng của sản phẩm...', style: muted),
+                const SizedBox(height: AppSpacing.xs),
+                const LinearProgressIndicator(),
+              ],
+            ),
+          )
+        else
+          _allergenNotice(theme),
+        const SizedBox(height: AppSpacing.sm),
+      ],
+      if (shares.isNotEmpty) ...[
+        Text('Khẩu phần này chiếm trong chỉ tiêu cả ngày:', style: theme.textTheme.bodyMedium),
+        for (final share in shares) _ShareRow(share: share),
+      ] else if (!hasLimits)
+        Text('Hồ sơ hiện chưa có chỉ tiêu mỗi ngày (dưới 18 tuổi hoặc hồ sơ cần sửa).', style: muted)
+      else
+        Text('Chưa đủ số liệu của món để so với chỉ tiêu.', style: muted),
+    ];
+  }
+
+  Widget _allergenNotice(ThemeData theme) {
+    return switch (allergens) {
+      AllergensUnknown() => _Notice(
+        icon: Icons.help_outline,
+        color: theme.colorScheme.onSurfaceVariant,
+        text: 'Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.',
       ),
-      NoListedAllergenMatch(:final recordedTagCount) => (
-        Icons.info_outline,
-        theme.colorScheme.onSurfaceVariant,
-        recordedTagCount == 0
+      NoListedAllergenMatch(:final recordedTagCount) => _Notice(
+        icon: Icons.info_outline,
+        color: theme.colorScheme.onSurfaceVariant,
+        text: recordedTagCount == 0
             ? 'Open Food Facts chưa ghi thành phần dị ứng nào cho sản phẩm này. Hãy đọc nhãn sản phẩm.'
             : 'Không thấy nhóm bạn dị ứng trong danh sách đã ghi. Danh sách có thể thiếu, hãy đọc nhãn.',
       ),
-      AllergenMatch(:final severe, :final mild) => (
-        Icons.gpp_maybe_outlined,
-        severe.isNotEmpty ? theme.colorScheme.error : theme.colorScheme.tertiary,
-        [
+      AllergenMatch(:final severe, :final mild) => _Notice(
+        icon: Icons.gpp_maybe_outlined,
+        color: severe.isNotEmpty ? theme.colorScheme.error : theme.colorScheme.tertiary,
+        text: [
           if (severe.isNotEmpty) 'Có thành phần bạn dị ứng nặng: ${severe.map(_allergenName).join(', ')}.',
           if (mild.isNotEmpty) 'Có thành phần bạn dị ứng nhẹ: ${mild.map(_allergenName).join(', ')}.',
         ].join(' '),
       ),
     };
+  }
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice({required this.icon, required this.color, required this.text});
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Semantics(
       liveRegion: true,
       child: Row(
@@ -112,21 +156,25 @@ class _ShareRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final percent = (share.share * 100).round();
-    final isOver = share.share > 1;
-    final color = isOver || share.isWatched && share.share >= 0.5 ? theme.colorScheme.error : null;
+    // Judged on the shown percent, so "100%" never sits next to "over the limit".
+    final isOver = percent > 100;
+    // Calories are a target, not a limit: going over is information, not a warning.
+    final isTarget = share.nutrient == Nutrient.energyKcal;
+    final isWarning = !isTarget && (isOver || share.isWatched && share.share >= 0.5);
+    final color = isWarning ? theme.colorScheme.error : null;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: AppSpacing.sm,
             children: [
-              Expanded(
-                child: Text(
-                  '${nutrientLabel(share.nutrient)}${share.isWatched ? ' (theo dõi theo bệnh nền)' : ''}',
-                  style: theme.textTheme.bodyMedium,
-                ),
+              Text(
+                '${nutrientLabel(share.nutrient)}${share.isWatched ? ' (theo dõi theo bệnh nền)' : ''}',
+                style: theme.textTheme.bodyMedium,
               ),
               Text(
                 '$percent% · ${_amount(share.amount)}/${_amount(share.dailyLimit)} ${nutrientUnit(share.nutrient)}',
@@ -143,7 +191,10 @@ class _ShareRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
           if (isOver)
-            Text('Vượt giới hạn cả ngày.', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
+            Text(
+              isTarget ? 'Vượt mục tiêu calo cả ngày.' : 'Vượt giới hạn cả ngày.',
+              style: theme.textTheme.bodySmall?.copyWith(color: color ?? theme.colorScheme.onSurfaceVariant),
+            ),
         ],
       ),
     );

@@ -12,13 +12,14 @@ final class FoodApi {
   Future<SearchResponse> search(String query) async =>
       searchResponseFromJson(await _client.getJson('/api/foods/search', query: {'q': query}));
 
-  /// Returns null when the backend does not know the barcode.
+  /// Returns null when the backend does not know the barcode, or rejects it as malformed (some Open Food Facts
+  /// entries carry codes that fail the GTIN check); retrying would never help in either case.
   Future<FoodItem?> lookUpBarcode(String barcode) async {
     final Map<String, Object?> json;
     try {
       json = await _client.getJson('/api/foods/barcode/${Uri.encodeComponent(barcode)}');
     } on ServerFailure catch (failure) {
-      if (failure.code == 'PRODUCT_NOT_FOUND') {
+      if (failure.code == 'PRODUCT_NOT_FOUND' || failure.code == 'INVALID_BARCODE') {
         return null;
       }
       rethrow;

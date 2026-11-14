@@ -20,6 +20,7 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
   };
 
   return PersonalLimits(
+    profileStatus: ProfileStatus.loaded,
     severeAllergenTags: tagsWith(AllergySeverity.severe),
     mildAllergenTags: tagsWith(AllergySeverity.mild),
     allergenNames: {

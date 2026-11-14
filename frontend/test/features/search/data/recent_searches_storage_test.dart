@@ -37,4 +37,12 @@ void main() {
     expect(await storage.add('phở'), ['phở']);
     expect(storage.read(), isEmpty);
   });
+
+  test('giá trị sai kiểu dưới khóa (dữ liệu cũ hỏng) đọc thành rỗng, không crash', () async {
+    SharedPreferences.setMockInitialValues({'recent_searches': 'không phải danh sách'});
+    final broken = RecentSearchesStorage(await SharedPreferences.getInstance());
+
+    expect(broken.read(), isEmpty);
+    expect(await broken.add('phở'), ['phở']);
+  });
 }

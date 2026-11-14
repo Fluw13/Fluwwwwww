@@ -13,6 +13,7 @@ PersonalLimits _limits({
   double? sugarsMaxG = 50,
   bool watchesSugar = false,
 }) => PersonalLimits(
+  profileStatus: ProfileStatus.loaded,
   severeAllergenTags: severe,
   mildAllergenTags: mild,
   allergenNames: const {},

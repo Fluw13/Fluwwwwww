@@ -93,6 +93,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               child: Image.network(
                 imageUrl.toString(),
                 height: 180,
+                // Decode at screen width instead of the photo's full size.
+                cacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round(),
                 fit: BoxFit.cover,
                 semanticLabel: 'Ảnh sản phẩm',
                 errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),

@@ -1,14 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_tab.dart';
+import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/core/database/database_provider.dart';
+import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
+import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/profile/domain/health_profile.dart';
+import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -16,6 +23,13 @@ import '../../../fixtures/food_api_samples.dart';
 import '../../../helpers/load_app_fonts.dart';
 import '../../../helpers/pump_fluw_app.dart';
 import '../../profile/domain/profile_fixture.dart';
+
+final DietaryPreferences _milkAllergy = DietaryPreferences(
+  allergies: {Allergen.milk: AllergySeverity.severe},
+  allergyNote: null,
+  dietStyle: DietStyle.regular,
+  preferences: const {},
+);
 
 http.Response _json(Object body, [int status = 200]) => http.Response.bytes(utf8.encode(jsonEncode(body)), status);
 
@@ -45,7 +59,12 @@ void main() {
   Future<void> scrollTo(WidgetTester tester, Finder finder) async {
     final list = find.byWidgetPredicate((widget) => widget is Scrollable && widget.axis == Axis.vertical).hitTestable();
     final element = list.evaluate().first;
-    await tester.scrollUntilVisible(finder, 200, scrollable: find.byElementPredicate((e) => identical(e, element)));
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find.byElementPredicate((e) => identical(e, element)),
+      maxScrolls: 500,
+    );
     await tester.ensureVisible(finder);
     await tester.pumpAndSettle();
   }
@@ -229,8 +248,119 @@ void main() {
     await tester.tap(find.textContaining('Chicken, broiler'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Thiết lập hồ sơ (từ 18 tuổi)'), findsOneWidget);
+    expect(find.textContaining('Thiết lập hồ sơ để Fluw cảnh báo dị ứng'), findsOneWidget);
   });
+
+  Future<void> saveProfile(WidgetTester tester, HealthProfile profile) async {
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(profile));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openFirstResult(WidgetTester tester, String query, String name) async {
+    await searchFor(tester, query);
+    await tester.tap(find.textContaining(name));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('hồ sơ hỏng thì nói rõ chưa đối chiếu được dị ứng, không im lặng như người không dị ứng', (tester) async {
+    await openSearch(tester, _backend([yoghurtSearchItem]));
+    await saveProfile(tester, buildProfile());
+    await tester.runAsync(() {
+      final database = appContainer(tester).read(appDatabaseProvider);
+      return database.update(database.profiles).write(const ProfilesCompanion(sex: Value('unknown')));
+    });
+    await tester.pumpAndSettle();
+
+    await openFirstResult(tester, 'sữa chua', 'Vinamilk sữa chua dâu');
+
+    expect(find.textContaining('Không đọc được hồ sơ trên máy nên chưa đối chiếu được dị ứng'), findsOneWidget);
+  });
+
+  testWidgets('dưới 18 tuổi: không mời thiết lập lại, nói rõ hồ sơ chưa có chỉ tiêu mỗi ngày', (tester) async {
+    await openSearch(tester, _backend([chickenItem]));
+    await saveProfile(tester, buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null));
+
+    await openFirstResult(tester, 'chicken', 'Chicken, broiler');
+
+    expect(find.textContaining('Hồ sơ hiện chưa có chỉ tiêu mỗi ngày'), findsOneWidget);
+    expect(find.textContaining('Thiết lập hồ sơ để Fluw'), findsNothing);
+  });
+
+  testWidgets('đang tải dị ứng thì nói đang tải, không nói nhầm là nguồn không có dữ liệu', (tester) async {
+    final product = Completer<http.Response>();
+    final backend = MockClient((request) {
+      if (request.url.path == '/api/foods/search') {
+        return Future.value(_json(searchBody('sữa', [yoghurtSearchItem])));
+      }
+      return product.future;
+    });
+    await openSearch(tester, backend);
+    await saveProfile(tester, buildProfile(dietary: _milkAllergy));
+    await searchFor(tester, 'sữa');
+
+    await tester.tap(find.text('Vinamilk sữa chua dâu'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Đang tải thông tin dị ứng của sản phẩm...'), findsOneWidget);
+    expect(find.textContaining('không có dữ liệu dị ứng'), findsNothing);
+    product.complete(_json({'item': yoghurtProduct}));
+    await tester.pumpAndSettle();
+    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
+  });
+
+  testWidgets('tải sản phẩm đầy đủ lỗi thì báo và cho thử lại; thử lại được thì hiện dị ứng', (tester) async {
+    var barcodeCalls = 0;
+    final backend = MockClient((request) async {
+      if (request.url.path == '/api/foods/search') {
+        return _json(searchBody('sữa', [yoghurtSearchItem]));
+      }
+      barcodeCalls++;
+      return barcodeCalls == 1
+          ? _json({
+              'error': {'code': 'SOURCES_UNAVAILABLE', 'message': 'Lỗi nguồn.'},
+            }, 503)
+          : _json({'item': yoghurtProduct});
+    });
+    await openSearch(tester, backend);
+    await saveProfile(tester, buildProfile(dietary: _milkAllergy));
+
+    await openFirstResult(tester, 'sữa', 'Vinamilk sữa chua dâu');
+    expect(find.textContaining('Chưa tải được đủ thông tin sản phẩm'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Thử lại'));
+    await tester.pumpAndSettle();
+    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
+    expect(find.textContaining('Chưa tải được đủ thông tin sản phẩm'), findsNothing);
+  });
+
+  testWidgets(
+    'khẩu phần lớn: đường vượt giới hạn (theo dõi vì tiểu đường), calo vượt mục tiêu nói khác, natri theo dõi vì huyết áp',
+    (tester) async {
+      await openSearch(tester, _backend([yoghurtSearchItem]));
+      // Calorie target raised to BMR (1,239 kcal), so 2,000 g of yoghurt (1,988 kcal) goes over it.
+      await saveProfile(
+        tester,
+        buildProfile(
+          sex: Sex.female,
+          weightKg: 50,
+          heightCm: 160,
+          targetWeightKg: 45,
+          activityLevel: ActivityLevel.sedentary,
+          conditions: {HealthCondition.diabetes, HealthCondition.hypertension},
+        ),
+      );
+      await openFirstResult(tester, 'sữa', 'Vinamilk sữa chua dâu');
+
+      await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '2000');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vượt giới hạn cả ngày.'), findsWidgets);
+      expect(find.text('Vượt mục tiêu calo cả ngày.'), findsOneWidget);
+      expect(find.text('Natri (theo dõi theo bệnh nền)'), findsOneWidget);
+      expect(find.text('Đường tổng (theo dõi theo bệnh nền)'), findsOneWidget);
+    },
+  );
 
   for (final textScale in [2.0, 3.1]) {
     testWidgets('320x568, cỡ chữ ${(textScale * 100).round()}%: Tra cứu và Chi tiết không tràn bố cục', (tester) async {
@@ -249,12 +379,19 @@ void main() {
           'recent_searches': ['sữa chua có đường'],
         },
       );
+      // An adult profile with conditions, so the percentage rows (the widest lines) are drawn too.
+      await saveProfile(
+        tester,
+        buildProfile(conditions: {HealthCondition.diabetes, HealthCondition.hypertension}, dietary: _milkAllergy),
+      );
       await searchFor(tester, 'sữa chua');
       await scrollTo(tester, find.text('Vinamilk sữa chua dâu'));
       expect(tester.takeException(), isNull);
 
       await tester.tap(find.text('Vinamilk sữa chua dâu'));
       await tester.pumpAndSettle();
+      await scrollTo(tester, find.textContaining('Natri (theo dõi'));
+      expect(tester.takeException(), isNull);
       await scrollTo(tester, find.textContaining('Nguồn: Open Food Facts'));
       expect(tester.takeException(), isNull);
     });

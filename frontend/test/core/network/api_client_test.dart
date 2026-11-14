@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/network/api_client.dart';
@@ -72,5 +73,12 @@ void main() {
   test('app chờ máy chủ thức dậy đủ lâu (gói free của Render chậm khoảng 50 giây)', () {
     expect(apiTimeout.inSeconds, greaterThanOrEqualTo(60));
     expect(apiBaseUrl, 'https://fluw.onrender.com');
+  });
+
+  test('lỗi TLS (wifi có trang đăng nhập, proxy chặn, sai đồng hồ) cũng là lỗi mạng, không treo app', () async {
+    await expectLater(
+      _client((request) async => throw const HandshakeException('bad certificate')).getJson('/x'),
+      throwsA(isA<NetworkFailure>()),
+    );
   });
 }

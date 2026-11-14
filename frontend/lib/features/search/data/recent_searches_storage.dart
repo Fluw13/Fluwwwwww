@@ -10,7 +10,14 @@ final class RecentSearchesStorage {
 
   final SharedPreferences? _preferences;
 
-  List<String> read() => List.unmodifiable(_preferences?.getStringList(_key) ?? const <String>[]);
+  /// A value of another type under the key, or a plugin error, reads as an empty list instead of crashing the tab.
+  List<String> read() {
+    try {
+      return List.unmodifiable(_preferences?.getStringList(_key) ?? const <String>[]);
+    } on Object {
+      return const [];
+    }
+  }
 
   /// Moves [query] to the front; the same words in another letter case count as one entry.
   Future<List<String>> add(String query) async {
@@ -34,7 +41,7 @@ final class RecentSearchesStorage {
   Future<void> _write(List<String> entries) async {
     try {
       await _preferences?.setStringList(_key, entries);
-    } on Exception {
+    } on Object {
       return;
     }
   }
