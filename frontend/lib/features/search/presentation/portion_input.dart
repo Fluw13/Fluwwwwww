@@ -21,6 +21,8 @@ class PortionInput extends StatelessWidget {
     return TextField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      // The iPhone number pad has no Done key, and the add bar pinned under the page sits behind the keyboard.
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
       decoration: InputDecoration(
         labelText: 'Khẩu phần bạn ăn',

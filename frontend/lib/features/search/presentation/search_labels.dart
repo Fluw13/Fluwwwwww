@@ -1,3 +1,4 @@
+import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
@@ -35,6 +36,15 @@ String nutrientUnit(Nutrient nutrient) => switch (nutrient) {
   Nutrient.sodiumMg => 'mg',
   _ => 'g',
 };
+
+/// kcal and mg read as whole numbers, as on nutrition labels and everywhere else in the app; grams keep one decimal.
+String formatNutrientAmount(Nutrient nutrient, double value) {
+  final number = switch (nutrient) {
+    Nutrient.energyKcal || Nutrient.sodiumMg => formatWhole(value),
+    _ => formatDecimal(value),
+  };
+  return '$number ${nutrientUnit(nutrient)}';
+}
 
 String apiFailureMessage(ApiFailure failure) => switch (failure) {
   NetworkFailure() => 'Không kết nối được máy chủ. Hãy kiểm tra mạng rồi thử lại.',

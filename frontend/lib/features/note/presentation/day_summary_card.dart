@@ -30,7 +30,7 @@ class DaySummaryCard extends StatelessWidget {
       if (limits.watchesSaturatedFat) Nutrient.saturatedFatG,
       if (limits.watchesSodium) Nutrient.sodiumMg,
     ];
-    final hasMissing = shown.any((nutrient) => totals[nutrient].missingCount > 0);
+    final hasMissing = shown.any((nutrient) => !totals[nutrient].isComplete);
     final note = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     Widget row(Nutrient nutrient) => switch (nutrient) {

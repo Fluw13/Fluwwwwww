@@ -10,7 +10,7 @@ import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/food_assessment.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
-import 'package:fluw/features/search/presentation/add_to_note_card.dart';
+import 'package:fluw/features/search/presentation/add_to_note_bar.dart';
 import 'package:fluw/features/search/presentation/attribution_footer.dart';
 import 'package:fluw/features/search/presentation/nutrient_table.dart';
 import 'package:fluw/features/search/presentation/personal_check_card.dart';
@@ -85,7 +85,9 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chi tiết dinh dưỡng')),
+      bottomNavigationBar: AddToNoteBar(item: _item, portion: portionAmount),
       body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           if (imageUrl != null) ...[
@@ -148,8 +150,6 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          AddToNoteCard(item: _item, portion: portionAmount),
           const SizedBox(height: AppSpacing.md),
           AttributionFooter(attribution: _item.attribution),
         ],

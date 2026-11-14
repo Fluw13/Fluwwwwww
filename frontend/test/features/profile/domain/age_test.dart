@@ -3,14 +3,14 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 
 void main() {
-  final birthDate = CalendarDate(2006, 5, 13);
+  final birthDate = CalendarDate(2006, 3, 8);
 
   test('đủ tuổi đúng vào ngày sinh nhật', () {
-    expect(ageInYears(birthDate: birthDate, today: CalendarDate(2026, 5, 13)), 20);
+    expect(ageInYears(birthDate: birthDate, today: CalendarDate(2026, 3, 8)), 20);
   });
 
   test('trước ngày sinh nhật một ngày thì chưa thêm tuổi', () {
-    expect(ageInYears(birthDate: birthDate, today: CalendarDate(2026, 5, 12)), 19);
+    expect(ageInYears(birthDate: birthDate, today: CalendarDate(2026, 3, 7)), 19);
   });
 
   test('sau sinh nhật trong năm vẫn giữ tuổi đó', () {

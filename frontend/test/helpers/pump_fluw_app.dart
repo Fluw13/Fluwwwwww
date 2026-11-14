@@ -6,6 +6,7 @@ import 'package:fluw/app/fluw_app.dart';
 import 'package:fluw/core/database/database_provider.dart';
 import 'package:fluw/core/network/api_client.dart';
 import 'package:fluw/core/network/api_client_provider.dart';
+import 'package:fluw/core/network/backend_warm_up.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/settings/theme_mode_storage.dart';
 import 'package:fluw/core/time/calendar_date.dart';
@@ -49,6 +50,8 @@ Future<SharedPreferences> pumpFluwApp(
         ),
         ...crossFeatureOverrides(),
         todayProvider.overrideWithValue(appTestToday),
+        // No warm-up calls in tests unless a test asks for them, so mock backends see only the requests they expect.
+        backendWarmUpProvider.overrideWithValue(() async {}),
         appDatabaseProvider.overrideWith((ref) {
           final database = openInMemoryDatabase();
           ref.onDispose(database.close);
