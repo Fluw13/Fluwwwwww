@@ -1,4 +1,4 @@
-import 'package:fluw/features/note/domain/note_entry.dart';
+import 'package:fluw/core/diary/note_entry.dart';
 
 /// Entries read from storage, plus how many stored rows could not be read, so the screen can say so instead of
 /// silently showing a smaller total.

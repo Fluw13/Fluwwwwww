@@ -2,7 +2,7 @@
 
 Ứng dụng di động giúp bạn tra cứu dinh dưỡng của thực phẩm, ghi lại những gì đã ăn trong ngày và biết mình cần nạp bao nhiêu calo, protein theo chiều cao, cân nặng và mục tiêu. Trợ lý AI của app tên là **Zero**.
 
-> Dùng được: **Hồ Sơ**, **Tra Cứu** + Chi tiết sản phẩm, **Nhật Ký**. Trang Chủ và Quét Món vẫn ghi "Đang xây dựng".
+> Dùng được: **Trang Chủ**, **Hồ Sơ**, **Tra Cứu** + Chi tiết sản phẩm, **Nhật Ký**. Quét Món vẫn ghi "Đang xây dựng".
 
 ## Tính năng
 
@@ -13,7 +13,7 @@
 | Thông tin sản phẩm | Tên, ảnh, thương hiệu, chỉ số dinh dưỡng theo khẩu phần bạn nhập, đối chiếu dị ứng và chỉ tiêu theo hồ sơ, ghi nguồn dữ liệu | Xong |
 | Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong; đánh giá cuối ngày làm cùng Trang chủ |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong |
-| Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Chưa làm |
+| Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua; nhắc nhở chưa làm |
 | Nước uống | Mục tiêu nước mỗi ngày, thêm nhanh 200/350/500 ml, lịch nhắc uống nước | Chưa làm |
 | Báo cáo | Biểu đồ calo theo tuần/tháng, tỉ lệ macro, cảnh báo đường/natri, cân nặng | Chưa làm |
 | Lịch sử & Đã lưu | Xem lại những gì đã tìm hoặc quét, lưu món yêu thích, nhập món thủ công | Chưa làm |
@@ -174,7 +174,7 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
 | M3 | Tra cứu, chi tiết sản phẩm, lịch sử & đã lưu *(xong tra cứu và chi tiết)* |
 | M4 | Nhật ký theo ngày và khung giờ *(xong)* |
 | M5 | Quét mã vạch và nhận diện ảnh |
-| M6 | Trang chủ, gợi ý, nhắc nhở |
+| M6 | Trang chủ, gợi ý, nhắc nhở *(xong Trang chủ và gợi ý)* |
 | M7 | Tài khoản và đánh giá sao |
 | M8 | Nước uống và nhắc uống nước |
 | M9 | Báo cáo tuần/tháng |

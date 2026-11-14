@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/database/app_database.dart';
 import 'package:fluw/core/diary/logged_food.dart';
+import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
@@ -10,7 +11,6 @@ import 'package:fluw/features/note/data/note_entry_mapper.dart';
 import 'package:fluw/features/note/data/note_food_logger.dart';
 import 'package:fluw/features/note/data/note_id.dart';
 import 'package:fluw/features/note/data/note_repository.dart';
-import 'package:fluw/features/note/domain/note_entry.dart';
 
 import '../../../helpers/in_memory_database.dart';
 

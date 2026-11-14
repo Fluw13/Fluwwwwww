@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
-import 'package:fluw/features/note/domain/note_entry.dart';
 
 /// Fixed storage keys; never rename, only add.
 const Map<QuantityUnit, String> quantityUnitKeys = {QuantityUnit.gram: 'g', QuantityUnit.milliliter: 'ml'};

@@ -2,6 +2,8 @@ import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
+import 'package:fluw/features/profile/domain/diet_style.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/nutrient_targets.dart';
@@ -36,5 +38,13 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
     watchesSugar: profile.limitsSugar || profile.conditions.contains(HealthCondition.diabetes),
     watchesSodium: profile.conditions.contains(HealthCondition.hypertension),
     watchesSaturatedFat: profile.conditions.contains(HealthCondition.dyslipidemia),
+    fatTargetG: adult?.nutrients.fatGrams,
+    carbohydratesTargetG: adult?.nutrients.carbohydratesGrams,
+    displayName: profile.displayName,
+    goalLabel: profile.hasReachedTarget ? 'Giữ cân (đã đạt cân nặng mục tiêu)' : weightGoalLabel(profile.goal),
+    avoidsAnimalProducts: profile.dietary.dietStyle == DietStyle.vegan,
+    limitsCarbohydrates: profile.dietary.dietStyle == DietStyle.keto,
+    prefersSteamedOrBoiled: profile.dietary.preferences.contains(FoodPreference.steamedOrBoiled),
+    likesNuts: profile.dietary.preferences.contains(FoodPreference.likesNuts),
   );
 }

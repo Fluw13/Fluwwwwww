@@ -60,7 +60,12 @@ GoRouter createAppRouter() {
 
 Widget _screenFor(BuildContext context, AppTab tab) {
   return switch (tab) {
-    AppTab.home => const HomeScreen(),
+    AppTab.home => HomeScreen(
+      onOpenSearch: () => context.go(AppTab.search.path),
+      onOpenScan: () => context.go(AppTab.scan.path),
+      onOpenNote: () => context.go(AppTab.note.path),
+      onSetupProfile: () => context.push(AppRoutes.profileSetup),
+    ),
     AppTab.search => SearchScreen(onOpenFood: (item) => context.push(AppRoutes.foodDetail, extra: item)),
     AppTab.scan => const ScanScreen(),
     AppTab.note => NoteScreen(onAddFood: () => context.go(AppTab.search.path)),
