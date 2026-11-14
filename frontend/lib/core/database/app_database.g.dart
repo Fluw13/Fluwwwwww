@@ -1406,6 +1406,657 @@ class WeightEntriesCompanion extends UpdateCompanion<WeightEntryRow> {
   }
 }
 
+class $NoteEntriesTable extends NoteEntries with TableInfo<$NoteEntriesTable, NoteEntryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $NoteEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceFoodIdMeta = const VerificationMeta('sourceFoodId');
+  @override
+  late final GeneratedColumn<String> sourceFoodId = GeneratedColumn<String>(
+    'source_food_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eatenAtUtcMsMeta = const VerificationMeta('eatenAtUtcMs');
+  @override
+  late final GeneratedColumn<int> eatenAtUtcMs = GeneratedColumn<int>(
+    'eaten_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _energyKcalMeta = const VerificationMeta('energyKcal');
+  @override
+  late final GeneratedColumn<double> energyKcal = GeneratedColumn<double>(
+    'energy_kcal',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _proteinGMeta = const VerificationMeta('proteinG');
+  @override
+  late final GeneratedColumn<double> proteinG = GeneratedColumn<double>(
+    'protein_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _carbohydratesGMeta = const VerificationMeta('carbohydratesG');
+  @override
+  late final GeneratedColumn<double> carbohydratesG = GeneratedColumn<double>(
+    'carbohydrates_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sugarsGMeta = const VerificationMeta('sugarsG');
+  @override
+  late final GeneratedColumn<double> sugarsG = GeneratedColumn<double>(
+    'sugars_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fatGMeta = const VerificationMeta('fatG');
+  @override
+  late final GeneratedColumn<double> fatG = GeneratedColumn<double>(
+    'fat_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _saturatedFatGMeta = const VerificationMeta('saturatedFatG');
+  @override
+  late final GeneratedColumn<double> saturatedFatG = GeneratedColumn<double>(
+    'saturated_fat_g',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sodiumMgMeta = const VerificationMeta('sodiumMg');
+  @override
+  late final GeneratedColumn<double> sodiumMg = GeneratedColumn<double>(
+    'sodium_mg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    sourceFoodId,
+    unit,
+    quantity,
+    eatenAtUtcMs,
+    energyKcal,
+    proteinG,
+    carbohydratesG,
+    sugarsG,
+    fatG,
+    saturatedFatG,
+    sodiumMg,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'note_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<NoteEntryRow> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(_nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('source_food_id')) {
+      context.handle(_sourceFoodIdMeta, sourceFoodId.isAcceptableOrUnknown(data['source_food_id']!, _sourceFoodIdMeta));
+    }
+    if (data.containsKey('unit')) {
+      context.handle(_unitMeta, unit.isAcceptableOrUnknown(data['unit']!, _unitMeta));
+    } else if (isInserting) {
+      context.missing(_unitMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta, quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('eaten_at_utc_ms')) {
+      context.handle(
+        _eatenAtUtcMsMeta,
+        eatenAtUtcMs.isAcceptableOrUnknown(data['eaten_at_utc_ms']!, _eatenAtUtcMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eatenAtUtcMsMeta);
+    }
+    if (data.containsKey('energy_kcal')) {
+      context.handle(_energyKcalMeta, energyKcal.isAcceptableOrUnknown(data['energy_kcal']!, _energyKcalMeta));
+    }
+    if (data.containsKey('protein_g')) {
+      context.handle(_proteinGMeta, proteinG.isAcceptableOrUnknown(data['protein_g']!, _proteinGMeta));
+    }
+    if (data.containsKey('carbohydrates_g')) {
+      context.handle(
+        _carbohydratesGMeta,
+        carbohydratesG.isAcceptableOrUnknown(data['carbohydrates_g']!, _carbohydratesGMeta),
+      );
+    }
+    if (data.containsKey('sugars_g')) {
+      context.handle(_sugarsGMeta, sugarsG.isAcceptableOrUnknown(data['sugars_g']!, _sugarsGMeta));
+    }
+    if (data.containsKey('fat_g')) {
+      context.handle(_fatGMeta, fatG.isAcceptableOrUnknown(data['fat_g']!, _fatGMeta));
+    }
+    if (data.containsKey('saturated_fat_g')) {
+      context.handle(
+        _saturatedFatGMeta,
+        saturatedFatG.isAcceptableOrUnknown(data['saturated_fat_g']!, _saturatedFatGMeta),
+      );
+    }
+    if (data.containsKey('sodium_mg')) {
+      context.handle(_sodiumMgMeta, sodiumMg.isAcceptableOrUnknown(data['sodium_mg']!, _sodiumMgMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  NoteEntryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return NoteEntryRow(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      sourceFoodId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}source_food_id']),
+      unit: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}unit'])!,
+      quantity: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}quantity'])!,
+      eatenAtUtcMs: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}eaten_at_utc_ms'])!,
+      energyKcal: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}energy_kcal']),
+      proteinG: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}protein_g']),
+      carbohydratesG: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}carbohydrates_g']),
+      sugarsG: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}sugars_g']),
+      fatG: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}fat_g']),
+      saturatedFatG: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}saturated_fat_g']),
+      sodiumMg: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}sodium_mg']),
+    );
+  }
+
+  @override
+  $NoteEntriesTable createAlias(String alias) {
+    return $NoteEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class NoteEntryRow extends DataClass implements Insertable<NoteEntryRow> {
+  final String id;
+  final String name;
+  final String? sourceFoodId;
+
+  /// `g` or `ml`.
+  final String unit;
+  final double quantity;
+
+  /// UTC milliseconds since epoch; the diary day and slot are worked out in local time when read.
+  final int eatenAtUtcMs;
+  final double? energyKcal;
+  final double? proteinG;
+  final double? carbohydratesG;
+  final double? sugarsG;
+  final double? fatG;
+  final double? saturatedFatG;
+  final double? sodiumMg;
+  const NoteEntryRow({
+    required this.id,
+    required this.name,
+    this.sourceFoodId,
+    required this.unit,
+    required this.quantity,
+    required this.eatenAtUtcMs,
+    this.energyKcal,
+    this.proteinG,
+    this.carbohydratesG,
+    this.sugarsG,
+    this.fatG,
+    this.saturatedFatG,
+    this.sodiumMg,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || sourceFoodId != null) {
+      map['source_food_id'] = Variable<String>(sourceFoodId);
+    }
+    map['unit'] = Variable<String>(unit);
+    map['quantity'] = Variable<double>(quantity);
+    map['eaten_at_utc_ms'] = Variable<int>(eatenAtUtcMs);
+    if (!nullToAbsent || energyKcal != null) {
+      map['energy_kcal'] = Variable<double>(energyKcal);
+    }
+    if (!nullToAbsent || proteinG != null) {
+      map['protein_g'] = Variable<double>(proteinG);
+    }
+    if (!nullToAbsent || carbohydratesG != null) {
+      map['carbohydrates_g'] = Variable<double>(carbohydratesG);
+    }
+    if (!nullToAbsent || sugarsG != null) {
+      map['sugars_g'] = Variable<double>(sugarsG);
+    }
+    if (!nullToAbsent || fatG != null) {
+      map['fat_g'] = Variable<double>(fatG);
+    }
+    if (!nullToAbsent || saturatedFatG != null) {
+      map['saturated_fat_g'] = Variable<double>(saturatedFatG);
+    }
+    if (!nullToAbsent || sodiumMg != null) {
+      map['sodium_mg'] = Variable<double>(sodiumMg);
+    }
+    return map;
+  }
+
+  NoteEntriesCompanion toCompanion(bool nullToAbsent) {
+    return NoteEntriesCompanion(
+      id: Value(id),
+      name: Value(name),
+      sourceFoodId: sourceFoodId == null && nullToAbsent ? const Value.absent() : Value(sourceFoodId),
+      unit: Value(unit),
+      quantity: Value(quantity),
+      eatenAtUtcMs: Value(eatenAtUtcMs),
+      energyKcal: energyKcal == null && nullToAbsent ? const Value.absent() : Value(energyKcal),
+      proteinG: proteinG == null && nullToAbsent ? const Value.absent() : Value(proteinG),
+      carbohydratesG: carbohydratesG == null && nullToAbsent ? const Value.absent() : Value(carbohydratesG),
+      sugarsG: sugarsG == null && nullToAbsent ? const Value.absent() : Value(sugarsG),
+      fatG: fatG == null && nullToAbsent ? const Value.absent() : Value(fatG),
+      saturatedFatG: saturatedFatG == null && nullToAbsent ? const Value.absent() : Value(saturatedFatG),
+      sodiumMg: sodiumMg == null && nullToAbsent ? const Value.absent() : Value(sodiumMg),
+    );
+  }
+
+  factory NoteEntryRow.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return NoteEntryRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      sourceFoodId: serializer.fromJson<String?>(json['sourceFoodId']),
+      unit: serializer.fromJson<String>(json['unit']),
+      quantity: serializer.fromJson<double>(json['quantity']),
+      eatenAtUtcMs: serializer.fromJson<int>(json['eatenAtUtcMs']),
+      energyKcal: serializer.fromJson<double?>(json['energyKcal']),
+      proteinG: serializer.fromJson<double?>(json['proteinG']),
+      carbohydratesG: serializer.fromJson<double?>(json['carbohydratesG']),
+      sugarsG: serializer.fromJson<double?>(json['sugarsG']),
+      fatG: serializer.fromJson<double?>(json['fatG']),
+      saturatedFatG: serializer.fromJson<double?>(json['saturatedFatG']),
+      sodiumMg: serializer.fromJson<double?>(json['sodiumMg']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'sourceFoodId': serializer.toJson<String?>(sourceFoodId),
+      'unit': serializer.toJson<String>(unit),
+      'quantity': serializer.toJson<double>(quantity),
+      'eatenAtUtcMs': serializer.toJson<int>(eatenAtUtcMs),
+      'energyKcal': serializer.toJson<double?>(energyKcal),
+      'proteinG': serializer.toJson<double?>(proteinG),
+      'carbohydratesG': serializer.toJson<double?>(carbohydratesG),
+      'sugarsG': serializer.toJson<double?>(sugarsG),
+      'fatG': serializer.toJson<double?>(fatG),
+      'saturatedFatG': serializer.toJson<double?>(saturatedFatG),
+      'sodiumMg': serializer.toJson<double?>(sodiumMg),
+    };
+  }
+
+  NoteEntryRow copyWith({
+    String? id,
+    String? name,
+    Value<String?> sourceFoodId = const Value.absent(),
+    String? unit,
+    double? quantity,
+    int? eatenAtUtcMs,
+    Value<double?> energyKcal = const Value.absent(),
+    Value<double?> proteinG = const Value.absent(),
+    Value<double?> carbohydratesG = const Value.absent(),
+    Value<double?> sugarsG = const Value.absent(),
+    Value<double?> fatG = const Value.absent(),
+    Value<double?> saturatedFatG = const Value.absent(),
+    Value<double?> sodiumMg = const Value.absent(),
+  }) => NoteEntryRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    sourceFoodId: sourceFoodId.present ? sourceFoodId.value : this.sourceFoodId,
+    unit: unit ?? this.unit,
+    quantity: quantity ?? this.quantity,
+    eatenAtUtcMs: eatenAtUtcMs ?? this.eatenAtUtcMs,
+    energyKcal: energyKcal.present ? energyKcal.value : this.energyKcal,
+    proteinG: proteinG.present ? proteinG.value : this.proteinG,
+    carbohydratesG: carbohydratesG.present ? carbohydratesG.value : this.carbohydratesG,
+    sugarsG: sugarsG.present ? sugarsG.value : this.sugarsG,
+    fatG: fatG.present ? fatG.value : this.fatG,
+    saturatedFatG: saturatedFatG.present ? saturatedFatG.value : this.saturatedFatG,
+    sodiumMg: sodiumMg.present ? sodiumMg.value : this.sodiumMg,
+  );
+  NoteEntryRow copyWithCompanion(NoteEntriesCompanion data) {
+    return NoteEntryRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      sourceFoodId: data.sourceFoodId.present ? data.sourceFoodId.value : this.sourceFoodId,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      eatenAtUtcMs: data.eatenAtUtcMs.present ? data.eatenAtUtcMs.value : this.eatenAtUtcMs,
+      energyKcal: data.energyKcal.present ? data.energyKcal.value : this.energyKcal,
+      proteinG: data.proteinG.present ? data.proteinG.value : this.proteinG,
+      carbohydratesG: data.carbohydratesG.present ? data.carbohydratesG.value : this.carbohydratesG,
+      sugarsG: data.sugarsG.present ? data.sugarsG.value : this.sugarsG,
+      fatG: data.fatG.present ? data.fatG.value : this.fatG,
+      saturatedFatG: data.saturatedFatG.present ? data.saturatedFatG.value : this.saturatedFatG,
+      sodiumMg: data.sodiumMg.present ? data.sodiumMg.value : this.sodiumMg,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteEntryRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sourceFoodId: $sourceFoodId, ')
+          ..write('unit: $unit, ')
+          ..write('quantity: $quantity, ')
+          ..write('eatenAtUtcMs: $eatenAtUtcMs, ')
+          ..write('energyKcal: $energyKcal, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbohydratesG: $carbohydratesG, ')
+          ..write('sugarsG: $sugarsG, ')
+          ..write('fatG: $fatG, ')
+          ..write('saturatedFatG: $saturatedFatG, ')
+          ..write('sodiumMg: $sodiumMg')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    sourceFoodId,
+    unit,
+    quantity,
+    eatenAtUtcMs,
+    energyKcal,
+    proteinG,
+    carbohydratesG,
+    sugarsG,
+    fatG,
+    saturatedFatG,
+    sodiumMg,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is NoteEntryRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.sourceFoodId == this.sourceFoodId &&
+          other.unit == this.unit &&
+          other.quantity == this.quantity &&
+          other.eatenAtUtcMs == this.eatenAtUtcMs &&
+          other.energyKcal == this.energyKcal &&
+          other.proteinG == this.proteinG &&
+          other.carbohydratesG == this.carbohydratesG &&
+          other.sugarsG == this.sugarsG &&
+          other.fatG == this.fatG &&
+          other.saturatedFatG == this.saturatedFatG &&
+          other.sodiumMg == this.sodiumMg);
+}
+
+class NoteEntriesCompanion extends UpdateCompanion<NoteEntryRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> sourceFoodId;
+  final Value<String> unit;
+  final Value<double> quantity;
+  final Value<int> eatenAtUtcMs;
+  final Value<double?> energyKcal;
+  final Value<double?> proteinG;
+  final Value<double?> carbohydratesG;
+  final Value<double?> sugarsG;
+  final Value<double?> fatG;
+  final Value<double?> saturatedFatG;
+  final Value<double?> sodiumMg;
+  final Value<int> rowid;
+  const NoteEntriesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sourceFoodId = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.eatenAtUtcMs = const Value.absent(),
+    this.energyKcal = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.carbohydratesG = const Value.absent(),
+    this.sugarsG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.saturatedFatG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  NoteEntriesCompanion.insert({
+    required String id,
+    required String name,
+    this.sourceFoodId = const Value.absent(),
+    required String unit,
+    required double quantity,
+    required int eatenAtUtcMs,
+    this.energyKcal = const Value.absent(),
+    this.proteinG = const Value.absent(),
+    this.carbohydratesG = const Value.absent(),
+    this.sugarsG = const Value.absent(),
+    this.fatG = const Value.absent(),
+    this.saturatedFatG = const Value.absent(),
+    this.sodiumMg = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       unit = Value(unit),
+       quantity = Value(quantity),
+       eatenAtUtcMs = Value(eatenAtUtcMs);
+  static Insertable<NoteEntryRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? sourceFoodId,
+    Expression<String>? unit,
+    Expression<double>? quantity,
+    Expression<int>? eatenAtUtcMs,
+    Expression<double>? energyKcal,
+    Expression<double>? proteinG,
+    Expression<double>? carbohydratesG,
+    Expression<double>? sugarsG,
+    Expression<double>? fatG,
+    Expression<double>? saturatedFatG,
+    Expression<double>? sodiumMg,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (sourceFoodId != null) 'source_food_id': sourceFoodId,
+      if (unit != null) 'unit': unit,
+      if (quantity != null) 'quantity': quantity,
+      if (eatenAtUtcMs != null) 'eaten_at_utc_ms': eatenAtUtcMs,
+      if (energyKcal != null) 'energy_kcal': energyKcal,
+      if (proteinG != null) 'protein_g': proteinG,
+      if (carbohydratesG != null) 'carbohydrates_g': carbohydratesG,
+      if (sugarsG != null) 'sugars_g': sugarsG,
+      if (fatG != null) 'fat_g': fatG,
+      if (saturatedFatG != null) 'saturated_fat_g': saturatedFatG,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  NoteEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? sourceFoodId,
+    Value<String>? unit,
+    Value<double>? quantity,
+    Value<int>? eatenAtUtcMs,
+    Value<double?>? energyKcal,
+    Value<double?>? proteinG,
+    Value<double?>? carbohydratesG,
+    Value<double?>? sugarsG,
+    Value<double?>? fatG,
+    Value<double?>? saturatedFatG,
+    Value<double?>? sodiumMg,
+    Value<int>? rowid,
+  }) {
+    return NoteEntriesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sourceFoodId: sourceFoodId ?? this.sourceFoodId,
+      unit: unit ?? this.unit,
+      quantity: quantity ?? this.quantity,
+      eatenAtUtcMs: eatenAtUtcMs ?? this.eatenAtUtcMs,
+      energyKcal: energyKcal ?? this.energyKcal,
+      proteinG: proteinG ?? this.proteinG,
+      carbohydratesG: carbohydratesG ?? this.carbohydratesG,
+      sugarsG: sugarsG ?? this.sugarsG,
+      fatG: fatG ?? this.fatG,
+      saturatedFatG: saturatedFatG ?? this.saturatedFatG,
+      sodiumMg: sodiumMg ?? this.sodiumMg,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sourceFoodId.present) {
+      map['source_food_id'] = Variable<String>(sourceFoodId.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<double>(quantity.value);
+    }
+    if (eatenAtUtcMs.present) {
+      map['eaten_at_utc_ms'] = Variable<int>(eatenAtUtcMs.value);
+    }
+    if (energyKcal.present) {
+      map['energy_kcal'] = Variable<double>(energyKcal.value);
+    }
+    if (proteinG.present) {
+      map['protein_g'] = Variable<double>(proteinG.value);
+    }
+    if (carbohydratesG.present) {
+      map['carbohydrates_g'] = Variable<double>(carbohydratesG.value);
+    }
+    if (sugarsG.present) {
+      map['sugars_g'] = Variable<double>(sugarsG.value);
+    }
+    if (fatG.present) {
+      map['fat_g'] = Variable<double>(fatG.value);
+    }
+    if (saturatedFatG.present) {
+      map['saturated_fat_g'] = Variable<double>(saturatedFatG.value);
+    }
+    if (sodiumMg.present) {
+      map['sodium_mg'] = Variable<double>(sodiumMg.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('NoteEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sourceFoodId: $sourceFoodId, ')
+          ..write('unit: $unit, ')
+          ..write('quantity: $quantity, ')
+          ..write('eatenAtUtcMs: $eatenAtUtcMs, ')
+          ..write('energyKcal: $energyKcal, ')
+          ..write('proteinG: $proteinG, ')
+          ..write('carbohydratesG: $carbohydratesG, ')
+          ..write('sugarsG: $sugarsG, ')
+          ..write('fatG: $fatG, ')
+          ..write('saturatedFatG: $saturatedFatG, ')
+          ..write('sodiumMg: $sodiumMg, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1414,6 +2065,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfileAllergiesTable profileAllergies = $ProfileAllergiesTable(this);
   late final $ProfilePreferencesTable profilePreferences = $ProfilePreferencesTable(this);
   late final $WeightEntriesTable weightEntries = $WeightEntriesTable(this);
+  late final $NoteEntriesTable noteEntries = $NoteEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
@@ -1423,6 +2075,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     profileAllergies,
     profilePreferences,
     weightEntries,
+    noteEntries,
   ];
 }
 
@@ -2176,6 +2829,282 @@ typedef $$WeightEntriesTableProcessedTableManager =
       WeightEntryRow,
       PrefetchHooks Function()
     >;
+typedef $$NoteEntriesTableCreateCompanionBuilder = NoteEntriesCompanion Function({
+  required String id,
+  required String name,
+  Value<String?> sourceFoodId,
+  required String unit,
+  required double quantity,
+  required int eatenAtUtcMs,
+  Value<double?> energyKcal,
+  Value<double?> proteinG,
+  Value<double?> carbohydratesG,
+  Value<double?> sugarsG,
+  Value<double?> fatG,
+  Value<double?> saturatedFatG,
+  Value<double?> sodiumMg,
+  Value<int> rowid,
+});
+typedef $$NoteEntriesTableUpdateCompanionBuilder = NoteEntriesCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> sourceFoodId,
+  Value<String> unit,
+  Value<double> quantity,
+  Value<int> eatenAtUtcMs,
+  Value<double?> energyKcal,
+  Value<double?> proteinG,
+  Value<double?> carbohydratesG,
+  Value<double?> sugarsG,
+  Value<double?> fatG,
+  Value<double?> saturatedFatG,
+  Value<double?> sodiumMg,
+  Value<int> rowid,
+});
+
+class $$NoteEntriesTableFilterComposer extends Composer<_$AppDatabase, $NoteEntriesTable> {
+  $$NoteEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sourceFoodId =>
+      $composableBuilder(column: $table.sourceFoodId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get unit => $composableBuilder(column: $table.unit, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get eatenAtUtcMs =>
+      $composableBuilder(column: $table.eatenAtUtcMs, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get energyKcal =>
+      $composableBuilder(column: $table.energyKcal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get carbohydratesG =>
+      $composableBuilder(column: $table.carbohydratesG, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get sugarsG =>
+      $composableBuilder(column: $table.sugarsG, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get fatG => $composableBuilder(column: $table.fatG, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get saturatedFatG =>
+      $composableBuilder(column: $table.saturatedFatG, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => ColumnFilters(column));
+}
+
+class $$NoteEntriesTableOrderingComposer extends Composer<_$AppDatabase, $NoteEntriesTable> {
+  $$NoteEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sourceFoodId =>
+      $composableBuilder(column: $table.sourceFoodId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get eatenAtUtcMs =>
+      $composableBuilder(column: $table.eatenAtUtcMs, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get energyKcal =>
+      $composableBuilder(column: $table.energyKcal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get proteinG =>
+      $composableBuilder(column: $table.proteinG, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get carbohydratesG =>
+      $composableBuilder(column: $table.carbohydratesG, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get sugarsG =>
+      $composableBuilder(column: $table.sugarsG, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get fatG =>
+      $composableBuilder(column: $table.fatG, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get saturatedFatG =>
+      $composableBuilder(column: $table.saturatedFatG, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get sodiumMg =>
+      $composableBuilder(column: $table.sodiumMg, builder: (column) => ColumnOrderings(column));
+}
+
+class $$NoteEntriesTableAnnotationComposer extends Composer<_$AppDatabase, $NoteEntriesTable> {
+  $$NoteEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name => $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceFoodId =>
+      $composableBuilder(column: $table.sourceFoodId, builder: (column) => column);
+
+  GeneratedColumn<String> get unit => $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<double> get quantity => $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<int> get eatenAtUtcMs => $composableBuilder(column: $table.eatenAtUtcMs, builder: (column) => column);
+
+  GeneratedColumn<double> get energyKcal => $composableBuilder(column: $table.energyKcal, builder: (column) => column);
+
+  GeneratedColumn<double> get proteinG => $composableBuilder(column: $table.proteinG, builder: (column) => column);
+
+  GeneratedColumn<double> get carbohydratesG =>
+      $composableBuilder(column: $table.carbohydratesG, builder: (column) => column);
+
+  GeneratedColumn<double> get sugarsG => $composableBuilder(column: $table.sugarsG, builder: (column) => column);
+
+  GeneratedColumn<double> get fatG => $composableBuilder(column: $table.fatG, builder: (column) => column);
+
+  GeneratedColumn<double> get saturatedFatG =>
+      $composableBuilder(column: $table.saturatedFatG, builder: (column) => column);
+
+  GeneratedColumn<double> get sodiumMg => $composableBuilder(column: $table.sodiumMg, builder: (column) => column);
+}
+
+class $$NoteEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $NoteEntriesTable,
+          NoteEntryRow,
+          $$NoteEntriesTableFilterComposer,
+          $$NoteEntriesTableOrderingComposer,
+          $$NoteEntriesTableAnnotationComposer,
+          $$NoteEntriesTableCreateCompanionBuilder,
+          $$NoteEntriesTableUpdateCompanionBuilder,
+          (NoteEntryRow, BaseReferences<_$AppDatabase, $NoteEntriesTable, NoteEntryRow>),
+          NoteEntryRow,
+          PrefetchHooks Function()
+        > {
+  $$NoteEntriesTableTableManager(_$AppDatabase db, $NoteEntriesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$NoteEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$NoteEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$NoteEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> sourceFoodId = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<double> quantity = const Value.absent(),
+                Value<int> eatenAtUtcMs = const Value.absent(),
+                Value<double?> energyKcal = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> carbohydratesG = const Value.absent(),
+                Value<double?> sugarsG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<double?> saturatedFatG = const Value.absent(),
+                Value<double?> sodiumMg = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NoteEntriesCompanion(
+                id: id,
+                name: name,
+                sourceFoodId: sourceFoodId,
+                unit: unit,
+                quantity: quantity,
+                eatenAtUtcMs: eatenAtUtcMs,
+                energyKcal: energyKcal,
+                proteinG: proteinG,
+                carbohydratesG: carbohydratesG,
+                sugarsG: sugarsG,
+                fatG: fatG,
+                saturatedFatG: saturatedFatG,
+                sodiumMg: sodiumMg,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> sourceFoodId = const Value.absent(),
+                required String unit,
+                required double quantity,
+                required int eatenAtUtcMs,
+                Value<double?> energyKcal = const Value.absent(),
+                Value<double?> proteinG = const Value.absent(),
+                Value<double?> carbohydratesG = const Value.absent(),
+                Value<double?> sugarsG = const Value.absent(),
+                Value<double?> fatG = const Value.absent(),
+                Value<double?> saturatedFatG = const Value.absent(),
+                Value<double?> sodiumMg = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => NoteEntriesCompanion.insert(
+                id: id,
+                name: name,
+                sourceFoodId: sourceFoodId,
+                unit: unit,
+                quantity: quantity,
+                eatenAtUtcMs: eatenAtUtcMs,
+                energyKcal: energyKcal,
+                proteinG: proteinG,
+                carbohydratesG: carbohydratesG,
+                sugarsG: sugarsG,
+                fatG: fatG,
+                saturatedFatG: saturatedFatG,
+                sodiumMg: sodiumMg,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$NoteEntriesTable, NoteEntryRow>(table),
+                  BaseReferences<_$AppDatabase, $NoteEntriesTable, NoteEntryRow>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$NoteEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $NoteEntriesTable,
+      NoteEntryRow,
+      $$NoteEntriesTableFilterComposer,
+      $$NoteEntriesTableOrderingComposer,
+      $$NoteEntriesTableAnnotationComposer,
+      $$NoteEntriesTableCreateCompanionBuilder,
+      $$NoteEntriesTableUpdateCompanionBuilder,
+      (NoteEntryRow, BaseReferences<_$AppDatabase, $NoteEntriesTable, NoteEntryRow>),
+      NoteEntryRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2188,4 +3117,5 @@ class $AppDatabaseManager {
   $$ProfilePreferencesTableTableManager get profilePreferences =>
       $$ProfilePreferencesTableTableManager(_db, _db.profilePreferences);
   $$WeightEntriesTableTableManager get weightEntries => $$WeightEntriesTableTableManager(_db, _db.weightEntries);
+  $$NoteEntriesTableTableManager get noteEntries => $$NoteEntriesTableTableManager(_db, _db.noteEntries);
 }

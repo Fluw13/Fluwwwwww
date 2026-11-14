@@ -18,6 +18,7 @@ PersonalLimits _limits({
   mildAllergenTags: mild,
   allergenNames: const {},
   dailyKcal: dailyKcal,
+  proteinMinG: 100,
   sugarsMaxG: sugarsMaxG,
   saturatedFatMaxG: 20,
   sodiumMaxMg: 2000,

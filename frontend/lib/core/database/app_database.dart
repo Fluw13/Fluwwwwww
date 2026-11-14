@@ -1,17 +1,18 @@
 import 'package:drift/drift.dart';
 import 'package:fluw/core/database/app_database.steps.dart';
+import 'package:fluw/core/database/note_tables.dart';
 import 'package:fluw/core/database/profile_tables.dart';
 
 part 'app_database.g.dart';
 
 /// Raising [schemaVersion]: change the tables, then run `dart run drift_dev make-migrations` (see CLAUDE.md section 4)
 /// and add the new step below.
-@DriftDatabase(tables: [Profiles, ProfileConditions, ProfileAllergies, ProfilePreferences, WeightEntries])
+@DriftDatabase(tables: [Profiles, ProfileConditions, ProfileAllergies, ProfilePreferences, WeightEntries, NoteEntries])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -27,6 +28,9 @@ class AppDatabase extends _$AppDatabase {
         await migrator.createTable(schema.profileAllergies);
         await migrator.createTable(schema.profilePreferences);
         await migrator.createTable(schema.weightEntries);
+      },
+      from3To4: (migrator, schema) async {
+        await migrator.createTable(schema.noteEntries);
       },
     ),
   );

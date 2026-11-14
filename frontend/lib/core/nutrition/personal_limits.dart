@@ -11,6 +11,7 @@ final class PersonalLimits {
     required this.mildAllergenTags,
     required this.allergenNames,
     required this.dailyKcal,
+    required this.proteinMinG,
     required this.sugarsMaxG,
     required this.saturatedFatMaxG,
     required this.sodiumMaxMg,
@@ -29,6 +30,7 @@ final class PersonalLimits {
         mildAllergenTags: const {},
         allergenNames: const {},
         dailyKcal: null,
+        proteinMinG: null,
         sugarsMaxG: null,
         saturatedFatMaxG: null,
         sodiumMaxMg: null,
@@ -47,6 +49,9 @@ final class PersonalLimits {
   final Map<String, String> allergenNames;
 
   final double? dailyKcal;
+
+  /// The lower end of the protein range; teens get theirs too, since protein is the one target they have.
+  final double? proteinMinG;
   final double? sugarsMaxG;
   final double? saturatedFatMaxG;
   final double? sodiumMaxMg;
