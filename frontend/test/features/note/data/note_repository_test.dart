@@ -42,7 +42,10 @@ void main() {
     final entry = _entry('a', DateTime.utc(2026, 11, 11, 5, 30), unit: QuantityUnit.milliliter, quantity: 330);
 
     await repository.add(entry);
-    final stored = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
+    final stored = await repository
+        .watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12))
+        .first
+        .then((window) => window.entries);
 
     expect(stored, [entry]);
     expect(stored.single.facts.per100[Nutrient.proteinG], isNull);
@@ -56,7 +59,10 @@ void main() {
     await repository.add(_entry('edge', DateTime.utc(2026, 11, 12)));
     await repository.add(_entry('before', DateTime.utc(2026, 11, 10, 23, 59)));
 
-    final stored = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
+    final stored = await repository
+        .watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12))
+        .first
+        .then((window) => window.entries);
 
     expect(stored.map((entry) => entry.id), ['early', 'late']);
   });
@@ -64,7 +70,7 @@ void main() {
   test('watch phát lại khi thêm và xóa món', () async {
     final stream = repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12));
     final emitted = <List<String>>[];
-    final subscription = stream.listen((entries) => emitted.add([for (final entry in entries) entry.id]));
+    final subscription = stream.listen((window) => emitted.add([for (final entry in window.entries) entry.id]));
     await pumpEventQueue();
 
     await repository.add(_entry('a', DateTime.utc(2026, 11, 11, 8)));
@@ -101,9 +107,10 @@ void main() {
           );
     }
 
-    final stored = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
+    final window = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
 
-    expect(stored.map((entry) => entry.id), ['ok']);
+    expect(window.entries.map((entry) => entry.id), ['ok']);
+    expect(window.unreadableCount, 3);
   });
 
   test('khóa đơn vị lưu cố định, không bao giờ đổi', () {
@@ -125,7 +132,10 @@ void main() {
         ),
       );
     }
-    final stored = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
+    final stored = await repository
+        .watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12))
+        .first
+        .then((window) => window.entries);
 
     expect(stored, hasLength(2));
     expect(stored.map((entry) => entry.id).toSet(), hasLength(2));

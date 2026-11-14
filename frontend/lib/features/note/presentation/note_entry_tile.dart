@@ -24,7 +24,7 @@ class NoteEntryTile extends StatelessWidget {
     final details = [
       timeLabel(entry.eatenAt),
       '${formatDecimal(entry.quantity)} $unit',
-      'Đạm ${protein == null ? 'chưa có' : '${formatDecimal(protein)} g'}',
+      'Protein (đạm) ${protein == null ? 'chưa có' : '${formatDecimal(protein)} g'}',
       'Đường ${sugars == null ? 'chưa có' : '${formatDecimal(sugars)} g'}',
     ].join(' · ');
 

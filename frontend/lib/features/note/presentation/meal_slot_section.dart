@@ -42,7 +42,7 @@ class MealSlotSection extends StatelessWidget {
         ),
         if (entries.isNotEmpty)
           Text(
-            '${kcal == null ? 'Năng lượng chưa có' : '${formatWhole(kcal)} kcal'} · Đạm ${grams(protein)} · '
+            '${kcal == null ? 'Năng lượng chưa có' : '${formatWhole(kcal)} kcal'} · Protein (đạm) ${grams(protein)} · '
             'Đường ${grams(sugars)}',
             style: theme.textTheme.bodyMedium,
           ),

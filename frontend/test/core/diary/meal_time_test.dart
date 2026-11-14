@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluw/core/diary/diary_target.dart';
 import 'package:fluw/core/diary/meal_placement.dart';
 import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/diary/meal_slot_labels.dart';
@@ -38,5 +39,13 @@ void main() {
     expect(mealSlotDisplayOrder.map(mealSlotLabel), ['Sáng', 'Trưa / Chiều', 'Tối', 'Khuya / Đêm']);
     expect(mealSlotHours(MealSlot.night), '00:01 - 05:59');
     expect(mealSlotHours(MealSlot.evening), '18:01 - 24:00');
+  });
+
+  test('00:00:30: khung mặc định là Tối của hôm trước và giữ đúng giờ thật, không lưu 21:00 ngày mới', () {
+    final now = DateTime(2026, 11, 12, 0, 0, 30);
+    final target = DiaryTarget.current(now);
+
+    expect(target, DiaryTarget(day: day, slot: MealSlot.evening));
+    expect(eatenAtFor(day: target.day, slot: target.slot, now: now), now);
   });
 }
