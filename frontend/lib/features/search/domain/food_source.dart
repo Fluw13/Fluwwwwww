@@ -1,0 +1,1 @@
+enum FoodSource { openFoodFacts, usda }

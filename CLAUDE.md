@@ -172,6 +172,13 @@ features/<tên>/
   - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình; test cố định ngày `appTestToday`.
   - App chạy locale `vi` (`flutter_localizations`); iOS khai báo `CFBundleLocalizations`. `tester.pageBack()` tìm tooltip tiếng Anh nên test bấm `find.byType(BackButton)`.
   - Ô nhập dùng `inputDecorationTheme` (nền `surfaceContainerLow`, bo 16, không viền) như thiết kế.
+- **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng.
+- **`PersonalLimits` (M3a) `core/nutrition/`:** dị ứng (tag OFF + tên người dùng đặt), chỉ tiêu cả ngày (kcal, đường, béo bão hòa, natri; chỉ người lớn có hồ sơ hợp lệ), cờ theo dõi theo bệnh, `profileStatus` (none / loading / unreadable / loaded). `personalLimitsProvider` trong core, override ở `app/app_overrides.dart` (`crossFeatureOverrides()`, dùng chung cho `main()` và `pumpFluwApp`) bằng `app/personal_limits_from_profile.dart`, để feature search không import feature profile. Hồ sơ hỏng → `unreadable`, UI phải báo, không im lặng như không dị ứng.
+- **`features/search/` (M3a):**
+  - `data/`: `food_item_json` (đọc hợp đồng M1a; món sai hợp đồng thì bỏ riêng; chỉ nhận link https), `food_api` (`PRODUCT_NOT_FOUND` và `INVALID_BARCODE` → null), `recent_searches_storage` (shared_preferences key `recent_searches`, tối đa 8, lỗi đọc/ghi nào cũng bỏ qua — không phải dữ liệu sức khỏe).
+  - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `QuickFilter` (ít đường <5 g, giàu protein >20 g, dưới 200 kcal theo 100 g/ml; thiếu số liệu thì không đạt), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
+  - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt; người dùng tự nhập khẩu phần 1–2.000), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn.
+  - Chưa làm: "Thêm vào Nhật ký" (sau M4), "Đã lưu" và nhập món thủ công (M3b).
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -183,7 +190,7 @@ features/<tên>/
   - `NoteEntry` (`id`, `facts`, `quantity`, `eatenAt`).
   - `NoteDay` và `groupNoteEntries`: ngày mới nhất đứng đầu; món cùng giờ xếp theo `id` vì `List.sort` không ổn định; danh sách và map đều không sửa được.
   - Khi làm phần data M4: thêm `==` cho `NoteEntry`, sinh `id` lúc tạo món.
-- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `http`, `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
+- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -423,9 +430,9 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a (tra cứu + mã vạch) chờ FLuw duyệt merge; M1b 30 món Việt (Zero viết công thức, cần key USDA chạy được); M1c Gemini (sau, FLuw kiểm key trước) |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1b 30 món Việt chờ key USDA chạy được; M1c Gemini (sau, FLuw kiểm key trước) |
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
-| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
+| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong; M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau; nút "Thêm vào Nhật ký" sau M4 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
 | M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Chờ M2–M4 |
@@ -452,6 +459,25 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 14/11/2026 — M3a: màn Tra Cứu và Chi tiết sản phẩm
+- **Merge PR #29** (M1a, `0a29380`), FLuw duyệt. **Deploy (VERIFIED qua log Render):** `dep-dbs17uff3r2c73dscfm0` live 07:56 UTC, Node 22.23.5, `npm install` 0 lỗ hổng, log `Server is running on port 5000`, không lỗi. Chưa gọi thử `/api/foods/*` từ ngoài (mạng agent chặn `fluw.onrender.com`).
+- **FLuw chốt:** M3a (tra cứu + chi tiết) trước; Đã lưu, nhập thủ công ở M3b; "Thêm vào Nhật ký" sau M4.
+- **Thêm:** `core/network/` (4 file), `core/nutrition/personal_limits*`, `app/app_overrides.dart`, `app/personal_limits_from_profile.dart`, `features/search/` data (4), domain (7), presentation (12); route `/search/food`; package `http`. Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** lỗi TLS (wifi có trang đăng nhập, proxy) không được bắt → Tra Cứu quay chờ mãi → bắt `IOException`.
+  - **Cao:** hồ sơ hỏng làm cảnh báo dị ứng tắt im lặng → `ProfileStatus.unreadable`, card báo rõ.
+  - Dòng phần trăm tràn ở cỡ chữ 200% → `Wrap`; test cỡ chữ lớn có hồ sơ người lớn.
+  - Mã OFF sai GTIN làm "Thử lại" hỏng vĩnh viễn → `INVALID_BARCODE` coi như không có.
+  - Calo là mục tiêu, không phải giới hạn; "100%" kèm "vượt" → xét theo % làm tròn.
+  - Dưới 18 tuổi bị mời thiết lập lại hồ sơ; storage chỉ bắt `Exception`, giá trị sai kiểu làm crash; từ khóa >100 ký tự vẫn gọi máy chủ; chờ dị ứng không có chữ giải thích; hướng dẫn backend local dùng http (bị chặn); ảnh giải mã nguyên cỡ.
+  - Thêm test cho các đột biến lọt: race tìm kiếm, lỗi tải sản phẩm + thử lại, vượt giới hạn, natri theo dõi, trạng thái đang tải dị ứng.
+- **Test:**
+  - `flutter test` 301/301 (từ 252), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch.
+  - Fixture JSON theo đúng hợp đồng backend, số liệu lấy từ fixture OFF thật của M1a.
+  - Kiểm 10 đột biến cho phần sửa review, đều bị bắt.
+  - Đã chụp ảnh 390 dp màn Tra Cứu và Chi tiết (test tạm, không commit).
+  - Chưa kiểm: gọi backend production từ app thật (mạng agent chặn), APK (job `android-apk`).
 
 ### 13/11/2026 — M1a: API tra cứu thực phẩm và mã vạch (backend)
 - **Merge PR #28** (M2d, `9c8b644`).
