@@ -19,6 +19,7 @@ import 'package:fluw/features/note/data/note_providers.dart';
 import 'package:fluw/features/note/domain/note_entry.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/search/presentation/add_to_note_bar.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
@@ -153,10 +154,12 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'gà');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
+    await scrollTo(tester, find.text(chickenItem['name']! as String));
     await tester.tap(find.text(chickenItem['name']! as String));
     await tester.pumpAndSettle();
-    await scrollTo(tester, find.widgetWithText(FilledButton, 'Thêm vào Nhật ký'));
   }
+
+  Finder inAddBar(Finder finder) => find.descendant(of: find.byType(AddToNoteBar), matching: finder);
 
   Future<List<NoteEntry>> storedOn(WidgetTester tester, DateTime from, DateTime to) async {
     final window = await tester.runAsync(
@@ -179,9 +182,9 @@ void main() {
 
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '200');
     await tester.pumpAndSettle();
-    await scrollTo(tester, find.widgetWithText(ChoiceChip, 'Tối'));
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Tối'));
+    await tester.tap(find.text('18–24h'));
     await tester.pumpAndSettle();
+    expect(inAddBar(find.text('Tối')), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Thêm vào Nhật ký'));
     await tester.pumpAndSettle();
 
@@ -209,7 +212,7 @@ void main() {
     await openChickenDetail(tester, fromSearchTab: false);
 
     expect(find.text('Thêm vào Nhật ký ngày 10/11'), findsOneWidget);
-    expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Sáng')).selected, isTrue);
+    expect(inAddBar(find.text('Sáng')), findsOneWidget, reason: 'khung đang chọn hiện tên đầy đủ');
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '200');
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Thêm vào Nhật ký'));
@@ -335,6 +338,25 @@ void main() {
 
     final stored = await storedOn(tester, DateTime(2026, 11, 11), DateTime(2026, 11, 12));
     expect(stored.map((entry) => entry.name), ['Phở bò', 'Bánh mì']);
+  });
+
+  testWidgets('320x568 cỡ chữ 310%: thanh thêm món ở Chi tiết luôn thấy nút, không tràn', (tester) async {
+    tester.view
+      ..physicalSize = const Size(320, 568)
+      ..devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 3.1;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await loadAppFonts();
+    await pumpFluwApp(tester, httpClient: chickenBackend);
+    await openChickenDetail(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.widgetWithText(FilledButton, 'Thêm vào Nhật ký').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('00–06h'));
+    await tester.pumpAndSettle();
+    expect(inAddBar(find.text('Khuya / Đêm')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   for (final textScale in [2.0, 3.1]) {

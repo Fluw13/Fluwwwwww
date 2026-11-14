@@ -31,7 +31,7 @@ HealthProfile buildProfile({
     displayName: displayName,
     sex: sex,
     bmrFormulaForOther: bmrFormulaForOther,
-    birthDate: birthDate ?? CalendarDate(2006, 5, 13),
+    birthDate: birthDate ?? CalendarDate(2006, 3, 8),
     heightCm: heightCm,
     weightKg: weightKg,
     targetWeightKg: targetWeightKg,

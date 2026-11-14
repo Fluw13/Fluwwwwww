@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
@@ -63,7 +62,7 @@ class NutrientTable extends StatelessWidget {
       );
     }
     return Text(
-      '${formatDecimal(value)} ${nutrientUnit(nutrient)}',
+      formatNutrientAmount(nutrient, value),
       textAlign: TextAlign.end,
       style: emphasize ? theme.textTheme.titleSmall : theme.textTheme.bodyMedium,
     );

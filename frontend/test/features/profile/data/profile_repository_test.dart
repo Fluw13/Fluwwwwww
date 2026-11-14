@@ -128,7 +128,7 @@ void main() {
   test('trường bắt buộc không đọc được thì báo hồ sơ hỏng, khác với chưa có hồ sơ, không crash', () async {
     final corruptions = <ProfilesCompanion>[
       const ProfilesCompanion(sex: Value('unknown')),
-      const ProfilesCompanion(birthDate: Value('13/05/2006')),
+      const ProfilesCompanion(birthDate: Value('08/03/2006')),
       const ProfilesCompanion(activityLevel: Value('extreme')),
       const ProfilesCompanion(trainingType: Value('crossfit')),
     ];

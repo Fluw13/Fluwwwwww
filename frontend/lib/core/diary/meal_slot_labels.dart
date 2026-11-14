@@ -17,3 +17,11 @@ String mealSlotHours(MealSlot slot) => switch (slot) {
   MealSlot.evening => '18:01 - 24:00',
   MealSlot.night => '00:01 - 05:59',
 };
+
+/// Short form for tight rows, as in the design's slot picker; always shown next to [mealSlotLabel] of the choice.
+String mealSlotShortHours(MealSlot slot) => switch (slot) {
+  MealSlot.morning => '06–12h',
+  MealSlot.afternoon => '12–18h',
+  MealSlot.evening => '18–24h',
+  MealSlot.night => '00–06h',
+};

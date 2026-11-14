@@ -195,8 +195,13 @@ features/<tên>/
   - `domain/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `week` (tuần bắt đầu thứ Hai).
   - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
   - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`.
-  - Màn Chi tiết (search) có `AddToNoteCard`: chọn khung, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo.
+  - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo. Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang.
+  - `WeekStrip` tự cuộn ngang tới ngày đang chọn (thứ Bảy, Chủ nhật bị khuất trên màn hẹp). Chỉ cuộn hàng ngày bằng `getOffsetToReveal`, không dùng `Scrollable.ensureVisible` vì nó cuộn cả trang.
   - Giờ cố định khi thêm vào khung khác (vd 21:00) hiện như giờ thật trên thẻ món; chưa đánh dấu là ước tính.
+- **Khởi động (`main.dart`):** đăng ký giấy phép phông và dữ liệu (`core/licenses/`), tạo `ProviderContainer` rồi gọi `wakeUpBackend` (`core/network/backend_warm_up.dart`, GET `/health`, lỗi thì bỏ qua) để Render free thức dậy trước khi người dùng tìm. Test không chạy `main()` nên không có lượt gọi này.
+- **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage` (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
+- **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
+- **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
 - Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
@@ -307,7 +312,7 @@ dart run build_runner build && dart format lib test
 - Bẫy khi test giao diện:
   - Phông mặc định của `flutter test` có ký tự vuông, nên không bắt được tràn chiều cao ở cỡ chữ lớn. Test cỡ chữ lớn phải gọi `loadAppFonts()` (`test/helpers/load_app_fonts.dart`).
   - `flutter test` tắt bóng đổ (`debugDisableShadows`), nên ảnh chụp trong test có dải đen ở mép thanh dưới. Đây không phải lỗi; muốn xem bóng thật thì đặt `debugDisableShadows = false`.
-- Code dính tới giờ (`placeInNote`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test`. CI chạy UTC nên không bắt được lỗi quên `toLocal()`. Đã đề xuất FLuw thêm `TZ` vào workflow (sửa workflow cần FLuw duyệt).
+- Code dính tới giờ (`placeMeal`, `DiaryTarget`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test`. CI chạy UTC nên không bắt được lỗi quên `toLocal()`. Đã đề xuất FLuw thêm `TZ` vào workflow (sửa workflow cần FLuw duyệt).
 - Môi trường cloud của agent không có Flutter sẵn: tải SDK `flutter_linux_3.47.9-stable.tar.xz` từ `storage.googleapis.com` vào scratchpad, `chown` thư mục SDK. **Không chạy `git config --global --add safe.directory`.**
 - Không có Android SDK trong môi trường agent → không build APK tại chỗ, không kiểm được `build.gradle.kts`. CI build APK ở job `android-apk`.
 - Proxy của môi trường agent chỉ cho push vào branch của phiên. Tạo tag, xóa branch khác phải để FLuw làm trên GitHub.
@@ -426,7 +431,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
-- Key USDA lưu cho môi trường agent (form bảo mật, 13/11) bị USDA báo `API_KEY_INVALID`. FLuw kiểm lại key, và kiểm `USDA_API_KEY` trên Render có cùng key đúng không.
+- Key USDA cho môi trường agent: lần đầu (13/11) agent lưu nhầm kiểu `Authorization: Bearer` nên USDA báo `API_KEY_INVALID` (không phải lỗi của key). 14/11 lưu lại với header `X-Api-Key`, nhưng proxy chưa áp dụng (thử `X-Api-Key: DEMO_KEY` vẫn không bị thay). Key trên Render chưa có request nào để kiểm; FLuw kiểm bằng cách tìm `chicken breast` trong app (có kết quả USDA là key đúng). Đề xuất M1b dùng bộ dữ liệu tải về của USDA (CC0, không cần key) qua host `fdc.nal.usda.gov`, chờ FLuw đồng ý.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ---
@@ -459,6 +464,13 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 - **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần.
 - **M1, khi thêm `express.json()`:** `errorHandler` phải giữ `error.status` 4xx (JSON hỏng → 400, body quá lớn → 413) thay vì trả 500.
 - **Express 5** gọi callback của `app.listen` cả khi lỗi; `server.js` đã bỏ qua nhánh lỗi để handler `'error'` xử lý.
+- **Chi phí (kiểm 14/11):**
+  - Render: 1 web service gói free, không có Postgres/Key Value, tắt preview. Gói free không tự tính tiền; FLuw xem mục Billing trên dashboard để chắc workspace không gắn gói trả phí.
+  - GitHub: repo **public** nên Actions và artifact miễn phí; artifact APK tự xóa sau 14 ngày.
+  - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Chưa tạo Firebase/Neon/Gemini (M7/M1c): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
+  - Không có lịch tự chạy (scheduled task) nào còn bật.
+- **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
+- **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
 - **Gemini:** gói miễn phí giới hạn lượt/ngày, và Google có thể dùng nội dung gửi lên để cải thiện sản phẩm. Model và biến môi trường Gemini trên Render chưa kiểm tra lại.
 
 ---
@@ -466,6 +478,33 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 14/11/2026 — Kiểm tra toàn bộ (chi phí, pháp lý, công thức, code, tốc độ, UI)
+- **Merge PR #31** (M4, `4da2d23`).
+- **Kiểm, không cần sửa:**
+  - Công thức BMR, TDEE, mục tiêu calo, protein, béo/đường/tinh bột, nước, BMI, tuổi đúng mục 6.
+  - Backend gọi 2 nguồn song song, cache có giới hạn, gộp tìm trùng.
+  - Không còn lịch tự chạy; Render/GitHub không có gì tính phí (mục 9).
+- **Đo tốc độ:**
+  - Backend chạy tại chỗ gọi OFF thật: tìm 0,15–0,67 s, có cache 0,002 s, mã vạch 0,6 s.
+  - SQLite với 6.570 món (3 năm): thêm/xóa ~1 ms, đọc 1 tuần 20 ms.
+  - Chỉ Render free ngủ mới chậm (~50 s lần đầu).
+- **Sửa:**
+  - Ngày sinh thật của FLuw trong 6 file test (repo public) → 08/03/2006 (cùng 20 tuổi ở ngày test).
+  - Icon app là logo Flutter (thương hiệu của Google) → icon Fluw cho Android (kể cả adaptive) và iOS.
+  - Không có trang giấy phép (BSD của Flutter/gói cần kèm thông báo; OFF yêu cầu ghi nguồn) → `AboutCard` + `showLicensePage`, `registerDataLicenses`.
+  - Render free ngủ làm lần tìm đầu chậm → `wakeUpBackend` khi mở app.
+  - Thêm vào Nhật ký phải cuộn qua cả bảng dinh dưỡng, lệch thiết kế → `AddToNoteBar` ghim đáy.
+  - Thứ Bảy/Chủ nhật bị khuất trên dải tuần → tự cuộn tới ngày đang chọn.
+  - kcal hiện "42.3 kcal" ở Tra cứu, nơi khác số nguyên → `formatNutrientAmount`.
+  - Code thừa: `Nutrients.asMap` (không còn dùng); `NutrientTotal.isComplete` dùng ở `DaySummaryCard`.
+  - README lỗi thời (ghi "Đang xây dựng", còn Nutri-Score đã bỏ) và câu quyền riêng tư chưa nói tới sao lưu của hệ điều hành → sửa.
+- **Chưa làm (báo FLuw):**
+  - Trang Chủ (M6) và Quét Món (M5) vẫn là màn "Đang xây dựng"; app mở vào Trang Chủ.
+  - Muốn Render không ngủ: ping định kỳ (sửa workflow, cần FLuw duyệt) hoặc gói trả phí; khuyên giữ free.
+  - User-Agent gửi OFF chưa có thông tin liên hệ (chờ FLuw).
+  - Trước khi lên Google Play/App Store: chính sách quyền riêng tư, tài khoản nhà phát triển (Google $25 một lần, Apple $99/năm).
+- **Test:** `flutter test` 342/342 (từ 334), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `npm test` 55/55; `flutter analyze`, `dart format` sạch. Đã chụp màn Nhật Ký và Chi tiết (test tạm, không commit). Chưa kiểm: APK và icon trên máy thật (job `android-apk`).
 
 ### 14/11/2026 — M4: Nhật ký ăn uống
 - **Merge PR #30** (M3a, `ce7c57f`). APK run #71 có Tra Cứu và Chi tiết.

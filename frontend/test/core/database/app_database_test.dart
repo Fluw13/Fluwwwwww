@@ -8,7 +8,7 @@ import '../../helpers/in_memory_database.dart';
 ProfilesCompanion _row({required int id}) => ProfilesCompanion.insert(
   id: Value(id),
   sex: 'male',
-  birthDate: '2006-05-13',
+  birthDate: '2006-03-08',
   heightCm: 175,
   weightKg: 70,
   targetWeightKg: 65,

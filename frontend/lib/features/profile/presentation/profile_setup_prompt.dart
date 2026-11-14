@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
+import 'package:fluw/features/profile/presentation/about_card.dart';
 
 /// Shown instead of the profile when there is nothing readable to show, with one clear way forward.
 class ProfileSetupPrompt extends StatelessWidget {
@@ -55,6 +56,8 @@ class ProfileSetupPrompt extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton(onPressed: onPressed, child: Text(buttonLabel)),
+            const SizedBox(height: AppSpacing.sm),
+            const LicensesButton(),
           ],
         ),
       ),

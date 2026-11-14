@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/features/search/presentation/search_labels.dart';
 
@@ -23,7 +22,7 @@ class FoodMetric extends StatelessWidget {
           style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         Text(
-          value == null ? 'Chưa có' : '${formatDecimal(value)} ${nutrientUnit(nutrient)}',
+          value == null ? 'Chưa có' : formatNutrientAmount(nutrient, value),
           style: theme.textTheme.titleSmall?.copyWith(
             color: value == null ? theme.colorScheme.onSurfaceVariant : color,
           ),

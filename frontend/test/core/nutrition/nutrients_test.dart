@@ -40,7 +40,6 @@ void main() {
     source[Nutrient.energyKcal] = 999;
 
     expect(nutrients[Nutrient.energyKcal], 100);
-    expect(() => nutrients.asMap()[Nutrient.energyKcal] = 1, throwsUnsupportedError);
   });
 
   test('bằng nhau khi cùng các chỉ số và giá trị, không phụ thuộc thứ tự', () {

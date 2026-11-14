@@ -14,8 +14,6 @@ final class Nutrients {
 
   double? operator [](Nutrient nutrient) => _values[nutrient];
 
-  Map<Nutrient, double> asMap() => _values;
-
   Nutrients scaled(double factor) =>
       Nutrients({for (final MapEntry(key: nutrient, :value) in _values.entries) nutrient: value * factor});
 

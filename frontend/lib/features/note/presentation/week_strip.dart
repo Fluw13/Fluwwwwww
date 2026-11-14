@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/note/domain/week.dart';
 import 'package:fluw/features/note/presentation/note_labels.dart';
 
-class WeekStrip extends StatelessWidget {
+class WeekStrip extends StatefulWidget {
   const WeekStrip({
     required this.selected,
     required this.today,
@@ -20,8 +21,51 @@ class WeekStrip extends StatelessWidget {
   final ValueChanged<CalendarDate> onSelected;
 
   @override
+  State<WeekStrip> createState() => _WeekStripState();
+}
+
+class _WeekStripState extends State<WeekStrip> {
+  final ScrollController _days = ScrollController();
+  final GlobalKey _selectedDayKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _revealSelectedDay();
+  }
+
+  @override
+  void didUpdateWidget(WeekStrip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selected != widget.selected) {
+      _revealSelectedDay();
+    }
+  }
+
+  @override
+  void dispose() {
+    _days.dispose();
+    super.dispose();
+  }
+
+  /// On a narrow phone the week scrolls sideways and Saturday or Sunday start out of view. Only this row scrolls:
+  /// `Scrollable.ensureVisible` would also move the page around it.
+  void _revealSelectedDay() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = _selectedDayKey.currentContext?.findRenderObject();
+      if (!mounted || box == null || !_days.hasClients) {
+        return;
+      }
+      final target = RenderAbstractViewport.of(box).getOffsetToReveal(box, 0.5).offset;
+      final position = _days.position;
+      _days.jumpTo(target.clamp(position.minScrollExtent, position.maxScrollExtent));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selected = widget.selected;
     final days = weekStartingOn(mondayOf(selected));
 
     return Column(
@@ -32,7 +76,7 @@ class WeekStrip extends StatelessWidget {
             IconButton(
               tooltip: 'Tuần trước',
               icon: const Icon(Icons.chevron_left),
-              onPressed: () => onSelected(selected.addDays(-DateTime.daysPerWeek)),
+              onPressed: () => widget.onSelected(selected.addDays(-DateTime.daysPerWeek)),
             ),
             Expanded(
               child: Text(monthLabel(selected), textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
@@ -40,26 +84,28 @@ class WeekStrip extends StatelessWidget {
             IconButton(
               tooltip: 'Tuần sau',
               icon: const Icon(Icons.chevron_right),
-              onPressed: () => onSelected(selected.addDays(DateTime.daysPerWeek)),
+              onPressed: () => widget.onSelected(selected.addDays(DateTime.daysPerWeek)),
             ),
           ],
         ),
-        if (selected != today)
+        if (selected != widget.today)
           Align(
-            child: TextButton(onPressed: () => onSelected(today), child: const Text('Về hôm nay')),
+            child: TextButton(onPressed: () => widget.onSelected(widget.today), child: const Text('Về hôm nay')),
           ),
         const SizedBox(height: AppSpacing.sm),
         SingleChildScrollView(
+          controller: _days,
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               for (final day in days) ...[
                 _DayButton(
+                  key: day == selected ? _selectedDayKey : null,
                   day: day,
                   isSelected: day == selected,
-                  isToday: day == today,
-                  hasEntries: daysWithEntries.contains(day),
-                  onTap: () => onSelected(day),
+                  isToday: day == widget.today,
+                  hasEntries: widget.daysWithEntries.contains(day),
+                  onTap: () => widget.onSelected(day),
                 ),
                 const SizedBox(width: AppSpacing.sm),
               ],
@@ -74,6 +120,7 @@ class WeekStrip extends StatelessWidget {
 class _DayButton extends StatelessWidget {
   const _DayButton({
     required this.day,
+    super.key,
     required this.isSelected,
     required this.isToday,
     required this.hasEntries,
