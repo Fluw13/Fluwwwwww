@@ -254,7 +254,21 @@ src/routes → controllers → services → providers (OFF, USDA, Gemini)
 src/middlewares/          notFound, errorHandler
 tests/                    node:test, helper startServer
 ```
-- Lỗi luôn trả `{ "error": { "code": "...", "message": "..." } }`, không lộ stack trace.
+- Lỗi luôn trả `{ "error": { "code": "...", "message": "..." } }`, không lộ stack trace. `HttpError` (status, code) cho lỗi phía client; `errorHandler` giữ status 4xx của body parser (code `BAD_REQUEST`), mọi lỗi khác (kể cả có `status` 5xx) thành 500 và ghi log.
+- **API tra cứu (M1a):**
+  - `GET /api/foods/search?q=` (2–100 ký tự, `q` lặp thì 400): gộp Open Food Facts (`search.openfoodfacts.org`, `langs=vi,en`) và USDA (Foundation + SR Legacy), mỗi nguồn 10 món, OFF trước. Trả `{ query, items, sources: { openFoodFacts, usda } }`, trạng thái `ok` / `unavailable` / `not_configured`. Một nguồn lỗi vẫn trả nguồn còn lại; mọi nguồn lỗi thì 503 `SOURCES_UNAVAILABLE`.
+  - `GET /api/foods/barcode/:code`: OFF API v2. Kiểm chữ số kiểm tra GTIN (8/12/13/14 số) trước khi gọi; sai thì 400 `INVALID_BARCODE`, không có thì 404 `PRODUCT_NOT_FOUND`.
+  - Món (`FoodItem`): `{ id ("off:<mã>" | "usda:<fdcId>"), source, name, brand, barcode, imageUrl, servingSize, basis: { amount: 100, unit: "g" | "ml" }, nutrients: { energyKcal, proteinG, carbohydratesG, sugarsG, fatG, saturatedFatG, sodiumMg }, allergenTags, attribution: { source, license, imageLicense, url } }`.
+    - `null` = không có dữ liệu, 0 là thật. Số vô lý (trên 100 g/100 g, trên 900 kcal) thành `null`.
+    - `allergenTags`: `null` = chưa biết (USDA, hoặc kết quả tìm kiếm OFF vì search API không trả trường này); `[]` chỉ là chưa ai ghi, **không** có nghĩa an toàn. App phải gọi `/barcode` để lấy dị ứng trước khi cảnh báo.
+    - Search API của OFF cũng không trả `product_name_vi`, nên tên trong kết quả tìm kiếm có thể không phải tiếng Việt.
+    - OFF: đơn vị theo `nutrition_data_per` (`100ml` → ml), rồi mới theo số lượng; natri g × 1000; thiếu kcal thì đổi từ kJ ÷ 4,184. USDA: năng lượng 1008 → 2048 → 2047, đường 2000 → 1063.
+    - App (M3) phải đổi `"g"`/`"ml"` sang `QuantityUnit` và từ chối giá trị lạ.
+  - Mỗi nguồn hẹn giờ 8 s (`lib/fetchJson`, lỗi nào cũng thành `UpstreamError`); cache trong bộ nhớ (`lib/ttlCache`): tìm kiếm 1 giờ (chỉ khi không nguồn nào lỗi), mã vạch 24 giờ, không có sản phẩm 1 giờ; tìm kiếm trùng đang chạy dùng chung một lượt gọi.
+  - Rate limit `/api/foods/*` 30 lượt/phút mỗi IP (`express-rate-limit`), `trust proxy` 1 vì Render đứng sau một proxy.
+  - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.1` (không ghi thông tin cá nhân của FLuw).
+  - `createApp(services)` nhận service để test; `src/createServices.js` lắp nguồn thật, `server.js` gọi một lần.
+  - Chạy thử ở môi trường agent: Node cần `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` mới đi qua proxy (Render không cần).
 - Hợp đồng với Render, không được đổi: chạy `node server.js` trong `backend/`, đọc `PORT`, có `GET /health`.
 - Biến môi trường khai báo trong `backend/.env.example`; local dùng `.env` (Node đọc bằng `--env-file-if-exists`).
 
@@ -398,6 +412,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
+- Key USDA lưu cho môi trường agent (form bảo mật, 13/11) bị USDA báo `API_KEY_INVALID`. FLuw kiểm lại key, và kiểm `USDA_API_KEY` trên Render có cùng key đúng không.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ---
@@ -408,7 +423,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | FLuw chốt 13/11: M1a tra cứu + mã vạch, M1b 30 món Việt (Zero viết công thức), M1c Gemini (sau, FLuw kiểm key trước) |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a (tra cứu + mã vạch) chờ FLuw duyệt merge; M1b 30 món Việt (Zero viết công thức, cần key USDA chạy được); M1c Gemini (sau, FLuw kiểm key trước) |
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | Chờ M1 |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Domain xong (#21) |
@@ -437,6 +452,23 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 13/11/2026 — M1a: API tra cứu thực phẩm và mã vạch (backend)
+- **Merge PR #28** (M2d, `9c8b644`).
+- **Môi trường:** tạo environment "Fluwwwwww" (mở OFF và USDA), FLuw duyệt. Key USDA nhập qua form báo không hợp lệ; tạm test USDA bằng mẫu dựng theo tài liệu, review kiểm thêm bằng `DEMO_KEY`.
+- **Thêm** ở `backend/src/`: `config`, `createServices`, `errors/` (HttpError, UpstreamError), `lib/` (fetchJson, ttlCache, gtin), `models/nutrients`, `providers/openFoodFacts/` và `providers/usda/` (client + mapper), `services/` (foodSearchService, barcodeService), `controllers/foodController`, `routes/foodRoutes`, `middlewares/rateLimiter`. `app.js` thành `createApp(services)`; `server.js` lắp service thật. Thêm `express-rate-limit`. Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** tra mã vạch đồ uống (`nutrition_data_per: 100ml`, vd Coca-Cola) ra toàn `null` → luôn đọc `_100g`, đơn vị theo `nutrition_data_per`; thêm fixture thật Coca-Cola.
+  - Món Foundation của USDA thiếu đường (id 1063) → đọc 2000 rồi 1063; năng lượng ưu tiên Atwater riêng 2048.
+  - Không có rate limit, mã vạch không kiểm chữ số kiểm tra → `express-rate-limit` + `trust proxy`, kiểm GTIN.
+  - Thiếu test lắp service (key USDA, số kết quả, TTL không có sản phẩm), test 5xx của errorHandler.
+  - Thêm: chặn số vô lý, đọc dự phòng `energy_100g`, giấy phép ảnh CC BY-SA, hủy body khi lỗi, gộp tìm kiếm trùng đang chạy.
+  - User-Agent: review đề xuất thêm URL repo làm thông tin liên hệ; chưa thêm vì đó là thông tin của FLuw, chờ FLuw quyết.
+- **Test:**
+  - `npm test` 55/55 (từ 4). Fixture OFF là dữ liệu thật (sữa chua Vinamilk, Coca-Cola, tìm "sữa chua").
+  - Kiểm 9 đột biến cho phần sửa review, đều bị bắt.
+  - Chạy thật `node server.js` gọi OFF: tìm "sữa chua", "phở"; mã vạch Vinamilk, Coca-Cola (100 ml, 42,25 kcal); mã sai chữ số kiểm tra trả 400.
+  - Chưa kiểm: USDA bằng key thật (key báo không hợp lệ); deploy Render (chờ FLuw duyệt merge).
 
 ### 13/11/2026 — M2d: dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy"
 - **Merge PR #27** (M2c, `fd59787`).

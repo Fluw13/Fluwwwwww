@@ -1,0 +1,31 @@
+{
+  "code": "0049000004632",
+  "status": 1,
+  "status_verbose": "product found",
+  "product": {
+    "allergens_tags": [],
+    "brands": "Coca-Cola",
+    "code": "0049000004632",
+    "image_front_small_url": "https://images.openfoodfacts.org/images/products/004/900/000/4632/front_en.71.200.jpg",
+    "nutriments": {
+      "carbohydrates_100g": 10.9859154929577,
+      "energy-kcal_100g": 42.2535211267606,
+      "energy-kj_100g": 186.760563380282,
+      "energy_100g": 186.760563380282,
+      "fat_100g": 0,
+      "proteins_100g": 0,
+      "salt_100g": 0.0598591549295775,
+      "saturated-fat_100g": 0,
+      "sodium_100g": 0.023943661971831,
+      "sugars_100g": 10.9859154929577
+    },
+    "nutrition_data": "on",
+    "nutrition_data_per": "100ml",
+    "nutrition_data_prepared_per": "100g",
+    "product_name": "Coca-Cola",
+    "product_quantity": 355,
+    "product_quantity_unit": "ml",
+    "quantity": "355ml",
+    "serving_size": "1 bottle (355 ml)"
+  }
+}

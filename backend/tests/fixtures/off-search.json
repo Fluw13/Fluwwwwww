@@ -1,0 +1,35 @@
+{
+  "hits": [
+    {
+      "code": "4897050114100",
+      "product_name": "Sữa chua G Duck"
+    },
+    {
+      "code": "8934673607827",
+      "brands": [
+        "Vinamilk"
+      ],
+      "quantity": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 16,
+        "energy-kcal_100g": 99.4,
+        "fat_100g": 2.6,
+        "proteins_100g": 3,
+        "salt_100g": 0.09,
+        "sodium_100g": 0.036,
+        "sugars_100g": 14.7
+      },
+      "product_name": "Vinamilk sữa chua dâu",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/467/360/7827/front_en.3.200.jpg"
+    },
+    {
+      "code": "8934673500432",
+      "quantity": "100g",
+      "product_name": "Vinamilk sữa chua trân châu",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/467/350/0432/front_en.3.200.jpg"
+    }
+  ],
+  "count": 114,
+  "page": 1,
+  "page_size": 3
+}

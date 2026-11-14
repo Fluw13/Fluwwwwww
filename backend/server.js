@@ -1,4 +1,8 @@
-const app = require('./src/app');
+const createApp = require('./src/app');
+const loadConfig = require('./src/config');
+const createServices = require('./src/createServices');
+
+const app = createApp(createServices(loadConfig()));
 
 const PORT = process.env.PORT || 5000;
 // Hosts such as Render send SIGTERM before stopping an instance during deploys; in-flight requests get time to finish.
