@@ -92,7 +92,7 @@ features/<tên>/
 - Widget test cần thay provider đã override mặc định thì truyền `pumpFluwApp(overrides:)`; chúng nằm ở `ProviderScope` con vì Riverpod không cho override một provider hai lần trong cùng container. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
 - **Shell (UI0):**
   - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
-  - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, avatar mở Hồ Sơ. Chưa có chuông thông báo; thêm ở M6/M8 khi có nhắc nhở.
+  - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, chuông (mở `/reminders`, M6b), avatar mở Hồ Sơ.
     - `AppBar` của Flutter tự giới hạn cỡ chữ tiêu đề (`_kMaxTitleTextScaleFactor`); giữ nguyên theo chuẩn Material.
   - Thanh dưới: 5 tab, nút Quét tròn 56 dp nổi 24 dp.
     - Phần nổi nằm trong chiều cao của thanh để nhận được chạm; có test chạm vào mép trên của nút.
@@ -200,6 +200,14 @@ features/<tên>/
   - `domain/nutrition_advice`: `adviceFor(today: null)` khi Nhật ký đang tải/lỗi thì chỉ còn lời nhắc theo hồ sơ. Không coi số thiếu là 0: buổi tối chỉ nói "còn khoảng" khi mọi món có calo; protein thiếu ở vài món thì nói "tối đa". Dị ứng lạc cũng bỏ các loại hạt. Gợi ý theo luật, không gọi AI: dị ứng (tên người dùng đặt + đọc nhãn), hạn chế đồ ngọt (theo dõi đường hoặc đã ≥ 80% giới hạn), muối, béo bão hòa (theo bệnh), bổ sung protein (nhóm thực phẩm, bỏ món dị ứng cả nặng lẫn nhẹ, thuần chay bỏ đồ động vật, keto bỏ đậu lăng; thích hấp/luộc, thích hạt), calo vượt > 10% hoặc buổi tối còn ≥ 300 kcal (chỉ khi đã ghi món). Dưới 18 tuổi không nói về calo. Không khẳng định sức khỏe cho món cụ thể.
   - `presentation/`: `HomeScreen` (callback từ `app_router`: Tra Cứu, Quét, Nhật Ký, Hồ Sơ, Thiết lập hồ sơ; hồ sơ không đọc được thì nút mở tab Hồ Sơ, không mở form trống; Nhật ký đang tải thì hiện vòng chờ, không hiện 0), `GreetingCard`, `TodayNutritionCard` (vòng calo + thanh protein, đường, tinh bột, béo, thêm béo bão hòa/natri khi theo dõi; vòng và "Còn lại" cạnh nhau, chồng lên nhau khi màn hẹp/chữ > 150%; thiếu kcal ở vài món thì "Còn lại tối đa", món nào cũng thiếu thì "Chưa có dữ liệu calo"; so vượt theo số đã làm tròn), `TodayMealsCard` (4 khung; khung trống có "Ghi món" đặt `diaryTargetProvider` rồi mở Tra Cứu, semantics nói tên khung; chữ > 130% thì nút xuống dưới tên khung; thiếu kcal ở vài món thì hiện "≥ X kcal"), `DayEvaluationCard` (hôm qua, mỗi dòng có icon + chữ), `AdviceCard`, `QuickActions` (Quét mã vạch, Tra cứu; "Nhập thực phẩm" của thiết kế chờ M3b).
   - Bỏ khỏi thiết kế: "Chuẩn Mục Tiêu", "An toàn", GI, "Êm dạ dày", khẳng định về dạ dày; thẻ nước chờ M8.
+- `features/reminders/` (M6b):
+  - `domain/`: `ReminderTime` ("HH:mm"), `ReminderSettings` (mặc định **tắt**, giờ 10:00/17:00/22:00; sắp xếp, không trùng), `reminder_message` (khung theo giờ: < 12 sáng, < 19 chiều, còn lại tổng kết; hôm nay nói số đã ghi so với chỉ tiêu, có món thiếu thì nói; chỉ gợi ý "món giàu protein" khi protein đủ số liệu và còn thiếu; ngày sau là lời nhắc chung), `reminder_plan` (hẹn 7 ngày, bỏ giờ đã qua, id = ngày × 10 + thứ tự).
+  - `data/`: `ReminderSettingsStorage` (shared_preferences `reminders_enabled`, `reminder_times`; kho lỗi/null thì mặc định), `reminderSettingsProvider`, `NotificationScheduler` (interface) + `LocalNotificationScheduler` (`flutter_local_notifications`, `timezone`, `flutter_timezone`; báo thức không chính xác `inexactAllowWhileIdle` nên không cần quyền báo thức chính xác của Android 14; kênh `meal_reminders`, `NotificationVisibility.private`; icon `ic_notification`).
+  - `presentation/`: `plannedRemindersProvider` (null khi Nhật ký đang tải/lỗi để giữ lịch cũ), `ReminderSync` (bọc app trong `FluwApp.builder`, `listenManual` + `fireImmediately`, chỉ hẹn lại khi kế hoạch đổi), `ReminderSettingsScreen` (route `/reminders` ngoài nhánh tab; bật thì mới xin quyền, bị từ chối thì vẫn tắt và báo cách bật; đổi giờ bằng `showTimePicker`, chặn trùng; nút về giờ mặc định).
+  - Bật thì người dùng tự bật (xin quyền đúng lúc cần), không bật sẵn lúc mở app lần đầu.
+  - Android: `RECEIVE_BOOT_COMPLETED` + 2 receiver của plugin trong `AndroidManifest.xml`; `isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs` 2.1.4 trong `build.gradle.kts`; AGP 9.1.1 (plugin yêu cầu tối thiểu); `drawable-*/ic_notification.png` (chữ F trắng) + `res/raw/keep.xml` giữ icon khi R8 thu gọn tài nguyên (thiếu là thông báo hỏng im lặng). iOS: `AppDelegate` đặt `UNUserNotificationCenter` delegate.
+  - Test: `pumpFluwApp` thay bộ hẹn giờ bằng `FakeNotificationScheduler` (`appNotifications(tester)`), `clockProvider` cố định 09:00 ngày `appTestToday`.
+- `clockProvider` (`core/time/`): giờ hiện tại dạng hàm để test cố định được.
 - `features/note/` (M4):
   - `domain/`: `week` (tuần bắt đầu thứ Hai).
   - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
@@ -212,7 +220,7 @@ features/<tên>/
 - **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
-- Thư viện đang dùng: `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`, `flutter_local_notifications`.
+- Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`, `flutter_timezone`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -457,7 +465,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | FLuw chọn Gemini miễn phí cho nhận diện ảnh (14/11). M5a mã vạch, M5b ảnh (cần M1c backend, FLuw duyệt) |
-| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | M6a (Trang chủ, gợi ý, đánh giá hôm qua) xong; M6b nhắc nhở đang làm |
+| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | M6a xong (PR #33, `e714d28`); M6b nhắc nhở đang review |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 | M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
 | M9 | Báo cáo tuần/tháng: calo, macro, đường/natri, cân nặng, nước | Chờ M2, M4, M8 |
@@ -488,6 +496,11 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 15/11/2026 — M6b: nhắc ghi bữa ăn
+- **Merge PR #33** (M6a, `e714d28`).
+- **Thêm:** `features/reminders/` (domain 4, data 4, presentation 3), `core/time/clock_provider`, chuông trên header, route `/reminders`, cấu hình Android/iOS cho thông báo hẹn giờ. Chi tiết ở mục 3.
+- **Test:** `flutter test` 399/399 (từ 383), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch. Chưa kiểm: build APK có plugin mới (job `android-apk`), thông báo thật trên máy.
 
 ### 15/11/2026 — M6a: Trang Chủ
 - **Merge PR #32** (kiểm tra toàn bộ, `aec59db`).

@@ -5,6 +5,7 @@ import 'package:fluw/features/home/presentation/home_screen.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_setup_screen.dart';
+import 'package:fluw/features/reminders/presentation/reminder_settings_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/presentation/food_detail_screen.dart';
@@ -14,6 +15,7 @@ import 'package:go_router/go_router.dart';
 abstract final class AppRoutes {
   static const String profileSetup = '/profile/setup';
   static const String foodDetail = '/search/food';
+  static const String reminders = '/reminders';
 }
 
 GoRouter createAppRouter() {
@@ -23,6 +25,8 @@ GoRouter createAppRouter() {
     navigatorKey: rootNavigatorKey,
     initialLocation: AppTab.home.path,
     routes: [
+      // Opened from the header bell on any tab, so it sits outside the tab branches, above the tab bar.
+      GoRoute(path: AppRoutes.reminders, builder: (context, state) => const ReminderSettingsScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
