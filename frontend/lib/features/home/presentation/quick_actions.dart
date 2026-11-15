@@ -63,21 +63,24 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
+    return Semantics(
+      button: true,
+      child: Material(
+        color: background,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, color: foreground, size: 28),
-              const SizedBox(height: AppSpacing.md),
-              Text(label, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foreground)),
-            ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, color: foreground, size: 28),
+                const SizedBox(height: AppSpacing.md),
+                Text(label, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foreground)),
+              ],
+            ),
           ),
         ),
       ),

@@ -46,5 +46,11 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
     limitsCarbohydrates: profile.dietary.dietStyle == DietStyle.keto,
     prefersSteamedOrBoiled: profile.dietary.preferences.contains(FoodPreference.steamedOrBoiled),
     likesNuts: profile.dietary.preferences.contains(FoodPreference.likesNuts),
+    targetsKind: switch (targets) {
+      AdultTargets() => TargetsKind.adult,
+      TeenTargets() => TargetsKind.teen,
+      BelowMinimumAge() => TargetsKind.belowMinimumAge,
+      InvalidProfile() => TargetsKind.invalid,
+    },
   );
 }

@@ -8,7 +8,8 @@ import 'package:fluw/core/theme/nutrient_colors.dart';
 import 'package:fluw/core/widgets/nutrient_progress.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 
-/// The design's calorie ring and nutrient bars for today. Totals only count foods that have each number.
+/// The design's calorie ring and nutrient bars for today. Totals only count foods that have each number; when some
+/// lack it, what is left is an upper bound and is said so.
 class TodayNutritionCard extends StatelessWidget {
   const TodayNutritionCard({required this.totals, required this.entryCount, required this.limits, super.key});
 
@@ -21,36 +22,39 @@ class TodayNutritionCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.extension<NutrientColors>()!;
     final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
-    final kcal = totals[Nutrient.energyKcal].knownSum;
+    final kcalTotal = totals[Nutrient.energyKcal];
+    final kcal = kcalTotal.knownSum;
     final target = limits.dailyKcal;
-    final shown = [Nutrient.energyKcal, Nutrient.proteinG, Nutrient.sugarsG, Nutrient.carbohydratesG, Nutrient.fatG];
+    final shown = [
+      Nutrient.energyKcal,
+      Nutrient.proteinG,
+      Nutrient.sugarsG,
+      Nutrient.carbohydratesG,
+      Nutrient.fatG,
+      if (limits.watchesSaturatedFat) Nutrient.saturatedFatG,
+      if (limits.watchesSodium) Nutrient.sodiumMg,
+    ];
     final hasMissing = entryCount > 0 && shown.any((nutrient) => !totals[nutrient].isComplete);
+    final carbsUnavailable = limits.targetsKind == TargetsKind.adult && limits.carbohydratesTargetG == null;
+
+    final summary = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ..._headline(theme, muted, kcal: kcal, isComplete: kcalTotal.isComplete, target: target),
+        Text(target == null ? _noTargetReason() : 'Kế hoạch: ${formatWhole(target)} kcal (ước tính)', style: muted),
+      ],
+    );
 
     return SectionCard(
       title: 'Dinh dưỡng hôm nay',
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final ring = _CalorieRing(kcal: kcal, target: target, color: colors.energy);
-            final summary = Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (target == null)
-                  Text('Chưa có mục tiêu calo', style: theme.textTheme.titleMedium)
-                else if (kcal != null && kcal > target) ...[
-                  Text('Đã vượt', style: muted),
-                  Text('${formatWhole(kcal - target)} kcal', style: theme.textTheme.titleLarge),
-                ] else ...[
-                  Text('Còn lại hôm nay', style: muted),
-                  Text('${formatWhole(target - (kcal ?? 0))} kcal', style: theme.textTheme.titleLarge),
-                ],
-                Text(
-                  target == null
-                      ? 'Thiết lập hồ sơ người lớn để có mục tiêu calo.'
-                      : 'Kế hoạch: ${formatWhole(target)} kcal (ước tính)',
-                  style: muted,
-                ),
-              ],
+            final ring = _CalorieRing(
+              kcal: kcal,
+              isComplete: kcalTotal.isComplete,
+              target: target,
+              color: colors.energy,
             );
             // Side by side as in the design; stacked when a narrow screen or large text leaves no room.
             if (constraints.maxWidth < 300 || MediaQuery.textScalerOf(context).scale(1) > 1.5) {
@@ -99,6 +103,7 @@ class TodayNutritionCard extends StatelessWidget {
           color: colors.carbohydrates,
           kind: NutrientTargetKind.target,
         ),
+        if (carbsUnavailable) Text('Mục tiêu tinh bột: chưa tính được với hồ sơ này.', style: muted),
         const SizedBox(height: AppSpacing.sm),
         NutrientProgress(
           label: 'Chất béo',
@@ -108,6 +113,29 @@ class TodayNutritionCard extends StatelessWidget {
           color: colors.fat,
           kind: NutrientTargetKind.target,
         ),
+        if (limits.watchesSaturatedFat) ...[
+          const SizedBox(height: AppSpacing.sm),
+          NutrientProgress(
+            label: 'Béo bão hòa',
+            value: totals[Nutrient.saturatedFatG].knownSum,
+            target: limits.saturatedFatMaxG,
+            unit: 'g',
+            color: colors.fat,
+            kind: NutrientTargetKind.limit,
+          ),
+        ],
+        if (limits.watchesSodium) ...[
+          const SizedBox(height: AppSpacing.sm),
+          NutrientProgress(
+            label: 'Natri',
+            value: totals[Nutrient.sodiumMg].knownSum,
+            target: limits.sodiumMaxMg,
+            unit: 'mg',
+            color: theme.colorScheme.tertiary,
+            kind: NutrientTargetKind.limit,
+            whole: true,
+          ),
+        ],
         if (hasMissing) ...[
           const SizedBox(height: AppSpacing.sm),
           Text('Có món thiếu số liệu nên tổng có thể thấp hơn thực tế.', style: muted),
@@ -115,12 +143,47 @@ class TodayNutritionCard extends StatelessWidget {
       ],
     );
   }
+
+  List<Widget> _headline(
+    ThemeData theme,
+    TextStyle? muted, {
+    required double? kcal,
+    required bool isComplete,
+    required double? target,
+  }) {
+    if (target == null) {
+      return [Text('Chưa có mục tiêu calo', style: theme.textTheme.titleMedium)];
+    }
+    if (kcal == null) {
+      return [Text('Chưa có dữ liệu calo của các món hôm nay', style: theme.textTheme.titleMedium)];
+    }
+    // Compared as shown, so "Đã vượt 0 kcal" never appears.
+    if (kcal.round() > target.round()) {
+      return [
+        Text(isComplete ? 'Đã vượt' : 'Đã vượt ít nhất', style: muted),
+        Text('${formatWhole(kcal - target)} kcal', style: theme.textTheme.titleLarge),
+      ];
+    }
+    return [
+      Text(isComplete ? 'Còn lại hôm nay' : 'Còn lại tối đa', style: muted),
+      Text('${formatWhole(target - kcal)} kcal', style: theme.textTheme.titleLarge),
+    ];
+  }
+
+  String _noTargetReason() => switch ((limits.profileStatus, limits.targetsKind)) {
+    (ProfileStatus.loaded, TargetsKind.teen) => 'Dưới 18 tuổi: Fluw không tính calo.',
+    (ProfileStatus.loaded, TargetsKind.belowMinimumAge) => 'Fluw chỉ tính chỉ tiêu từ 14 tuổi.',
+    (ProfileStatus.loaded, _) => 'Hồ sơ chưa đủ để tính mục tiêu calo.',
+    (ProfileStatus.unreadable, _) => 'Không đọc được hồ sơ.',
+    _ => 'Thiết lập hồ sơ để có mục tiêu calo.',
+  };
 }
 
 class _CalorieRing extends StatelessWidget {
-  const _CalorieRing({required this.kcal, required this.target, required this.color});
+  const _CalorieRing({required this.kcal, required this.isComplete, required this.target, required this.color});
 
   final double? kcal;
+  final bool isComplete;
   final double? target;
   final Color color;
 
@@ -130,10 +193,14 @@ class _CalorieRing extends StatelessWidget {
     final kcal = this.kcal;
     final target = this.target;
     final eatenText = kcal == null ? 'Chưa có' : formatWhole(kcal);
+    final spoken = switch (kcal) {
+      null => 'chưa có dữ liệu calo',
+      _ => '${isComplete ? '' : 'ít nhất '}${formatWhole(kcal)} kcal',
+    };
 
     return Semantics(
       label: 'Năng lượng đã nạp hôm nay',
-      value: target == null ? '$eatenText kcal' : '$eatenText trên ${formatWhole(target)} kcal',
+      value: target == null ? spoken : '$spoken, mục tiêu ${formatWhole(target)} kcal',
       excludeSemantics: true,
       child: SizedBox.square(
         dimension: 132,

@@ -7,10 +7,13 @@ import 'package:fluw/features/home/domain/day_evaluation.dart';
 
 /// The end-of-day review of a finished day. Each line pairs an icon with words, so it never relies on colour alone.
 class DayEvaluationCard extends StatelessWidget {
-  const DayEvaluationCard({required this.title, required this.evaluation, super.key});
+  const DayEvaluationCard({required this.title, required this.evaluation, this.unreadableCount = 0, super.key});
 
   final String title;
   final DayEvaluation evaluation;
+
+  /// Diary rows that could not be read, left out of the verdicts.
+  final int unreadableCount;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +45,11 @@ class DayEvaluationCard extends StatelessWidget {
             ),
           ),
         if (evaluation.hasMissingData) Text('Có món thiếu số liệu nên đánh giá có thể chưa đủ.', style: muted),
+        if (unreadableCount > 0)
+          Text(
+            'Có $unreadableCount món không đọc được nên không tính vào đánh giá.',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+          ),
         Text('Đánh giá ước tính, không thay thế tư vấn y tế.', style: muted),
       ],
     );
@@ -71,6 +79,7 @@ String verdictText(NutrientVerdict verdict) {
     VerdictStatus.below => '$label: thiếu $gap',
     VerdictStatus.over when verdict.nutrient == Nutrient.energyKcal => '$label: vượt mục tiêu $gap',
     VerdictStatus.over => '$label: vượt giới hạn $gap',
+    VerdictStatus.incomplete => '$label: chưa đủ số liệu để đánh giá (${verdict.missingCount} món thiếu)',
     VerdictStatus.noData => '$label: chưa có dữ liệu',
   };
 }

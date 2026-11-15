@@ -1,6 +1,9 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_tab.dart';
+import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/core/database/database_provider.dart';
 import 'package:fluw/core/diary/diary_target.dart';
 import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/diary/note_entry.dart';
@@ -13,6 +16,7 @@ import 'package:fluw/features/note/data/note_providers.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_setup_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
 import 'package:fluw/features/search/presentation/search_screen.dart';
@@ -87,7 +91,7 @@ void main() {
     expect(find.text('Theo dõi: đường'), findsOneWidget);
     expect(
       tester.getSemantics(find.bySemanticsLabel('Năng lượng đã nạp hôm nay')),
-      isSemantics(value: '600 trên 2,083 kcal'),
+      isSemantics(value: '600 kcal, mục tiêu 2,083 kcal'),
     );
     expect(find.text('1,483 kcal'), findsOneWidget, reason: 'còn lại 2,083 - 600');
     expect(find.textContaining('30 g / cần ít nhất 126 g'), findsOneWidget);
@@ -143,6 +147,89 @@ void main() {
     await tester.tap(find.text('Xem Nhật ký'));
     await tester.pumpAndSettle();
     expect(find.byType(NoteScreen), findsOneWidget);
+  });
+
+  testWidgets('món thiếu calo: không tính "còn lại" như 0, nói rõ chưa có dữ liệu', (tester) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    await tester.pumpAndSettle();
+    await tester.runAsync(
+      () => appContainer(tester)
+          .read(noteRepositoryProvider)
+          .add(
+            NoteEntry(
+              id: 'tea',
+              name: 'Trà',
+              sourceFoodId: null,
+              facts: NutritionFacts(per100: Nutrients(const {Nutrient.proteinG: 1}), unit: QuantityUnit.milliliter),
+              quantity: 300,
+              eatenAt: DateTime(2026, 11, 11, 8),
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chưa có dữ liệu calo của các món hôm nay'), findsOneWidget);
+    expect(find.text('Còn lại hôm nay'), findsNothing);
+  });
+
+  testWidgets('dưới 18 tuổi: không bảo đi sửa hồ sơ', (tester) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(
+      () =>
+          appContainer(tester)
+              .read(profileRepositoryProvider)
+              .save(buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dưới 18 tuổi: Fluw không tính calo.'), findsOneWidget);
+    expect(find.textContaining('hồ sơ người lớn'), findsNothing);
+  });
+
+  testWidgets('hồ sơ không đọc được: nút mở tab Hồ Sơ, không mở form trống có thể ghi đè', (tester) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    await tester.runAsync(() {
+      final database = appContainer(tester).read(appDatabaseProvider);
+      return database.update(database.profiles).write(const ProfilesCompanion(sex: Value('unknown')));
+    });
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Mở Hồ Sơ'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProfileScreen), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+  });
+
+  testWidgets('trình đọc màn hình: nút "Ghi món" nói rõ khung giờ', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await pumpFluwApp(tester);
+    await scrollTo(tester, find.text('Trưa / Chiều (12:01 - 18:00)'));
+
+    expect(find.bySemanticsLabel('Ghi món vào buổi trưa / chiều'), findsOneWidget);
+    semantics.dispose();
+  });
+
+  testWidgets('cỡ chữ 310%: nút "Ghi món" xuống dưới tên khung, tên khung không bị bóp hẹp', (tester) async {
+    tester.view
+      ..physicalSize = const Size(320, 568)
+      ..devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 3.1;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await loadAppFonts();
+    await pumpFluwApp(tester);
+    await scrollTo(tester, find.text('Trưa / Chiều (12:01 - 18:00)'));
+
+    expect(tester.getRect(find.text('Trưa / Chiều (12:01 - 18:00)')).width, greaterThan(200));
+    // The second slot in display order is Trưa / Chiều; every slot is empty here.
+    final button = find.widgetWithText(TextButton, 'Ghi món').at(1);
+    await scrollTo(tester, button);
+    // Measured after the last scroll, so both rects are in the same frame.
+    final label = tester.getRect(find.text('Trưa / Chiều (12:01 - 18:00)'));
+    expect(tester.getRect(button).top, greaterThanOrEqualTo(label.bottom));
   });
 
   for (final textScale in [2.0, 3.1]) {

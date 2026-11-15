@@ -17,6 +17,7 @@ PersonalLimits _limits({
   bool nuts = false,
   double? kcal = 2000,
   double? proteinMin = 100,
+  TargetsKind kind = TargetsKind.adult,
 }) => PersonalLimits(
   profileStatus: ProfileStatus.loaded,
   severeAllergenTags: severe,
@@ -34,22 +35,23 @@ PersonalLimits _limits({
   limitsCarbohydrates: keto,
   prefersSteamedOrBoiled: steamed,
   likesNuts: nuts,
+  targetsKind: kind,
 );
 
 NutrientTotals _today(Map<Nutrient, double> values) => NutrientTotals.of([Nutrients(values)]);
 
-final DateTime _morning = DateTime(2026, 11, 11, 9);
-final DateTime _evening = DateTime(2026, 11, 11, 20);
+const int _morning = 9;
+const int _evening = 20;
 
-List<Advice> _advice(PersonalLimits limits, Map<Nutrient, double> today, {DateTime? now, int entries = 1}) =>
-    adviceFor(limits: limits, today: _today(today), entryCount: entries, now: now ?? _morning);
+List<Advice> _advice(PersonalLimits limits, Map<Nutrient, double> today, {int hour = _morning, int entries = 1}) =>
+    adviceFor(limits: limits, today: _today(today), entryCount: entries, hour: hour);
 
 Advice _protein(List<Advice> advice) => advice.firstWhere((item) => item.title.startsWith('Bổ sung protein'));
 
 void main() {
   test('chưa có hồ sơ hoặc hồ sơ hỏng thì chỉ có một lời nhắc, không gợi ý theo số liệu', () {
     List<Advice> forStatus(ProfileStatus status) =>
-        adviceFor(limits: PersonalLimits.empty(status), today: _today(const {}), entryCount: 0, now: _morning);
+        adviceFor(limits: PersonalLimits.empty(status), today: _today(const {}), entryCount: 0, hour: _morning);
 
     expect(forStatus(ProfileStatus.none).single.title, 'Thiết lập hồ sơ để nhận gợi ý');
     expect(forStatus(ProfileStatus.unreadable).single.title, 'Không đọc được hồ sơ');
@@ -132,20 +134,98 @@ void main() {
   test('calo: vượt hơn 10% thì nhắc; buổi tối còn nhiều thì nhắc đừng bỏ bữa; buổi sáng thì không', () {
     expect(_advice(_limits(), {Nutrient.energyKcal: 2300, Nutrient.proteinG: 120}).last.title, 'Đã vượt mục tiêu calo');
     expect(
-      _advice(_limits(), {Nutrient.energyKcal: 1200, Nutrient.proteinG: 120}, now: _evening).last.title,
+      _advice(_limits(), {Nutrient.energyKcal: 1200, Nutrient.proteinG: 120}, hour: _evening).last.title,
       'Còn khoảng 800 kcal hôm nay',
     );
     expect(_advice(_limits(), {Nutrient.energyKcal: 1200, Nutrient.proteinG: 120}), isEmpty);
     expect(
-      _advice(_limits(), {Nutrient.energyKcal: 0, Nutrient.proteinG: 120}, now: _evening, entries: 0),
+      _advice(_limits(), {Nutrient.energyKcal: 0, Nutrient.proteinG: 120}, hour: _evening, entries: 0),
       isEmpty,
       reason: 'chưa ghi món nào thì không đoán là chưa ăn',
     );
   });
 
-  test('dưới 18 tuổi: không nói về calo, nhắc hỏi chuyên gia', () {
-    final advice = _advice(_limits(kcal: null, proteinMin: 45), {Nutrient.proteinG: 50});
+  test('dưới 18 tuổi: không nói về calo, nhắc hỏi chuyên gia; dưới 14 tuổi và hồ sơ lỗi có lời riêng', () {
+    expect(
+      _advice(_limits(kcal: null, proteinMin: 45, kind: TargetsKind.teen), {Nutrient.proteinG: 50}).single.title,
+      'Dưới 18 tuổi',
+    );
+    expect(
+      _advice(_limits(kcal: null, proteinMin: null, kind: TargetsKind.belowMinimumAge), const {}).single.title,
+      'Fluw chỉ tính chỉ tiêu từ 14 tuổi',
+    );
+    expect(
+      _advice(_limits(kcal: null, proteinMin: null, kind: TargetsKind.invalid), const {}).single.title,
+      'Chưa tính được chỉ tiêu',
+    );
+  });
 
-    expect(advice.single.title, 'Dưới 18 tuổi');
+  test('thiếu số liệu không bị coi là 0: buổi tối không nói "còn khoảng" khi có món thiếu calo', () {
+    List<Advice> evening(List<Map<Nutrient, double>> foods) => adviceFor(
+      limits: _limits(),
+      today: NutrientTotals.of(foods.map(Nutrients.new)),
+      entryCount: foods.length,
+      hour: _evening,
+    );
+
+    expect(
+      evening([
+        const {Nutrient.proteinG: 120},
+      ]).where((item) => item.title.startsWith('Còn khoảng')),
+      isEmpty,
+    );
+    expect(
+      evening([
+        const {Nutrient.energyKcal: 500, Nutrient.proteinG: 120},
+        const {Nutrient.proteinG: 1},
+      ]).where((item) => item.title.startsWith('Còn khoảng')),
+      isEmpty,
+    );
+  });
+
+  test('protein thiếu ở vài món: nói "tối đa" vì số thật có thể cao hơn; món nào cũng thiếu thì không gợi ý', () {
+    final partial = adviceFor(
+      limits: _limits(),
+      today: NutrientTotals.of([
+        Nutrients(const {Nutrient.proteinG: 40}),
+        Nutrients(const {Nutrient.energyKcal: 100}),
+      ]),
+      entryCount: 2,
+      hour: _morning,
+    );
+    expect(_protein(partial).body, startsWith('Còn thiếu tối đa khoảng 60 g'));
+
+    final unknown = adviceFor(
+      limits: _limits(),
+      today: NutrientTotals.of([
+        Nutrients(const {Nutrient.energyKcal: 100}),
+      ]),
+      entryCount: 1,
+      hour: _morning,
+    );
+    expect(unknown.where((item) => item.title.startsWith('Bổ sung protein')), isEmpty);
+  });
+
+  test('Nhật ký chưa đọc được: chỉ còn lời nhắc theo hồ sơ, không có số đã nạp', () {
+    final advice = adviceFor(
+      limits: _limits(watchesSugar: true, severe: {'en:fish'}),
+      today: null,
+      entryCount: 0,
+      hour: _evening,
+    );
+
+    expect(advice.map((item) => item.title), ['Tránh món có: Cá', 'Hạn chế đồ ngọt']);
+    expect(advice.last.body, startsWith('Giới hạn hôm nay: tối đa 50 g đường tổng.'));
+  });
+
+  test('dị ứng lạc thì không gợi ý các loại hạt (hay dị ứng chéo)', () {
+    final advice = _protein(_advice(_limits(vegan: true, nuts: true, mild: {'en:peanuts'}), {Nutrient.proteinG: 0}));
+
+    expect(advice.body, isNot(contains('hạnh nhân')));
+  });
+
+  test('không theo dõi đường: nhắc hạn chế đồ ngọt từ đúng 80% giới hạn', () {
+    expect(_advice(_limits(), {Nutrient.sugarsG: 40}).where((item) => item.title == 'Hạn chế đồ ngọt'), hasLength(1));
+    expect(_advice(_limits(), {Nutrient.sugarsG: 39.9}).where((item) => item.title == 'Hạn chế đồ ngọt'), isEmpty);
   });
 }

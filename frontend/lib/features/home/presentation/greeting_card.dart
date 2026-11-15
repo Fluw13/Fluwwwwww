@@ -3,10 +3,14 @@ import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 
 class GreetingCard extends StatelessWidget {
-  const GreetingCard({required this.limits, required this.onSetupProfile, super.key});
+  const GreetingCard({required this.limits, required this.onSetupProfile, required this.onOpenProfile, super.key});
 
   final PersonalLimits limits;
   final VoidCallback onSetupProfile;
+
+  /// For a profile that could not be read: the Hồ Sơ tab tells a broken profile from a failed read and only offers
+  /// a retry for the latter, so an empty form never overwrites a profile that is just briefly unreadable.
+  final VoidCallback onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +42,9 @@ class GreetingCard extends StatelessWidget {
                 FilledButton(onPressed: onSetupProfile, child: const Text('Thiết lập hồ sơ')),
               ],
               ProfileStatus.unreadable => [
-                Text('Không đọc được hồ sơ trên máy. Hãy nhập lại để Fluw tính đúng chỉ tiêu.', style: muted),
+                Text('Không đọc được hồ sơ trên máy.', style: muted),
                 const SizedBox(height: AppSpacing.sm),
-                FilledButton(onPressed: onSetupProfile, child: const Text('Nhập lại hồ sơ')),
+                FilledButton(onPressed: onOpenProfile, child: const Text('Mở Hồ Sơ')),
               ],
               ProfileStatus.loading => const <Widget>[],
             },

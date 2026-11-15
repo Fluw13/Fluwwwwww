@@ -63,26 +63,46 @@ class _SlotRow extends StatelessWidget {
     final names = entries.take(2).map((entry) => entry.name).join(', ');
     final more = entries.length > 2 ? ' và ${entries.length - 2} món khác' : '';
 
-    return Row(
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${mealSlotLabel(slot)} (${mealSlotHours(slot)})', style: theme.textTheme.labelLarge),
-              Text(entries.isEmpty ? 'Chưa ghi món' : '$names$more', style: entries.isEmpty ? muted : null),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        if (entries.isEmpty)
-          TextButton.icon(onPressed: onAdd, icon: const Icon(Icons.add_circle_outline), label: const Text('Ghi món'))
-        else
-          Text(switch (total?.knownSum) {
+        Text('${mealSlotLabel(slot)} (${mealSlotHours(slot)})', style: theme.textTheme.labelLarge),
+        Text(entries.isEmpty ? 'Chưa ghi món' : '$names$more', style: entries.isEmpty ? muted : null),
+      ],
+    );
+    final Widget trailing = entries.isEmpty
+        ? Semantics(
+            label: 'Ghi món vào buổi ${mealSlotLabel(slot).toLowerCase()}',
+            button: true,
+            excludeSemantics: true,
+            onTap: onAdd,
+            child: TextButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text('Ghi món'),
+            ),
+          )
+        : Text(switch (total?.knownSum) {
             null => 'Chưa có kcal',
             // Some foods lack calories, so the real total is at least this much.
             final kcal => total!.isComplete ? '${formatWhole(kcal)} kcal' : '≥ ${formatWhole(kcal)} kcal',
-          }, style: theme.textTheme.titleSmall),
+          }, style: theme.textTheme.titleSmall);
+
+    // With large text the button would squeeze the slot name into a sliver: put it under the name instead.
+    if (MediaQuery.textScalerOf(context).scale(1) > 1.3) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          details,
+          Align(alignment: AlignmentDirectional.centerEnd, child: trailing),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: details),
+        const SizedBox(width: AppSpacing.sm),
+        trailing,
       ],
     );
   }

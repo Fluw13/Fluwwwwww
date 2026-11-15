@@ -18,6 +18,10 @@ enum VerdictStatus {
   below,
   over,
 
+  /// Some foods lack this number and the known part cannot settle the verdict: within a limit or below a target could
+  /// still change once the missing numbers are counted.
+  incomplete,
+
   /// Every food of the day lacks this number.
   noData,
 }
@@ -72,7 +76,7 @@ DayEvaluation evaluateDay({required NutrientTotals totals, required int entryCou
     final eaten = total.knownSum;
     return NutrientVerdict(
       nutrient: nutrient,
-      status: eaten == null ? VerdictStatus.noData : judge(eaten),
+      status: eaten == null ? VerdictStatus.noData : _settle(judge(eaten), missingCount: total.missingCount),
       eaten: eaten,
       target: target,
       missingCount: total.missingCount,
@@ -112,3 +116,9 @@ DayEvaluation evaluateDay({required NutrientTotals totals, required int entryCou
 }
 
 int _roundedPercent(double eaten, double target) => (eaten / target * 100).round();
+
+/// The known total is the least that was eaten: "over" and "reached" stand with gaps, anything else is not settled.
+VerdictStatus _settle(VerdictStatus status, {required int missingCount}) =>
+    missingCount == 0 || status == VerdictStatus.over || status == VerdictStatus.reached
+    ? status
+    : VerdictStatus.incomplete;

@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/personal_limits_from_profile.dart';
+import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/dietary_preferences.dart';
+import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/profile/domain/health_profile.dart';
 
 import '../features/profile/domain/profile_fixture.dart';
 
@@ -47,5 +50,48 @@ void main() {
 
   test('giảm ngọt cũng làm đường được theo dõi', () {
     expect(personalLimitsFromProfile(buildProfile(limitsSugar: true), today: fixtureToday).watchesSugar, isTrue);
+  });
+
+  test('trường cho Trang Chủ: mục tiêu béo/tinh bột, tên, mục tiêu, loại chỉ tiêu và cờ chế độ ăn', () {
+    final limits = personalLimitsFromProfile(
+      buildProfile(
+        displayName: 'An',
+        dietary: DietaryPreferences(
+          allergies: const {},
+          allergyNote: null,
+          dietStyle: DietStyle.vegan,
+          preferences: const {FoodPreference.steamedOrBoiled, FoodPreference.likesNuts},
+        ),
+      ),
+      today: fixtureToday,
+    );
+
+    expect(limits.fatTargetG, closeTo(2083.0625 * 0.25 / 9, 1e-6));
+    expect(limits.carbohydratesTargetG, closeTo((2083.0625 - 126 * 4 - 2083.0625 * 0.25) / 4, 1e-6));
+    expect(limits.displayName, 'An');
+    expect(limits.goalLabel, 'Giảm cân');
+    expect(limits.targetsKind, TargetsKind.adult);
+    expect(limits.avoidsAnimalProducts, isTrue);
+    expect(limits.limitsCarbohydrates, isFalse);
+    expect(limits.prefersSteamedOrBoiled, isTrue);
+    expect(limits.likesNuts, isTrue);
+  });
+
+  test('keto, dưới 18 tuổi, dưới 14 tuổi, hồ sơ chưa hợp lệ', () {
+    PersonalLimits of(HealthProfile profile) => personalLimitsFromProfile(profile, today: fixtureToday);
+    final keto = DietaryPreferences(
+      allergies: const {},
+      allergyNote: null,
+      dietStyle: DietStyle.keto,
+      preferences: const {},
+    );
+
+    expect(of(buildProfile(dietary: keto)).limitsCarbohydrates, isTrue);
+    expect(of(buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null)).targetsKind, TargetsKind.teen);
+    expect(
+      of(buildProfile(birthDate: CalendarDate(2015, 1, 1), weeklyChangeKg: null)).targetsKind,
+      TargetsKind.belowMinimumAge,
+    );
+    expect(of(buildProfile(heightCm: 50)).targetsKind, TargetsKind.invalid);
   });
 }

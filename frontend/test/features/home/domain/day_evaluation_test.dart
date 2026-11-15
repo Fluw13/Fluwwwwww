@@ -110,4 +110,36 @@ void main() {
 
     expect(evaluation.verdicts.map((verdict) => verdict.nutrient), [Nutrient.proteinG, Nutrient.sugarsG]);
   });
+
+  test('thiếu số liệu ở vài món: "trong giới hạn", "đạt", "thiếu" thành chưa đủ số liệu; "vượt" và "đủ" vẫn đứng', () {
+    final evaluation = evaluateDay(
+      totals: _totals([
+        {Nutrient.energyKcal: 1900, Nutrient.proteinG: 120, Nutrient.sugarsG: 5},
+        {Nutrient.energyKcal: 100},
+      ]),
+      entryCount: 2,
+      limits: _limits(),
+    );
+
+    expect(evaluation.verdicts.map((verdict) => (verdict.nutrient, verdict.status)), [
+      (Nutrient.energyKcal, VerdictStatus.onTarget),
+      (Nutrient.proteinG, VerdictStatus.reached),
+      (Nutrient.sugarsG, VerdictStatus.incomplete),
+    ]);
+    expect(evaluation.isBalanced, isFalse, reason: 'đường chưa biết đủ thì không kết luận cân đối');
+
+    final over = evaluateDay(
+      totals: _totals([
+        {Nutrient.energyKcal: 2500, Nutrient.proteinG: 40, Nutrient.sugarsG: 60},
+        {Nutrient.energyKcal: 100},
+      ]),
+      entryCount: 2,
+      limits: _limits(),
+    );
+    expect(over.verdicts.map((verdict) => verdict.status), [
+      VerdictStatus.over,
+      VerdictStatus.incomplete,
+      VerdictStatus.over,
+    ]);
+  });
 }
