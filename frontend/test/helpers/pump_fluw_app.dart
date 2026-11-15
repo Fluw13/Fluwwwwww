@@ -10,6 +10,7 @@ import 'package:fluw/core/network/backend_warm_up.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/settings/theme_mode_storage.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/core/time/current_hour_provider.dart';
 import 'package:fluw/core/time/today_provider.dart';
 import 'package:fluw/features/search/data/recent_searches_storage.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
@@ -21,6 +22,9 @@ import 'in_memory_database.dart';
 
 /// The date every app test runs on, so ages and targets never change with the real calendar.
 final CalendarDate appTestToday = CalendarDate(2026, 11, 11);
+
+/// The hour every app test runs at: morning, so no evening-only text shows unless a test asks for it.
+const int appTestHour = 9;
 
 /// Starts the real app with in-memory settings and database, and returns the settings so tests can check what was
 /// saved. The database closes with the app, also when a test fails; reach it through [appContainer].
@@ -50,6 +54,7 @@ Future<SharedPreferences> pumpFluwApp(
         ),
         ...crossFeatureOverrides(),
         todayProvider.overrideWithValue(appTestToday),
+        currentHourProvider.overrideWithValue(appTestHour),
         // No warm-up calls in tests unless a test asks for them, so mock backends see only the requests they expect.
         backendWarmUpProvider.overrideWithValue(() async {}),
         appDatabaseProvider.overrideWith((ref) {

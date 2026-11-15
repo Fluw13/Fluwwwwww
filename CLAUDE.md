@@ -191,8 +191,17 @@ features/<tên>/
   - `DiaryTarget` (ngày + khung). `DiaryTarget.current(now)` lấy ngày nhật ký từ **cùng một đồng hồ** với giờ ăn (lúc 00:00:30 là Tối hôm trước); không trộn `todayProvider` với `DateTime.now()`. `diaryTargetProvider`: Nhật ký đặt khi bấm "Thêm món" ở một khung, màn Chi tiết đọc làm mặc định, ghi xong thì xóa.
   - `eatenAtFor(day, slot, now)`: đúng khung đang diễn ra thì giữ giờ thật; khung khác thì giờ cố định trong khung (03:00, 09:00, 15:00, 21:00).
   - `FoodLogger` (interface) + `foodLoggerProvider`: tính năng khác ghi món vào Nhật ký mà không import `features/note`; `app_overrides` nối bằng `NoteFoodLogger`. `LoggedFood` chép số liệu, nên nguồn đổi sau này không sửa món đã ăn.
+  - M6a chuyển sang `core/diary/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `NoteWindow`. `DiaryReader` (interface, `NoteRepository` cài, `app_overrides` nối) + `diaryDayProvider(date)` (cửa sổ 00:00 → 00:01 hôm sau, trả `DiaryDay` gồm `NoteDay?` và số dòng hỏng) cho Trang Chủ, nhắc nhở, báo cáo đọc Nhật ký mà không import `features/note`.
+- `core/widgets/nutrient_progress.dart` (M6a): dòng "đã nạp / chỉ tiêu" + thanh, dùng chung cho Nhật Ký và Trang Chủ. `NutrientTargetKind`: `calorieGoal` (báo vượt mục tiêu), `minimum` (protein), `limit` (báo vượt giới hạn), `target` (béo, tinh bột: không cảnh báo). Thiếu số liệu thì "Chưa có dữ liệu", không vẽ thanh.
+- `PersonalLimits` (M6a) thêm, đều có mặc định: `fatTargetG`, `carbohydratesTargetG`, `displayName`, `goalLabel`, cờ chế độ ăn `avoidsAnimalProducts` (thuần chay), `limitsCarbohydrates` (keto), `prefersSteamedOrBoiled`, `likesNuts` (chỉ để gợi ý món), `targetsKind` (`TargetsKind`: adult / teen / belowMinimumAge / invalid; mỗi loại một lời nhắn, chỉ `invalid` mới bảo kiểm tra hồ sơ).
+- `currentHourProvider` (`core/time/`): giờ hiện tại, tự làm mới đầu giờ sau; test cố định `appTestHour` = 9.
+- `features/home/` (M6a):
+  - `domain/day_evaluation`: đánh giá một ngày theo chỉ tiêu: calo đạt khi trong ±10% (agent chọn, `calorieToleranceShare`; FLuw đổi được), protein đủ khi đạt cận dưới (so theo 0,1 g), đường/béo bão hòa/natri vượt theo % làm tròn; béo bão hòa và natri chỉ xét khi theo dõi bệnh tương ứng. Ngày chưa ghi món không đánh giá. Món nào cũng thiếu một chỉ số → `noData`. Có món thiếu: "vượt" và "đủ" vẫn giữ (tổng đã biết là mức tối thiểu), còn lại thành `incomplete` (không tính là tốt).
+  - `domain/nutrition_advice`: `adviceFor(today: null)` khi Nhật ký đang tải/lỗi thì chỉ còn lời nhắc theo hồ sơ. Không coi số thiếu là 0: buổi tối chỉ nói "còn khoảng" khi mọi món có calo; protein thiếu ở vài món thì nói "tối đa". Dị ứng lạc cũng bỏ các loại hạt. Gợi ý theo luật, không gọi AI: dị ứng (tên người dùng đặt + đọc nhãn), hạn chế đồ ngọt (theo dõi đường hoặc đã ≥ 80% giới hạn), muối, béo bão hòa (theo bệnh), bổ sung protein (nhóm thực phẩm, bỏ món dị ứng cả nặng lẫn nhẹ, thuần chay bỏ đồ động vật, keto bỏ đậu lăng; thích hấp/luộc, thích hạt), calo vượt > 10% hoặc buổi tối còn ≥ 300 kcal (chỉ khi đã ghi món). Dưới 18 tuổi không nói về calo. Không khẳng định sức khỏe cho món cụ thể.
+  - `presentation/`: `HomeScreen` (callback từ `app_router`: Tra Cứu, Quét, Nhật Ký, Hồ Sơ, Thiết lập hồ sơ; hồ sơ không đọc được thì nút mở tab Hồ Sơ, không mở form trống; Nhật ký đang tải thì hiện vòng chờ, không hiện 0), `GreetingCard`, `TodayNutritionCard` (vòng calo + thanh protein, đường, tinh bột, béo, thêm béo bão hòa/natri khi theo dõi; vòng và "Còn lại" cạnh nhau, chồng lên nhau khi màn hẹp/chữ > 150%; thiếu kcal ở vài món thì "Còn lại tối đa", món nào cũng thiếu thì "Chưa có dữ liệu calo"; so vượt theo số đã làm tròn), `TodayMealsCard` (4 khung; khung trống có "Ghi món" đặt `diaryTargetProvider` rồi mở Tra Cứu, semantics nói tên khung; chữ > 130% thì nút xuống dưới tên khung; thiếu kcal ở vài món thì hiện "≥ X kcal"), `DayEvaluationCard` (hôm qua, mỗi dòng có icon + chữ), `AdviceCard`, `QuickActions` (Quét mã vạch, Tra cứu; "Nhập thực phẩm" của thiết kế chờ M3b).
+  - Bỏ khỏi thiết kế: "Chuẩn Mục Tiêu", "An toàn", GI, "Êm dạ dày", khẳng định về dạ dày; thẻ nước chờ M8.
 - `features/note/` (M4):
-  - `domain/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `week` (tuần bắt đầu thứ Hai).
+  - `domain/`: `week` (tuần bắt đầu thứ Hai).
   - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
   - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`.
   - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo. Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang. Ô khung đang chọn nền `primary` chữ `onPrimary` đậm (như ngày đang chọn ở dải tuần), không dùng màu nhạt khó phân biệt.
@@ -447,8 +456,8 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết |
-| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Chờ M1 |
-| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Chờ M2–M4 |
+| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | FLuw chọn Gemini miễn phí cho nhận diện ảnh (14/11). M5a mã vạch, M5b ảnh (cần M1c backend, FLuw duyệt) |
+| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | M6a (Trang chủ, gợi ý, đánh giá hôm qua) xong; M6b nhắc nhở đang làm |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 | M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
 | M9 | Báo cáo tuần/tháng: calo, macro, đường/natri, cân nặng, nước | Chờ M2, M4, M8 |
@@ -479,6 +488,20 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 15/11/2026 — M6a: Trang Chủ
+- **Merge PR #32** (kiểm tra toàn bộ, `aec59db`).
+- **FLuw chọn (14/11):** nhận diện ảnh dùng Gemini gói miễn phí (M1c + M5b); FLuw đã có key Gemini.
+- **Thêm:** `core/diary/` (chuyển `NoteEntry`, `NoteDay`, `NoteWindow`; thêm `DiaryReader`, `diaryDayProvider`), `core/widgets/nutrient_progress`, `core/time/current_hour_provider`, `PersonalLimits` thêm trường cho Trang Chủ, `features/home/` (domain 2, presentation 7). Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** số thiếu bị coi là 0 (buổi tối báo "còn khoảng 2,083 kcal, đừng bỏ bữa" khi món không có calo; vòng ghi "Chưa có" mà dòng dưới ghi còn 2,083; Nhật ký lỗi vẫn ghi "đã nạp 0 g đường") → không tính khi thiếu, "tối đa"/"ít nhất", vòng chờ khi đang tải, `today: null` khi lỗi.
+  - **Cao:** hồ sơ đọc lỗi → nút "Nhập lại hồ sơ" mở form trống, có thể ghi đè hồ sơ thật → nút mở tab Hồ Sơ (chỉ cho "Thử lại" khi lỗi đọc).
+  - Dưới 18 tuổi bị bảo "thiết lập hồ sơ người lớn", dưới 14 tuổi bị bảo kiểm tra hồ sơ → `TargetsKind`.
+  - Thiếu số liệu vẫn được chấm "trong giới hạn"/"cân đối" → `VerdictStatus.incomplete`; báo số món hỏng trong đánh giá hôm qua.
+  - Hàng bữa ăn ở cỡ chữ 310% bóp tên khung còn 44 dp → nút xuống dưới.
+  - Thấp: so vượt calo theo số làm tròn; semantics "Ghi món" nói tên khung, ô lối tắt có vai trò nút, vòng calo đọc "ít nhất"; thêm thanh natri/béo bão hòa khi theo dõi; ghi "chưa tính được" khi người lớn không có mục tiêu tinh bột; dị ứng lạc bỏ các loại hạt; gợi ý buổi tối theo `currentHourProvider`.
+  - 5 đột biến lọt (cờ thuần chay, đổi béo/tinh bột, cửa sổ ngày, bỏ lọc ngày, ngưỡng 80%) → thêm test; kiểm lại 8 đột biến, đều bị bắt.
+- **Test:** `flutter test` 383/383 (từ 346), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch. Đã chụp Trang Chủ 390 dp (test tạm, không commit). Chưa kiểm: APK, máy thật.
 
 ### 14/11/2026 — Kiểm tra toàn bộ (chi phí, pháp lý, công thức, code, tốc độ, UI)
 - **Merge PR #31** (M4, `4da2d23`).

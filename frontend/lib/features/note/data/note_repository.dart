@@ -1,15 +1,16 @@
 import 'package:drift/drift.dart';
 import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/core/diary/diary_reader.dart';
+import 'package:fluw/core/diary/note_entry.dart';
+import 'package:fluw/core/diary/note_window.dart';
 import 'package:fluw/features/note/data/note_entry_mapper.dart';
-import 'package:fluw/features/note/data/note_window.dart';
-import 'package:fluw/features/note/domain/note_entry.dart';
 
-final class NoteRepository {
+final class NoteRepository implements DiaryReader {
   NoteRepository(this._database);
 
   final AppDatabase _database;
 
-  /// Entries eaten from [from] (inclusive) to [to] (exclusive), oldest first. Unreadable rows are left out and counted.
+  @override
   Stream<NoteWindow> watchBetween(DateTime from, DateTime to) {
     final query = _database.select(_database.noteEntries)
       ..where(

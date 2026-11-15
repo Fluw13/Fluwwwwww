@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/diary/meal_slot_labels.dart';
+import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
-import 'package:fluw/features/note/domain/note_entry.dart';
 import 'package:fluw/features/note/presentation/note_entry_tile.dart';
 
 class MealSlotSection extends StatelessWidget {

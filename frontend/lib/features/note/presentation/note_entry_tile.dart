@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
-import 'package:fluw/features/note/domain/note_entry.dart';
 import 'package:fluw/features/note/presentation/note_labels.dart';
 
 class NoteEntryTile extends StatelessWidget {

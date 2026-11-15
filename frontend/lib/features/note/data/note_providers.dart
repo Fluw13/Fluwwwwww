@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/database/database_provider.dart';
+import 'package:fluw/core/diary/note_window.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/note/data/note_repository.dart';
-import 'package:fluw/features/note/data/note_window.dart';
 
 final noteRepositoryProvider = Provider<NoteRepository>((ref) => NoteRepository(ref.watch(appDatabaseProvider)));
 
