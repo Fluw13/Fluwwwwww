@@ -88,7 +88,7 @@ features/<tên>/
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
   presentation/           màn hình và widget riêng của tính năng
 ```
-- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`.
+- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`, `reminders`.
 - Widget test cần thay provider đã override mặc định thì truyền `pumpFluwApp(overrides:)`; chúng nằm ở `ProviderScope` con vì Riverpod không cho override một provider hai lần trong cùng container. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
 - **Shell (UI0):**
   - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
@@ -173,13 +173,28 @@ features/<tên>/
   - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình và tự làm mới sau nửa đêm (Timer); test cố định ngày `appTestToday`.
   - App chạy locale `vi` (`flutter_localizations`); iOS khai báo `CFBundleLocalizations`. `tester.pageBack()` tìm tooltip tiếng Anh nên test bấm `find.byType(BackButton)`.
   - Ô nhập dùng `inputDecorationTheme` (nền `surfaceContainerLow`, bo 16, không viền) như thiết kế.
-- **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng.
+- **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng. `postBytes` (M5b) gửi ảnh; `apiFailureMessage` (`api_failure_message.dart`) là lời nhắn chung cho mọi `ApiFailure`.
 - **`PersonalLimits` (M3a) `core/nutrition/`:** dị ứng (tag OFF + tên người dùng đặt), chỉ tiêu cả ngày (kcal, đường, béo bão hòa, natri; chỉ người lớn có hồ sơ hợp lệ), cờ theo dõi theo bệnh, `profileStatus` (none / loading / unreadable / loaded). `personalLimitsProvider` trong core, override ở `app/app_overrides.dart` (`crossFeatureOverrides()`, dùng chung cho `main()` và `pumpFluwApp`) bằng `app/personal_limits_from_profile.dart`, để feature search không import feature profile. Hồ sơ hỏng → `unreadable`, UI phải báo, không im lặng như không dị ứng.
 - **`features/search/` (M3a):**
   - `data/`: `food_item_json` (đọc hợp đồng M1a; món sai hợp đồng thì bỏ riêng; chỉ nhận link https), `food_api` (`PRODUCT_NOT_FOUND` và `INVALID_BARCODE` → null), `recent_searches_storage` (shared_preferences key `recent_searches`, tối đa 8, lỗi đọc/ghi nào cũng bỏ qua — không phải dữ liệu sức khỏe).
   - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `QuickFilter` (ít đường <5 g, giàu protein >20 g, dưới 200 kcal theo 100 g/ml; thiếu số liệu thì không đạt), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
   - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt; người dùng tự nhập khẩu phần 1–2.000), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn.
   - Chưa làm: "Đã lưu" và nhập món thủ công (M3b).
+- **`features/scan/` (M5):** tab Quét Món có 2 chế độ (`SegmentedButton`): Mã vạch và Ảnh món ăn.
+  - Mã vạch (M5a):
+    - `mobile_scanner` 7.5.0, chạy trên máy: Android dùng ML Kit gói sẵn trong app, iPhone dùng Apple Vision. Chỉ đọc EAN-13, EAN-8, UPC-A (`noDuplicates`).
+    - `domain/gtin`: kiểm chữ số kiểm tra (8/12/13/14 số); camera đọc nhầm thì bỏ qua, không gọi máy chủ. Có ô nhập mã bằng tay.
+    - `BarcodeCamera` (interface) + `LiveBarcodeCamera`. Camera chỉ chạy khi tab Quét đang hiện (`TickerMode`), app ở trước màn hình, đang ở chế độ Mã vạch và không đang mở sản phẩm.
+    - Quét được → route `/search/barcode/:code` (`BarcodeLookupScreen` ở `features/search`): tra `/barcode` một lần rồi mở `FoodDetailScreen(isFullProduct: true)` (không tra lại); không có thì "Tìm theo tên" / "Quét mã khác"; lỗi mạng có "Thử lại".
+    - Android: quyền `CAMERA` + `uses-feature` camera `required="false"`. iOS: `NSCameraUsageDescription`.
+  - Ảnh món ăn (M5b):
+    - `PhotoRecognitionPanel`: lần đầu hỏi đồng ý gửi ảnh (`PhotoConsentStorage`, shared_preferences `photo_recognition_consent`; không có kho hoặc lỗi thì hỏi lại). Hộp thoại nói rõ ảnh đi qua máy chủ Fluw tới Google Gemini, gói miễn phí Google có thể dùng ảnh, đừng chụp người hay giấy tờ.
+    - `FoodPhotoPicker` (interface) + `ImageFoodPhotoPicker` (`image_picker`, tối đa 1280 px, chất lượng 80); `contentTypeOf` theo mime rồi theo đuôi file. Android chọn ảnh bằng trình chọn của hệ thống, không cần quyền đọc bộ nhớ; chụp ảnh thì `image_picker` tự xin quyền camera.
+    - `RecognitionApi` gọi `POST /api/foods/recognize`, bỏ món sai dạng.
+    - Kết quả ghi "AI (Google Gemini) gợi ý, có thể sai". Chọn món → `searchRequestProvider` (`core/search/`, so theo identity nên cùng từ khóa vẫn chạy lại) + mở tab Tra Cứu; `SearchScreen` chạy tìm rồi xóa yêu cầu. Số liệu dinh dưỡng luôn từ OFF/USDA, không từ AI.
+    - Lỗi hiện lời nhắn của máy chủ; 413 → "Ảnh quá lớn". Ảnh không có món ăn thì nói rõ. Đang nhận diện thì tắt nút, báo có thể gần một phút khi máy chủ ngủ.
+    - iOS: `NSPhotoLibraryUsageDescription`.
+  - Test: `pumpFluwApp` thay camera bằng `FakeBarcodeCamera` (`appBarcodeCamera(tester)`) và bộ chọn ảnh bằng `FakeFoodPhotoPicker` (`appPhotoPicker(tester)`).
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
@@ -232,7 +247,7 @@ features/<tên>/
 - **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
-- Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`.
+- Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`, `mobile_scanner`, `image_picker`; dev: `drift_dev`, `build_runner`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -318,6 +333,12 @@ tests/                    node:test, helper startServer
   - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.1` (không ghi thông tin cá nhân của FLuw).
   - `createApp(services)` nhận service để test; `src/createServices.js` lắp nguồn thật, `server.js` gọi một lần.
   - Chạy thử ở môi trường agent: Node cần `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` mới đi qua proxy (Render không cần).
+- **Nhận diện ảnh (M1c):** `POST /api/foods/recognize`, thân là ảnh thô (`Content-Type` image/jpeg, png, webp, heic, heif), tối đa 4 MB (`express.raw`), rate limit riêng 6 lượt/phút mỗi IP.
+  - Gemini REST `v1beta/models/{GEMINI_MODEL}:generateContent` (mặc định `gemini-flash-latest`), key ở header `x-goog-api-key`, hẹn giờ 25 s. `responseSchema` chỉ có tên món (`nameVi`) và từ khóa (`searchQuery`); prompt cấm ước lượng khối lượng, calo, chất dinh dưỡng.
+  - Trả `{ isFood, foods: [{ name, searchQuery }] }`, tối đa 3 món, bỏ trùng. Bị chặn an toàn (`blockReason`) thì coi là không có đồ ăn.
+  - Lỗi: chưa có `GEMINI_API_KEY` → 503 `RECOGNITION_NOT_CONFIGURED`; sai kiểu ảnh 415 `UNSUPPORTED_IMAGE`; ảnh rỗng 400 `IMAGE_REQUIRED`; quá 4 MB 413 `BAD_REQUEST`; Gemini 429 → 503 `RECOGNITION_BUSY`; Gemini 400 → 422 `IMAGE_UNREADABLE`; lỗi khác của Gemini → 503 `RECOGNITION_UNAVAILABLE` (log `[Recognition]`, không có ảnh).
+  - Không lưu, không ghi log ảnh. `fetchJson` nhận thêm `method`, `body`, `headers`, `acceptStatuses`, `timeoutMs`.
+  - `server.js` ghi log `[Config]` lúc khởi động: USDA, Gemini bật hay tắt và model (không ghi key), để biết biến môi trường trên Render đã có chưa.
 - Hợp đồng với Render, không được đổi: chạy `node server.js` trong `backend/`, đọc `PORT`, có `GET /health`.
 - Biến môi trường khai báo trong `backend/.env.example`; local dùng `.env` (Node đọc bằng `--env-file-if-exists`).
 
@@ -462,6 +483,7 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
 - Key USDA cho môi trường agent: lần đầu (13/11) agent lưu nhầm kiểu `Authorization: Bearer` nên USDA báo `API_KEY_INVALID` (không phải lỗi của key). 14/11 lưu lại với header `X-Api-Key`, nhưng proxy chưa áp dụng (thử `X-Api-Key: DEMO_KEY` vẫn không bị thay). Key trên Render chưa có request nào để kiểm; FLuw kiểm bằng cách tìm `chicken breast` trong app (có kết quả USDA là key đúng). Đề xuất M1b dùng bộ dữ liệu tải về của USDA (CC0, không cần key) qua host `fdc.nal.usda.gov`, chờ FLuw đồng ý.
+- `GEMINI_API_KEY` trên Render: thiếu thì nhận diện ảnh báo "Máy chủ chưa bật nhận diện ảnh". Kiểm bằng log `[Config]` sau mỗi lần deploy.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ---
@@ -472,12 +494,12 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1b 30 món Việt chờ key USDA chạy được; M1c Gemini (sau, FLuw kiểm key trước) |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1c Gemini xong (cùng PR với M5); M1b 30 món Việt chờ key USDA chạy được |
 | M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
 | M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết |
-| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | FLuw chọn Gemini miễn phí cho nhận diện ảnh (14/11). M5a mã vạch, M5b ảnh (cần M1c backend, FLuw duyệt) |
-| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Xong: M6a (PR #33, `e714d28`), M6b nhắc ghi bữa ăn |
+| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Xong: M5a mã vạch, M5b nhận diện ảnh bằng Gemini miễn phí (FLuw chọn 14/11); khẩu phần chọn ở màn Chi tiết |
+| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Xong: M6a (PR #33, `e714d28`), M6b nhắc ghi bữa ăn (PR #34, `5226475`) |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 | M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
 | M9 | Báo cáo tuần/tháng: calo, macro, đường/natri, cân nặng, nước | Chờ M2, M4, M8 |
@@ -501,7 +523,10 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
   - Không có lịch tự chạy (scheduled task) nào còn bật.
 - **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
 - **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
-- **Gemini:** gói miễn phí giới hạn lượt/ngày, và Google có thể dùng nội dung gửi lên để cải thiện sản phẩm. Model và biến môi trường Gemini trên Render chưa kiểm tra lại.
+- **Gemini:**
+  - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, chỉ gửi ảnh, không kèm dữ liệu sức khỏe.
+  - `gemini-flash-latest` là tên Google trỏ tới model Flash hiện hành; đổi bằng biến `GEMINI_MODEL` nếu cần cố định.
+  - Điều khoản bổ sung của Gemini API yêu cầu gói trả phí khi phục vụ người dùng ở EEA, Thụy Sĩ, Anh. Kiểm lại điều khoản trước khi lên cửa hàng; nếu vẫn dùng gói miễn phí thì chỉ phát hành ở Việt Nam.
 
 ---
 
