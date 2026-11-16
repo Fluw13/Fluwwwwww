@@ -24,6 +24,13 @@ before(async () => {
                 throw new HttpError(404, 'PRODUCT_NOT_FOUND', 'Không có.');
             },
         },
+        recognitionService: {
+            recognize: async ({ image, contentType }) => {
+                calls.push(['recognize', image.length, contentType]);
+                return { isFood: true, foods: [{ name: 'Phở bò', searchQuery: 'phở bò' }] };
+            },
+        },
+        recognizeRateLimit: { windowMs: 60 * 1000, limit: 2 },
     });
     server = await startServer(app);
 });
@@ -50,4 +57,35 @@ test('GET /api/foods/barcode/:code chuyển mã vạch cho service', async () =>
 
     assert.equal(response.status, 404);
     assert.deepEqual(calls.at(-1), ['barcode', '8934673607827']);
+});
+
+test('POST /api/foods/recognize nhận ảnh dạng nhị phân và trả tên món', async () => {
+    const response = await fetch(`${server.baseUrl}/api/foods/recognize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: Buffer.alloc(1024, 1),
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).foods, [{ name: 'Phở bò', searchQuery: 'phở bò' }]);
+    assert.deepEqual(calls.at(-1), ['recognize', 1024, 'image/jpeg']);
+});
+
+test('POST /api/foods/recognize: ảnh quá 4 MB thì 413, không tới service; quá 2 lượt/phút (cấu hình test) thì 429', async () => {
+    const before = calls.length;
+    const tooLarge = await fetch(`${server.baseUrl}/api/foods/recognize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/png' },
+        body: Buffer.alloc(4 * 1024 * 1024 + 1, 1),
+    });
+    assert.equal(tooLarge.status, 413);
+    assert.equal(calls.length, before);
+
+    const limited = await fetch(`${server.baseUrl}/api/foods/recognize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: Buffer.alloc(10, 1),
+    });
+    assert.equal(limited.status, 429);
+    assert.equal((await limited.json()).error.code, 'TOO_MANY_REQUESTS');
 });

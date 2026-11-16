@@ -2,6 +2,8 @@ const createFetchJson = require('./lib/fetchJson');
 const createTtlCache = require('./lib/ttlCache');
 const createOpenFoodFactsClient = require('./providers/openFoodFacts/client');
 const createUsdaClient = require('./providers/usda/client');
+const createGeminiClient = require('./providers/gemini/client');
+const createRecognitionService = require('./services/recognitionService');
 const createBarcodeService = require('./services/barcodeService');
 const createFoodSearchService = require('./services/foodSearchService');
 
@@ -23,6 +25,14 @@ const createServices = (config) => {
         barcodeService: createBarcodeService({
             openFoodFacts,
             cache: createTtlCache({ maxEntries: BARCODE_CACHE_ENTRIES }),
+        }),
+        recognitionService: createRecognitionService({
+            gemini: createGeminiClient({
+                fetchJson,
+                apiKey: config.geminiApiKey,
+                model: config.geminiModel,
+                timeoutMs: config.recognitionTimeoutMs,
+            }),
         }),
     };
 };
