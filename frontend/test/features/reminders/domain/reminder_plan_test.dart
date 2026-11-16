@@ -24,8 +24,11 @@ PersonalLimits _limits({bool watchesSugar = false}) => PersonalLimits(
   watchesSaturatedFat: false,
 );
 
-DayIntake _intake(List<Map<Nutrient, double>> foods) =>
-    DayIntake(totals: NutrientTotals.of(foods.map(Nutrients.new)), entryCount: foods.length);
+DayIntake _intake(List<Map<Nutrient, double>> foods, {int unreadable = 0}) => DayIntake(
+  totals: NutrientTotals.of(foods.map(Nutrients.new)),
+  entryCount: foods.length,
+  unreadableCount: unreadable,
+);
 
 void main() {
   final today = CalendarDate(2026, 11, 30);
@@ -81,12 +84,36 @@ void main() {
       const ReminderMessage(
         title: 'Tổng kết hôm nay',
         body: 'Hôm nay: Năng lượng 600 / 2,000 kcal, protein 30 / 100 g.',
+        showsIntake: true,
       ),
     );
     expect(plan[3].message.body, 'Ghi bữa sáng vào Nhật ký để Fluw tính đúng chỉ tiêu hôm nay.');
+    expect(plan[3].message.showsIntake, isFalse, reason: 'lời nhắc chung được hiện trên màn khóa');
   });
 
-  test('khung theo giờ: trước 12h là sáng, 12h–18h59 là chiều, từ 19h là tổng kết', () {
+  test('id nằm trong dải của nhắc bữa ăn; kho hỏng có hơn 10 giờ thì id vẫn không trùng', () {
+    final many = ReminderSettings(enabled: true, times: [for (var hour = 6; hour < 18; hour++) ReminderTime(hour, 0)]);
+    expect(many.times, hasLength(ReminderSettings.maxTimes));
+
+    final plan = planReminders(
+      settings: many,
+      now: DateTime(2026, 11, 30, 5),
+      today: today,
+      todayIntake: _intake(const []),
+      limits: _limits(),
+    );
+    final ids = plan.map((reminder) => reminder.id).toList();
+    expect(ids.toSet(), hasLength(ids.length));
+    expect(ids.every(isMealReminderId), isTrue);
+    expect(isMealReminderId(mealReminderIdEnd - 1), isTrue);
+    expect(isMealReminderId(mealReminderIdEnd), isFalse, reason: 'dải sau dành cho nhắc uống nước');
+    expect(isMealReminderId(-1), isFalse);
+  });
+
+  test('khung theo giờ: trước 6h là khuya, trước 12h là sáng, 12h–18h59 là chiều, từ 19h là tổng kết', () {
+    expect(ReminderMoment.of(const ReminderTime(0, 0)), ReminderMoment.night);
+    expect(ReminderMoment.of(const ReminderTime(5, 59)), ReminderMoment.night);
+    expect(ReminderMoment.of(const ReminderTime(6, 0)), ReminderMoment.morning);
     expect(ReminderMoment.of(const ReminderTime(11, 59)), ReminderMoment.morning);
     expect(ReminderMoment.of(const ReminderTime(12, 0)), ReminderMoment.afternoon);
     expect(ReminderMoment.of(const ReminderTime(18, 59)), ReminderMoment.afternoon);
@@ -122,5 +149,57 @@ void main() {
       ]),
     );
     expect(unknownKcal.body, contains('Năng lượng chưa có dữ liệu / 2,000 kcal'));
+  });
+
+  test('theo dõi đường mà có món thiếu số đường thì nói thiếu số liệu, không hiện như tổng đủ', () {
+    final foods = _intake([
+      {Nutrient.energyKcal: 500, Nutrient.proteinG: 20, Nutrient.sugarsG: 3},
+      {Nutrient.energyKcal: 300, Nutrient.proteinG: 10},
+    ]);
+
+    final watching = reminderMessage(
+      moment: ReminderMoment.afternoon,
+      intake: foods,
+      limits: _limits(watchesSugar: true),
+    );
+    expect(watching.body, contains('đường 3 / 50 g'));
+    expect(watching.body, contains('Một số món thiếu số liệu.'));
+
+    final notWatching = reminderMessage(moment: ReminderMoment.afternoon, intake: foods, limits: _limits());
+    expect(notWatching.body, isNot(contains('thiếu số liệu')), reason: 'không hiện dòng đường thì không cần nói');
+  });
+
+  test('món không đọc được: nói rõ, không bảo là chưa ghi món nào', () {
+    final onlyUnreadable = reminderMessage(
+      moment: ReminderMoment.evening,
+      intake: _intake(const [], unreadable: 2),
+      limits: _limits(),
+    );
+    expect(onlyUnreadable.body, 'Có 2 món hôm nay không đọc được. Mở Nhật ký để xem lại.');
+
+    final some = reminderMessage(
+      moment: ReminderMoment.afternoon,
+      intake: _intake([
+        {Nutrient.energyKcal: 500, Nutrient.proteinG: 20},
+      ], unreadable: 1),
+      limits: _limits(),
+    );
+    expect(some.body, contains('1 món không đọc được nên chưa tính.'));
+  });
+
+  test('nhắc lúc khuya là lời nhắc chung, không tổng kết ngày; chỉ nhắc có số liệu mới ẩn khỏi màn khóa', () {
+    final eaten = _intake([
+      {Nutrient.energyKcal: 500, Nutrient.proteinG: 20},
+    ]);
+
+    final night = reminderMessage(moment: ReminderMoment.night, intake: eaten, limits: _limits());
+    expect(night.body, 'Nếu bạn ăn khuya, nhớ ghi món vào Nhật ký.');
+    expect(night.showsIntake, isFalse);
+
+    expect(reminderMessage(moment: ReminderMoment.morning, intake: eaten, limits: _limits()).showsIntake, isTrue);
+    expect(
+      reminderMessage(moment: ReminderMoment.morning, intake: _intake(const []), limits: _limits()).showsIntake,
+      isFalse,
+    );
   });
 }

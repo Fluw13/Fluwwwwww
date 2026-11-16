@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,14 +19,43 @@ class ReminderSync extends ConsumerStatefulWidget {
 }
 
 class _ReminderSyncState extends ConsumerState<ReminderSync> {
+  /// The plan the phone was last asked for. Starts empty, so with reminders off (the default) nothing runs at launch:
+  /// turning them off already cancelled what was scheduled. Null after a failure, so the next plan is sent again.
+  List<PlannedReminder>? _sent = const [];
+  late final AppLifecycleListener _lifecycle;
+
   @override
   void initState() {
     super.initState();
-    ref.listenManual<List<PlannedReminder>?>(plannedRemindersProvider, (previous, next) {
-      if (next != null && !const ListEquality<PlannedReminder>().equals(previous, next)) {
-        ref.read(notificationSchedulerProvider).replaceAll(next).ignore();
-      }
-    }, fireImmediately: true);
+    // Back in the app: times already past drop out, and after travel the times follow the new time zone.
+    _lifecycle = AppLifecycleListener(onResume: () => ref.invalidate(plannedRemindersProvider));
+    ref.listenManual<List<PlannedReminder>?>(plannedRemindersProvider, (_, plan) => _send(plan), fireImmediately: true);
+  }
+
+  void _send(List<PlannedReminder>? plan) {
+    if (plan == null || const ListEquality<PlannedReminder>().equals(_sent, plan)) {
+      return;
+    }
+    _sent = plan;
+    unawaited(
+      ref.read(notificationSchedulerProvider).replaceAll(plan).catchError((Object error, StackTrace stack) {
+        _sent = null;
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stack,
+            library: 'fluw reminders',
+            context: ErrorDescription('while scheduling meal reminders'),
+          ),
+        );
+      }),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   @override

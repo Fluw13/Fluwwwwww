@@ -15,7 +15,8 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.fluw.app"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications 23 (androidx.core 1.19) needs SDK 37 to compile against; Flutter's default is lower.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

@@ -6,6 +6,12 @@ import 'package:fluw/features/reminders/domain/reminder_settings.dart';
 /// Reminders are scheduled this many days ahead, so they keep coming for a week even if the app is not opened.
 const int reminderDaysAhead = 7;
 
+/// Meal reminder ids are day offset × [ReminderSettings.maxTimes] + time index, all below this. Rescheduling cancels
+/// every pending id in the range, so other notifications (water reminders) must use ids from here up.
+const int mealReminderIdEnd = reminderDaysAhead * ReminderSettings.maxTimes;
+
+bool isMealReminderId(int id) => id >= 0 && id < mealReminderIdEnd;
+
 final class PlannedReminder {
   const PlannedReminder({required this.id, required this.at, required this.message});
 
@@ -38,7 +44,7 @@ List<PlannedReminder> planReminders({
       for (final (index, time) in settings.times.indexed)
         if (_at(today.addDays(dayOffset), time.hour, time.minute) case final at when at.isAfter(now))
           PlannedReminder(
-            id: dayOffset * 10 + index,
+            id: dayOffset * ReminderSettings.maxTimes + index,
             at: at,
             message: reminderMessage(
               moment: ReminderMoment.of(time),

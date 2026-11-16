@@ -1,55 +1,60 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:fluw/features/reminders/data/notification_scheduler.dart';
 import 'package:fluw/features/reminders/domain/reminder_plan.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 /// Local notifications only: nothing is sent to a server. Scheduled as inexact alarms, which need no special
-/// permission on Android 14 (a reminder a few minutes late is fine).
+/// permission. Android 12+ delivers them within about an hour of the time (usually sooner); older Android versions and
+/// battery saving can delay them more.
 class LocalNotificationScheduler implements NotificationScheduler {
-  LocalNotificationScheduler({FlutterLocalNotificationsPlugin? plugin})
-    : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
+  LocalNotificationScheduler({FlutterLocalNotificationsPlugin? plugin, DateTime Function()? now})
+    : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
+      _now = now ?? DateTime.now;
 
   final FlutterLocalNotificationsPlugin _plugin;
+  final DateTime Function() _now;
   Future<void>? _ready;
+  Future<void> _queue = Future<void>.value();
+  List<PlannedReminder>? _wanted;
 
-  static const NotificationDetails _details = NotificationDetails(
+  /// Every reminder is one-shot at an absolute time, which any zone states equally well, so the device's zone and the
+  /// zone database are not needed. "UTC" is a name both Android and iOS know. Travel is handled by planning again.
+  static final tz.Location _utc = tz.Location('UTC', [tz.minTime], [0], [tz.TimeZone.UTC]);
+
+  /// The plugin rejects times in the past; this covers the time between the check and the call.
+  static const Duration _margin = Duration(seconds: 10);
+
+  static NotificationDetails _details(PlannedReminder reminder) => NotificationDetails(
     android: AndroidNotificationDetails(
       'meal_reminders',
       'Nhắc ghi bữa ăn',
       channelDescription: 'Nhắc ghi bữa ăn vào Nhật ký theo giờ bạn chọn',
-      // The text holds what was eaten: hidden on a locked screen where the phone hides sensitive content.
-      visibility: NotificationVisibility.private,
+      // Most phones show every notification in full on the lock screen unless the user changed it, so texts with what
+      // was eaten are left off secure lock screens altogether.
+      visibility: reminder.message.showsIntake ? NotificationVisibility.secret : NotificationVisibility.private,
     ),
-    iOS: DarwinNotificationDetails(),
+    iOS: const DarwinNotificationDetails(),
   );
 
-  Future<void> _initialize() async {
-    tz.initializeTimeZones();
+  Future<void> _ensureReady() async {
     try {
-      final zone = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(zone.identifier));
-    } on Object {
-      // Unknown zone name: fall back to a fixed offset so reminders still come at the right local hour today.
-      final offsetHours = DateTime.now().timeZoneOffset.inHours;
-      final fallback = offsetHours == 0 ? 'UTC' : 'Etc/GMT${offsetHours > 0 ? '-' : '+'}${offsetHours.abs()}';
-      tz.setLocalLocation(tz.getLocation(fallback));
-    }
-    await _plugin.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('ic_notification'),
-        iOS: DarwinInitializationSettings(
-          requestAlertPermission: false,
-          requestBadgePermission: false,
-          requestSoundPermission: false,
+      await (_ready ??= _plugin.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('ic_notification'),
+          iOS: DarwinInitializationSettings(
+            requestAlertPermission: false,
+            requestBadgePermission: false,
+            requestSoundPermission: false,
+          ),
         ),
-      ),
-    );
+      ));
+    } on Object {
+      // Tried again on the next call instead of failing for good.
+      _ready = null;
+      rethrow;
+    }
   }
-
-  Future<void> _ensureReady() => _ready ??= _initialize();
 
   @override
   Future<bool> requestPermission() async {
@@ -63,18 +68,49 @@ class LocalNotificationScheduler implements NotificationScheduler {
   }
 
   @override
-  Future<void> replaceAll(List<PlannedReminder> reminders) async {
+  Future<void> replaceAll(List<PlannedReminder> reminders) {
+    _wanted = reminders;
+    final done = _queue.then((_) => _applyWanted());
+    _queue = done.then<void>((_) {}, onError: (Object _) {});
+    return done;
+  }
+
+  /// One plan at a time, and only the newest of those that came in meanwhile: turning reminders off while the week is
+  /// still being scheduled cannot leave part of it behind.
+  Future<void> _applyWanted() async {
+    final reminders = _wanted;
+    if (reminders == null) {
+      return;
+    }
+    _wanted = null;
     await _ensureReady();
-    await _plugin.cancelAll();
+    for (final pending in await _plugin.pendingNotificationRequests()) {
+      if (isMealReminderId(pending.id)) {
+        await _plugin.cancel(id: pending.id);
+      }
+    }
+    final earliest = _now().add(_margin);
+    (Object, StackTrace)? failure;
     for (final reminder in reminders) {
-      await _plugin.zonedSchedule(
-        id: reminder.id,
-        title: reminder.message.title,
-        body: reminder.message.body,
-        scheduledDate: tz.TZDateTime.from(reminder.at, tz.local),
-        notificationDetails: _details,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      );
+      if (!reminder.at.isAfter(earliest)) {
+        continue;
+      }
+      try {
+        await _plugin.zonedSchedule(
+          id: reminder.id,
+          title: reminder.message.title,
+          body: reminder.message.body,
+          scheduledDate: tz.TZDateTime.from(reminder.at, _utc),
+          notificationDetails: _details(reminder),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        );
+      } on Object catch (error, stack) {
+        // The other reminders are still scheduled; the caller hears about the first failure.
+        failure ??= (error, stack);
+      }
+    }
+    if (failure case (final error, final stack)) {
+      Error.throwWithStackTrace(error, stack);
     }
   }
 }

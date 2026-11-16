@@ -26,7 +26,7 @@ void main() {
     expect(find.text('10:00'), findsOneWidget);
     expect(find.text('17:00'), findsOneWidget);
     expect(find.text('22:00'), findsOneWidget);
-    expect(appNotifications(tester).current, isEmpty, reason: 'chưa bật thì không hẹn gì');
+    expect(appNotifications(tester).scheduled, isEmpty, reason: 'chưa bật thì không đụng tới hệ thống thông báo');
   });
 
   testWidgets('bật nhắc nhở: xin quyền, lưu, hẹn 7 ngày; ghi món thì nội dung nhắc hôm nay đổi theo', (tester) async {
@@ -77,7 +77,7 @@ void main() {
     expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
     expect(find.textContaining('chưa được phép gửi thông báo'), findsOneWidget);
     expect(preferences.getBool(ReminderSettingsStorage.enabledKey), isNot(isTrue));
-    expect(appNotifications(tester).current, isEmpty);
+    expect(appNotifications(tester).scheduled, isEmpty);
   });
 
   testWidgets('tắt nhắc nhở thì hủy hết lịch đã hẹn; giờ đã đổi thì có nút về mặc định', (tester) async {
@@ -100,5 +100,52 @@ void main() {
     await tester.tap(find.byType(SwitchListTile));
     await tester.pumpAndSettle();
     expect(notifications.current, isEmpty);
+  });
+
+  testWidgets('quay lại app thì tính lại kế hoạch, nhưng chỉ hẹn lại khi kế hoạch thật sự đổi', (tester) async {
+    await pumpFluwApp(tester, storedSettings: {ReminderSettingsStorage.enabledKey: true});
+    final notifications = appNotifications(tester);
+    expect(notifications.scheduled, hasLength(1));
+
+    for (final state in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pumpAndSettle();
+
+    expect(notifications.scheduled, hasLength(1), reason: 'giờ test cố định nên kế hoạch không đổi');
+  });
+
+  testWidgets('đổi giờ nhắc bằng bộ chọn giờ; chọn trùng giờ đã có thì báo và giữ nguyên', (tester) async {
+    Future<void> pickTime(String current, String hour, String minute) async {
+      await tester.tap(find.text(current));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.keyboard_outlined));
+      await tester.pumpAndSettle();
+      final fields = find.descendant(of: find.byType(Dialog), matching: find.byType(TextField));
+      await tester.enterText(fields.at(0), hour);
+      await tester.enterText(fields.at(1), minute);
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+    }
+
+    await pumpFluwApp(tester, storedSettings: {ReminderSettingsStorage.enabledKey: true});
+    await openReminders(tester);
+    final notifications = appNotifications(tester);
+
+    await pickTime('10:00', '17', '00');
+    expect(find.text('Đã có giờ nhắc 17:00.'), findsOneWidget);
+    expect(find.text('10:00'), findsOneWidget);
+    expect(notifications.current!.first.at, DateTime(2026, 11, 11, 10));
+
+    await pickTime('10:00', '09', '15');
+    expect(find.text('09:15'), findsOneWidget);
+    expect(notifications.current!.first.at, DateTime(2026, 11, 11, 9, 15));
   });
 }

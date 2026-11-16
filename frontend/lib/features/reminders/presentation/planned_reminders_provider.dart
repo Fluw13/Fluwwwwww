@@ -25,7 +25,11 @@ final plannedRemindersProvider = Provider<List<PlannedReminder>?>((ref) {
     settings: settings,
     now: ref.watch(clockProvider)(),
     today: today,
-    todayIntake: DayIntake(totals: day.day?.dayTotal ?? NutrientTotals.of(const []), entryCount: day.entryCount),
+    todayIntake: DayIntake(
+      totals: day.day?.dayTotal ?? NutrientTotals.of(const []),
+      entryCount: day.entryCount,
+      unreadableCount: day.unreadableCount,
+    ),
     limits: ref.watch(personalLimitsProvider),
   );
 });

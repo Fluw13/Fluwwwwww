@@ -201,12 +201,24 @@ features/<tên>/
   - `presentation/`: `HomeScreen` (callback từ `app_router`: Tra Cứu, Quét, Nhật Ký, Hồ Sơ, Thiết lập hồ sơ; hồ sơ không đọc được thì nút mở tab Hồ Sơ, không mở form trống; Nhật ký đang tải thì hiện vòng chờ, không hiện 0), `GreetingCard`, `TodayNutritionCard` (vòng calo + thanh protein, đường, tinh bột, béo, thêm béo bão hòa/natri khi theo dõi; vòng và "Còn lại" cạnh nhau, chồng lên nhau khi màn hẹp/chữ > 150%; thiếu kcal ở vài món thì "Còn lại tối đa", món nào cũng thiếu thì "Chưa có dữ liệu calo"; so vượt theo số đã làm tròn), `TodayMealsCard` (4 khung; khung trống có "Ghi món" đặt `diaryTargetProvider` rồi mở Tra Cứu, semantics nói tên khung; chữ > 130% thì nút xuống dưới tên khung; thiếu kcal ở vài món thì hiện "≥ X kcal"), `DayEvaluationCard` (hôm qua, mỗi dòng có icon + chữ), `AdviceCard`, `QuickActions` (Quét mã vạch, Tra cứu; "Nhập thực phẩm" của thiết kế chờ M3b).
   - Bỏ khỏi thiết kế: "Chuẩn Mục Tiêu", "An toàn", GI, "Êm dạ dày", khẳng định về dạ dày; thẻ nước chờ M8.
 - `features/reminders/` (M6b):
-  - `domain/`: `ReminderTime` ("HH:mm"), `ReminderSettings` (mặc định **tắt**, giờ 10:00/17:00/22:00; sắp xếp, không trùng), `reminder_message` (khung theo giờ: < 12 sáng, < 19 chiều, còn lại tổng kết; hôm nay nói số đã ghi so với chỉ tiêu, có món thiếu thì nói; chỉ gợi ý "món giàu protein" khi protein đủ số liệu và còn thiếu; ngày sau là lời nhắc chung), `reminder_plan` (hẹn 7 ngày, bỏ giờ đã qua, id = ngày × 10 + thứ tự).
-  - `data/`: `ReminderSettingsStorage` (shared_preferences `reminders_enabled`, `reminder_times`; kho lỗi/null thì mặc định), `reminderSettingsProvider`, `NotificationScheduler` (interface) + `LocalNotificationScheduler` (`flutter_local_notifications`, `timezone`, `flutter_timezone`; báo thức không chính xác `inexactAllowWhileIdle` nên không cần quyền báo thức chính xác của Android 14; kênh `meal_reminders`, `NotificationVisibility.private`; icon `ic_notification`).
-  - `presentation/`: `plannedRemindersProvider` (null khi Nhật ký đang tải/lỗi để giữ lịch cũ), `ReminderSync` (bọc app trong `FluwApp.builder`, `listenManual` + `fireImmediately`, chỉ hẹn lại khi kế hoạch đổi), `ReminderSettingsScreen` (route `/reminders` ngoài nhánh tab; bật thì mới xin quyền, bị từ chối thì vẫn tắt và báo cách bật; đổi giờ bằng `showTimePicker`, chặn trùng; nút về giờ mặc định).
+  - `domain/`:
+    - `ReminderTime` ("HH:mm"); `ReminderSettings` (mặc định **tắt**, giờ 10:00/17:00/22:00; sắp xếp, không trùng, tối đa `maxTimes` = 10 để id không trùng khi kho hỏng).
+    - `reminder_message`: khung theo giờ (< 6 khuya, < 12 sáng, < 19 chiều, còn lại tổng kết). Khuya luôn là lời nhắc chung (00:00 thuộc ngày hôm trước). Hôm nay nói số đã ghi so với chỉ tiêu; món thiếu kcal/protein (hoặc đường khi theo dõi đường) thì nói "thiếu số liệu"; dòng Nhật ký không đọc được thì nói rõ, không bảo "chưa ghi món nào"; chỉ gợi ý "món giàu protein" khi protein đủ số liệu và còn thiếu; ngày sau là lời nhắc chung. `showsIntake` đánh dấu nhắc có số liệu ăn uống.
+    - `reminder_plan`: hẹn 7 ngày, bỏ giờ đã qua, id = ngày × 10 + thứ tự, trong `[0, mealReminderIdEnd)` = `[0, 70)`. **Thông báo khác (nhắc uống nước M8) phải dùng id từ 70 trở lên**, vì hẹn lại sẽ hủy mọi id đang chờ trong dải này.
+  - `data/`:
+    - `ReminderSettingsStorage` (shared_preferences `reminders_enabled`, `reminder_times`; kho lỗi/null thì mặc định), `reminderSettingsProvider`, `NotificationScheduler` (interface).
+    - `LocalNotificationScheduler` (`flutter_local_notifications`, `timezone`):
+      - Báo thức không chính xác `inexactAllowWhileIdle`, không cần quyền báo thức chính xác. Android 12+ báo trong khoảng 1 giờ sau giờ đặt (thường sớm hơn); Android cũ hoặc chế độ tiết kiệm pin có thể trễ hơn.
+      - Gửi giờ theo zone `UTC` (Android và iOS đều biết tên này): nhắc là một lần vào thời điểm tuyệt đối nên zone nào cũng đúng. Không cần `flutter_timezone` hay cơ sở dữ liệu múi giờ.
+      - `replaceAll` chạy lần lượt, chỉ áp kế hoạch mới nhất (tắt ngay khi đang hẹn dở không để sót nhắc). Bỏ giờ còn dưới 10 giây. Một nhắc lỗi thì vẫn hẹn các nhắc còn lại, rồi ném lỗi đầu tiên. Chỉ hủy các id nhắc bữa ăn đang chờ (không `cancelAll`). Khởi động plugin lỗi thì lần sau thử lại.
+      - Kênh `meal_reminders`, icon `ic_notification`. Nhắc có số liệu ăn uống: `NotificationVisibility.secret` (không hiện trên màn khóa có bảo mật; đa số máy Android mặc định hiện đủ nội dung). Nhắc chung: `private`. iPhone: theo cài đặt Xem trước của máy.
+  - `presentation/`:
+    - `plannedRemindersProvider` (null khi Nhật ký đang tải/lỗi để giữ lịch cũ).
+    - `ReminderSync` (bọc app trong `FluwApp.builder`, `listenManual` + `fireImmediately`): chỉ hẹn lại khi kế hoạch đổi; kế hoạch đã gửi bắt đầu là rỗng nên khi tắt nhắc (mặc định) không khởi động plugin lúc mở app; lỗi thì báo qua `FlutterError.reportError` và lần sau gửi lại; quay lại app thì tính lại kế hoạch (bỏ giờ đã qua, đổi múi giờ khi đi xa).
+    - `ReminderSettingsScreen` (route `/reminders` ngoài nhánh tab; bật thì mới xin quyền, bị từ chối thì vẫn tắt và báo cách bật; đổi giờ bằng `showTimePicker`, chặn trùng; nút về giờ mặc định). Bộ chọn giờ ép `alwaysUse24HourFormat`: mặt đồng hồ theo locale `vi` (24 giờ) nhưng ô gõ giờ theo cài đặt 12/24 giờ của máy, máy để 12 giờ sẽ không gõ được 13–23 (lỗi của Flutter).
   - Bật thì người dùng tự bật (xin quyền đúng lúc cần), không bật sẵn lúc mở app lần đầu.
-  - Android: `RECEIVE_BOOT_COMPLETED` + 2 receiver của plugin trong `AndroidManifest.xml`; `isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs` 2.1.4 trong `build.gradle.kts`; AGP 9.1.1 (plugin yêu cầu tối thiểu); `drawable-*/ic_notification.png` (chữ F trắng) + `res/raw/keep.xml` giữ icon khi R8 thu gọn tài nguyên (thiếu là thông báo hỏng im lặng). iOS: `AppDelegate` đặt `UNUserNotificationCenter` delegate.
-  - Test: `pumpFluwApp` thay bộ hẹn giờ bằng `FakeNotificationScheduler` (`appNotifications(tester)`), `clockProvider` cố định 09:00 ngày `appTestToday`.
+  - Android: `RECEIVE_BOOT_COMPLETED` + 2 receiver của plugin trong `AndroidManifest.xml`; `isCoreLibraryDesugaringEnabled` + `desugar_jdk_libs` 2.1.4 trong `build.gradle.kts`; AGP 9.1.1 và `compileSdk` ít nhất 37 (plugin yêu cầu tối thiểu, mặc định của Flutter là 36); `drawable-*/ic_notification.png` (chữ F trắng) + `res/raw/keep.xml` giữ icon khi R8 thu gọn tài nguyên (thiếu là thông báo hỏng im lặng). iOS: `AppDelegate` đặt `UNUserNotificationCenter` delegate.
+  - Test: `pumpFluwApp` thay bộ hẹn giờ bằng `FakeNotificationScheduler` (`appNotifications(tester)`), `clockProvider` cố định 09:00 ngày `appTestToday`. `LocalNotificationScheduler` test bằng plugin giả (`noSuchMethod`); `ReminderSync` test riêng với đồng hồ đổi được. Bộ chọn giờ trong test: bấm `Icons.keyboard_outlined` rồi gõ giờ, phút, bấm "OK".
 - `clockProvider` (`core/time/`): giờ hiện tại dạng hàm để test cố định được.
 - `features/note/` (M4):
   - `domain/`: `week` (tuần bắt đầu thứ Hai).
@@ -220,7 +232,7 @@ features/<tên>/
 - **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
-- Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`, `flutter_timezone`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`.
+- Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`; dev: `drift_dev`, `build_runner`. Dự kiến, **chỉ thêm khi dùng tới**: `mobile_scanner`, `image_picker`.
 
 ### Thiết kế (`design/figma/`, 11 ảnh PNG xuất 2x từ Figma)
 - Đọc ảnh dài: cắt thành đoạn khoảng 1100 px bằng Pillow (`python3 -I`), không đọc nguyên ảnh.
@@ -500,7 +512,17 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
 ### 15/11/2026 — M6b: nhắc ghi bữa ăn
 - **Merge PR #33** (M6a, `e714d28`).
 - **Thêm:** `features/reminders/` (domain 4, data 4, presentation 3), `core/time/clock_provider`, chuông trên header, route `/reminders`, cấu hình Android/iOS cho thông báo hẹn giờ. Chi tiết ở mục 3.
-- **Test:** `flutter test` 399/399 (từ 383), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch. Chưa kiểm: build APK có plugin mới (job `android-apk`), thông báo thật trên máy.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** `compileSdk` 36 trong khi `flutter_local_notifications` 23 cần 37 (README của plugin) → `maxOf(flutter.compileSdkVersion, 37)`.
+  - **Cao:** bật rồi tắt nhắc ngay khi đang hẹn 21 nhắc thì `cancelAll` chen giữa vòng hẹn, còn 18 nhắc vẫn đến dù công tắc tắt → `replaceAll` chạy lần lượt, chỉ áp kế hoạch mới nhất.
+  - Zone dự phòng `'UTC'` không có trong `timezone/data/latest.dart`; máy để múi giờ UTC không bao giờ bật được nhắc, và lỗi khởi động bị nhớ mãi → bỏ `flutter_timezone` và cơ sở dữ liệu múi giờ, gửi giờ theo zone `UTC`; khởi động lỗi thì lần sau thử lại.
+  - Một giờ vừa qua lúc hẹn làm plugin ném lỗi, sau `cancelAll` thì cả tuần mất nhắc → bỏ giờ còn dưới 10 giây, mỗi nhắc một try/catch.
+  - Món thiếu số đường mà vẫn hiện "đường 3 / 25 g" như tổng đủ; dòng Nhật ký hỏng bị bỏ im lặng ("chưa ghi món nào" là sai) → nói "thiếu số liệu" và số món không đọc được.
+  - Nhắc có số liệu ăn uống (dòng đường gợi ý bệnh tiểu đường) hiện đủ trên màn khóa của đa số máy Android → `secret` cho nhắc có số liệu.
+  - Thấp: giờ 00:00–05:59 bị coi là buổi sáng ("Bạn đã ăn sáng chưa?" lúc 3 giờ sáng) → khung khuya, lời nhắc chung; `cancelAll` xóa cả thông báo đã hiện và sẽ xóa nhắc uống nước → chỉ hủy id nhắc bữa ăn; tắt nhắc vẫn khởi động plugin mỗi lần mở app → bỏ; đổi múi giờ không hẹn lại → tính lại khi quay lại app; chú thích "trễ vài phút" sai → sửa (Android 12+ đến khoảng 1 giờ).
+  - Tự tìm khi viết test: máy để 12 giờ thì ô gõ giờ của bộ chọn giờ từ chối 13–23 mà không có SA/CH để chọn → ép 24 giờ.
+  - 5 đột biến lọt và scheduler chưa có test → thêm test plugin giả, provider kế hoạch, `ReminderSync`, bộ chọn giờ; kiểm lại 21 đột biến, đều bị bắt.
+- **Test:** `flutter test` 416/416 (từ 383), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch. Chưa kiểm: build APK có plugin mới (job `android-apk`), thông báo thật trên máy.
 
 ### 15/11/2026 — M6a: Trang Chủ
 - **Merge PR #32** (kiểm tra toàn bộ, `aec59db`).

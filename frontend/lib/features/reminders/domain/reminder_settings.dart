@@ -5,7 +5,10 @@ import 'package:fluw/features/reminders/domain/reminder_time.dart';
 /// launch. The default times are the ones FLuw chose.
 final class ReminderSettings {
   ReminderSettings({required this.enabled, required List<ReminderTime> times})
-    : times = List.unmodifiable({...times}.toList()..sort());
+    : times = List.unmodifiable(({...times}.toList()..sort()).take(maxTimes));
+
+  /// Reminder ids leave room for this many times a day (see `planReminders`); a damaged store cannot exceed it.
+  static const int maxTimes = 10;
 
   static final List<ReminderTime> defaultTimes = List.unmodifiable(const [
     ReminderTime(10, 0),

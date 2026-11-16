@@ -5,6 +5,7 @@ import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/reminders/data/notification_scheduler.dart';
 import 'package:fluw/features/reminders/data/reminder_settings_controller.dart';
+import 'package:fluw/features/reminders/domain/reminder_message.dart';
 import 'package:fluw/features/reminders/domain/reminder_settings.dart';
 import 'package:fluw/features/reminders/domain/reminder_time.dart';
 
@@ -52,6 +53,10 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
       context: context,
       initialTime: TimeOfDay(hour: current.hour, minute: current.minute),
       helpText: 'Chọn giờ nhắc',
+      // The dial follows the Vietnamese 24-hour format, but typed hours follow the phone's 12/24-hour setting: on a
+      // 12-hour phone 13–23 would be rejected with no AM/PM to pick. Times show as 24-hour everywhere in the app.
+      builder: (context, child) =>
+          MediaQuery(data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), child: child!),
     );
     if (picked == null || !mounted) {
       return;
@@ -112,8 +117,9 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Nhắc nhở chạy trên máy, không gửi dữ liệu lên máy chủ. Trên màn khóa, điện thoại có thể ẩn nội dung nhắc '
-            'tùy cài đặt của bạn.',
+            'Nhắc nhở chạy trên máy, không gửi dữ liệu lên máy chủ. Nhắc có số liệu ăn uống không hiện trên màn khóa '
+            'Android; trên iPhone, nội dung hiện theo cài đặt Xem trước của máy. Để tiết kiệm pin, điện thoại có thể '
+            'gửi nhắc muộn hơn giờ đặt.',
             style: muted,
           ),
         ],
@@ -121,9 +127,10 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
     );
   }
 
-  String _momentLabel(ReminderTime time) => switch (time.hour) {
-    < 12 => 'Nhắc ghi bữa sáng',
-    < 19 => 'Nhắc ghi bữa trưa, chiều',
-    _ => 'Tổng kết cuối ngày',
+  String _momentLabel(ReminderTime time) => switch (ReminderMoment.of(time)) {
+    ReminderMoment.night => 'Nhắc ghi bữa khuya',
+    ReminderMoment.morning => 'Nhắc ghi bữa sáng',
+    ReminderMoment.afternoon => 'Nhắc ghi bữa trưa, chiều',
+    ReminderMoment.evening => 'Tổng kết cuối ngày',
   };
 }
