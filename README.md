@@ -68,7 +68,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 ## Quyền riêng tư
 
 Đang áp dụng:
-- Nhắc ghi bữa ăn chạy trên điện thoại (thông báo hẹn giờ), không gửi gì lên máy chủ. Nhắc có số liệu ăn uống không hiện trên màn khóa Android; trên iPhone, nội dung hiện theo cài đặt Xem trước của máy. Để tiết kiệm pin, điện thoại có thể gửi nhắc muộn hơn giờ đặt (Android 12 trở lên thường trong vòng 1 giờ).
+- Nhắc ghi bữa ăn chạy trên điện thoại (thông báo hẹn giờ), không gửi gì lên máy chủ. Trên Android có khóa màn hình (mã PIN, hình vẽ, vân tay...), nhắc có số liệu ăn uống không hiện trên màn khóa; trên iPhone, nội dung hiện theo cài đặt Xem trước của máy. Để tiết kiệm pin, điện thoại có thể gửi nhắc muộn hơn giờ đặt (Android 12 trở lên thường trong vòng 1 giờ).
 - Hồ sơ sức khỏe, Nhật ký và cân nặng **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
 - Khi tra cứu, app chỉ gửi từ khóa hoặc mã vạch lên máy chủ Fluw, không kèm dữ liệu sức khỏe. Mỗi lần mở app, app gọi máy chủ một lần (`/health`, không kèm dữ liệu) để máy chủ gói miễn phí thức dậy sớm.
 - Ảnh sản phẩm tải thẳng từ máy chủ của Open Food Facts, nên Open Food Facts thấy địa chỉ IP của bạn như khi mở trang web của họ.

@@ -101,6 +101,7 @@ ReminderMessage reminderMessage({
       proteinMin != null &&
       protein != null &&
       totals[Nutrient.proteinG].isComplete &&
+      intake.unreadableCount == 0 &&
       (protein * 10).round() < (proteinMin * 10).round();
   final missing = [
     Nutrient.energyKcal,

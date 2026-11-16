@@ -26,7 +26,7 @@ void main() {
     expect(find.text('10:00'), findsOneWidget);
     expect(find.text('17:00'), findsOneWidget);
     expect(find.text('22:00'), findsOneWidget);
-    expect(appNotifications(tester).scheduled, isEmpty, reason: 'chưa bật thì không đụng tới hệ thống thông báo');
+    expect(appNotifications(tester).scheduled, [isEmpty], reason: 'mở app chỉ dọn nhắc còn sót, không hẹn gì');
   });
 
   testWidgets('bật nhắc nhở: xin quyền, lưu, hẹn 7 ngày; ghi món thì nội dung nhắc hôm nay đổi theo', (tester) async {
@@ -77,7 +77,7 @@ void main() {
     expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isFalse);
     expect(find.textContaining('chưa được phép gửi thông báo'), findsOneWidget);
     expect(preferences.getBool(ReminderSettingsStorage.enabledKey), isNot(isTrue));
-    expect(appNotifications(tester).scheduled, isEmpty);
+    expect(appNotifications(tester).scheduled, everyElement(isEmpty));
   });
 
   testWidgets('tắt nhắc nhở thì hủy hết lịch đã hẹn; giờ đã đổi thì có nút về mặc định', (tester) async {

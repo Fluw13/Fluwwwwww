@@ -19,16 +19,23 @@ class ReminderSync extends ConsumerStatefulWidget {
 }
 
 class _ReminderSyncState extends ConsumerState<ReminderSync> {
-  /// The plan the phone was last asked for. Starts empty, so with reminders off (the default) nothing runs at launch:
-  /// turning them off already cancelled what was scheduled. Null after a failure, so the next plan is sent again.
-  List<PlannedReminder>? _sent = const [];
+  /// The plan the phone was last asked for; null when unknown, so the next plan is sent even when it is empty. Unknown
+  /// at launch, so reminders left behind (turning them off failed, or the app was closed mid-way) are cancelled, and
+  /// after a failure.
+  List<PlannedReminder>? _sent;
   late final AppLifecycleListener _lifecycle;
 
   @override
   void initState() {
     super.initState();
-    // Back in the app: times already past drop out, and after travel the times follow the new time zone.
-    _lifecycle = AppLifecycleListener(onResume: () => ref.invalidate(plannedRemindersProvider));
+    // Back in the app: times already past drop out, after travel the times follow the new time zone, and a plan that
+    // failed is sent again. Sent here too, because Riverpod does not notify when the new plan equals the old one.
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        ref.invalidate(plannedRemindersProvider);
+        _send(ref.read(plannedRemindersProvider));
+      },
+    );
     ref.listenManual<List<PlannedReminder>?>(plannedRemindersProvider, (_, plan) => _send(plan), fireImmediately: true);
   }
 

@@ -117,9 +117,9 @@ class _ReminderSettingsScreenState extends ConsumerState<ReminderSettingsScreen>
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Nhắc nhở chạy trên máy, không gửi dữ liệu lên máy chủ. Nhắc có số liệu ăn uống không hiện trên màn khóa '
-            'Android; trên iPhone, nội dung hiện theo cài đặt Xem trước của máy. Để tiết kiệm pin, điện thoại có thể '
-            'gửi nhắc muộn hơn giờ đặt.',
+            'Nhắc nhở chạy trên máy, không gửi dữ liệu lên máy chủ. Trên Android có khóa màn hình (mã PIN, hình vẽ, vân '
+            'tay...), nhắc có số liệu ăn uống không hiện trên màn khóa; trên iPhone, nội dung hiện theo cài đặt Xem '
+            'trước của máy. Để tiết kiệm pin, điện thoại có thể gửi nhắc muộn hơn giờ đặt.',
             style: muted,
           ),
         ],

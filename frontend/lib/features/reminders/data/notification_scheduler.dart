@@ -8,8 +8,9 @@ abstract interface class NotificationScheduler {
   Future<bool> requestPermission();
 
   /// Cancels the meal reminders still pending and schedules [reminders] instead; times already past are skipped.
-  /// Calls run one at a time, and when several come in meanwhile only the newest plan is applied. Fails with the
-  /// first reminder that could not be scheduled, after scheduling the rest.
+  /// Calls run one at a time; calls made while another one waits join it, and only the newest plan is applied. Each
+  /// call completes with the outcome of the run that applied its plan or a newer one, and fails with the first
+  /// reminder that could not be scheduled, after scheduling the rest.
   Future<void> replaceAll(List<PlannedReminder> reminders);
 }
 

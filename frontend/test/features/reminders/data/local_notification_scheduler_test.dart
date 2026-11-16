@@ -11,6 +11,7 @@ class _FakePlugin implements FlutterLocalNotificationsPlugin {
   final Map<int, tz.TZDateTime> pending = {};
   final Map<int, NotificationDetails> details = {};
   int initializeCalls = 0;
+  int scheduleCalls = 0;
   bool failInitialize = false;
   Set<int> failingIds = {};
 
@@ -30,6 +31,7 @@ class _FakePlugin implements FlutterLocalNotificationsPlugin {
       case #cancel:
         return _roundTrip(() => pending.remove(named[#id]! as int));
       case #zonedSchedule:
+        scheduleCalls++;
         final id = named[#id]! as int;
         final date = named[#scheduledDate]! as tz.TZDateTime;
         if (failingIds.contains(id) || date.isBefore(DateTime.now())) {
@@ -67,7 +69,7 @@ void main() {
     expect(plugin.pending, isEmpty);
   });
 
-  test('nhiều kế hoạch tới cùng lúc thì chỉ áp kế hoạch mới nhất', () async {
+  test('nhiều kế hoạch tới khi lượt trước chưa chạy thì gộp lại, chỉ hẹn kế hoạch mới nhất', () async {
     final plugin = _FakePlugin();
     final scheduler = LocalNotificationScheduler(plugin: plugin);
     final now = DateTime.now();
@@ -79,6 +81,19 @@ void main() {
     ]);
 
     expect(plugin.pending.keys, [2]);
+    expect(plugin.scheduleCalls, 1, reason: 'kế hoạch cũ không bị hẹn rồi hủy');
+  });
+
+  test('lượt gộp lỗi thì mọi nơi gọi gộp vào đều nhận lỗi', () async {
+    final plugin = _FakePlugin()..failingIds = {2};
+    final scheduler = LocalNotificationScheduler(plugin: plugin);
+    final now = DateTime.now();
+
+    final older = scheduler.replaceAll([_reminder(1, now.add(const Duration(hours: 2)))]);
+    final newer = scheduler.replaceAll([_reminder(2, now.add(const Duration(hours: 3)))]);
+
+    await expectLater(older, throwsArgumentError);
+    await expectLater(newer, throwsArgumentError);
   });
 
   test('giờ chỉ còn vài giây khi tới lượt hẹn thì bỏ qua, không làm hỏng cả lượt', () async {

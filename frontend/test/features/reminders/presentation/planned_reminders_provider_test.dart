@@ -51,6 +51,18 @@ void main() {
     expect(container.read(plannedRemindersProvider), isNull, reason: 'lỗi');
   });
 
+  test('dòng Nhật ký không đọc được thì nhắc hôm nay nói rõ', () async {
+    final (container, diary) = await start(enabled: true);
+
+    diary.controller.add(const NoteWindow(entries: [], unreadableCount: 2));
+    await pumpEventQueue();
+
+    expect(
+      container.read(plannedRemindersProvider)!.first.message.body,
+      'Có 2 món hôm nay không đọc được. Mở Nhật ký để xem lại.',
+    );
+  });
+
   test('tắt nhắc nhở thì kế hoạch rỗng ngay, không chờ Nhật ký', () async {
     final (container, _) = await start(enabled: false);
 

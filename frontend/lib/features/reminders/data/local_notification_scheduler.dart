@@ -15,8 +15,9 @@ class LocalNotificationScheduler implements NotificationScheduler {
   final FlutterLocalNotificationsPlugin _plugin;
   final DateTime Function() _now;
   Future<void>? _ready;
-  Future<void> _queue = Future<void>.value();
-  List<PlannedReminder>? _wanted;
+  Future<void> _running = Future<void>.value();
+  Future<void>? _waiting;
+  late List<PlannedReminder> _wanted;
 
   /// Every reminder is one-shot at an absolute time, which any zone states equally well, so the device's zone and the
   /// zone database are not needed. "UTC" is a name both Android and iOS know. Travel is handled by planning again.
@@ -38,20 +39,23 @@ class LocalNotificationScheduler implements NotificationScheduler {
   );
 
   Future<void> _ensureReady() async {
-    try {
-      await (_ready ??= _plugin.initialize(
-        settings: const InitializationSettings(
-          android: AndroidInitializationSettings('ic_notification'),
-          iOS: DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false,
-          ),
+    final attempt = _ready ??= _plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('ic_notification'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         ),
-      ));
+      ),
+    );
+    try {
+      await attempt;
     } on Object {
-      // Tried again on the next call instead of failing for good.
-      _ready = null;
+      // Tried again on the next call instead of failing for good; a newer attempt already under way is kept.
+      if (identical(_ready, attempt)) {
+        _ready = null;
+      }
       rethrow;
     }
   }
@@ -67,22 +71,25 @@ class LocalNotificationScheduler implements NotificationScheduler {
     return await android?.requestNotificationsPermission() ?? false;
   }
 
+  /// One plan at a time: turning reminders off while the week is still being scheduled cannot leave part of it behind.
+  /// Calls that come in while a run is waiting join it, and it applies the newest of their plans.
   @override
   Future<void> replaceAll(List<PlannedReminder> reminders) {
     _wanted = reminders;
-    final done = _queue.then((_) => _applyWanted());
-    _queue = done.then<void>((_) {}, onError: (Object _) {});
-    return done;
+    final waiting = _waiting;
+    if (waiting != null) {
+      return waiting;
+    }
+    final run = _running.then((_) {
+      _waiting = null;
+      return _apply(_wanted);
+    });
+    _waiting = run;
+    _running = run.then<void>((_) {}, onError: (Object _) {});
+    return run;
   }
 
-  /// One plan at a time, and only the newest of those that came in meanwhile: turning reminders off while the week is
-  /// still being scheduled cannot leave part of it behind.
-  Future<void> _applyWanted() async {
-    final reminders = _wanted;
-    if (reminders == null) {
-      return;
-    }
-    _wanted = null;
+  Future<void> _apply(List<PlannedReminder> reminders) async {
     await _ensureReady();
     for (final pending in await _plugin.pendingNotificationRequests()) {
       if (isMealReminderId(pending.id)) {

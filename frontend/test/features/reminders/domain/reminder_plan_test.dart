@@ -185,6 +185,7 @@ void main() {
       limits: _limits(),
     );
     expect(some.body, contains('1 món không đọc được nên chưa tính.'));
+    expect(some.body, isNot(contains('giàu protein')), reason: 'món không đọc được có thể đã đủ protein');
   });
 
   test('nhắc lúc khuya là lời nhắc chung, không tổng kết ngày; chỉ nhắc có số liệu mới ẩn khỏi màn khóa', () {
