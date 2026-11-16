@@ -13,7 +13,7 @@
 | Thông tin sản phẩm | Tên, ảnh, thương hiệu, chỉ số dinh dưỡng theo khẩu phần bạn nhập, đối chiếu dị ứng và chỉ tiêu theo hồ sơ, ghi nguồn dữ liệu | Xong |
 | Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong; đánh giá cuối ngày làm cùng Trang chủ |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong |
-| Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua; nhắc nhở chưa làm |
+| Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong: Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua, nhắc ghi bữa ăn (bật ở nút chuông) |
 | Nước uống | Mục tiêu nước mỗi ngày, thêm nhanh 200/350/500 ml, lịch nhắc uống nước | Chưa làm |
 | Báo cáo | Biểu đồ calo theo tuần/tháng, tỉ lệ macro, cảnh báo đường/natri, cân nặng | Chưa làm |
 | Lịch sử & Đã lưu | Xem lại những gì đã tìm hoặc quét, lưu món yêu thích, nhập món thủ công | Chưa làm |
@@ -68,6 +68,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 ## Quyền riêng tư
 
 Đang áp dụng:
+- Nhắc ghi bữa ăn chạy trên điện thoại (thông báo hẹn giờ), không gửi gì lên máy chủ. Trên Android có khóa màn hình (mã PIN, hình vẽ, vân tay...), nhắc có số liệu ăn uống không hiện trên màn khóa; trên iPhone, nội dung hiện theo cài đặt Xem trước của máy. Để tiết kiệm pin, điện thoại có thể gửi nhắc muộn hơn giờ đặt (Android 12 trở lên thường trong vòng 1 giờ).
 - Hồ sơ sức khỏe, Nhật ký và cân nặng **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
 - Khi tra cứu, app chỉ gửi từ khóa hoặc mã vạch lên máy chủ Fluw, không kèm dữ liệu sức khỏe. Mỗi lần mở app, app gọi máy chủ một lần (`/health`, không kèm dữ liệu) để máy chủ gói miễn phí thức dậy sớm.
 - Ảnh sản phẩm tải thẳng từ máy chủ của Open Food Facts, nên Open Food Facts thấy địa chỉ IP của bạn như khi mở trang web của họ.
@@ -174,7 +175,7 @@ Khi **chưa có keystore** trong GitHub Secrets, CI ký APK bằng một khóa d
 | M3 | Tra cứu, chi tiết sản phẩm, lịch sử & đã lưu *(xong tra cứu và chi tiết)* |
 | M4 | Nhật ký theo ngày và khung giờ *(xong)* |
 | M5 | Quét mã vạch và nhận diện ảnh |
-| M6 | Trang chủ, gợi ý, nhắc nhở *(xong Trang chủ và gợi ý)* |
+| M6 | Trang chủ, gợi ý, nhắc nhở *(xong)* |
 | M7 | Tài khoản và đánh giá sao |
 | M8 | Nước uống và nhắc uống nước |
 | M9 | Báo cáo tuần/tháng |

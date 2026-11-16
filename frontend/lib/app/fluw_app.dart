@@ -6,6 +6,7 @@ import 'package:fluw/core/network/backend_warm_up.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/theme/app_theme.dart';
 import 'package:fluw/core/time/today_provider.dart';
+import 'package:fluw/features/reminders/presentation/reminder_sync.dart';
 import 'package:go_router/go_router.dart';
 
 class FluwApp extends ConsumerStatefulWidget {
@@ -54,6 +55,7 @@ class _FluwAppState extends ConsumerState<FluwApp> {
       supportedLocales: const [Locale('vi')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: _router,
+      builder: (context, child) => ReminderSync(child: child!),
     );
   }
 }

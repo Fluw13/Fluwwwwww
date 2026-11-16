@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluw/app/app_router.dart';
 import 'package:fluw/app/app_tab.dart';
 import 'package:fluw/app/shell/fluw_bottom_bar.dart';
 import 'package:fluw/app/shell/fluw_top_bar.dart';
@@ -14,7 +15,11 @@ class AppShell extends StatelessWidget {
     final currentTab = AppTab.values[navigationShell.currentIndex];
 
     return Scaffold(
-      appBar: FluwTopBar(title: currentTab.title, onProfileTap: () => _open(AppTab.profile)),
+      appBar: FluwTopBar(
+        title: currentTab.title,
+        onProfileTap: () => _open(AppTab.profile),
+        onRemindersTap: () => context.push(AppRoutes.reminders),
+      ),
       body: navigationShell,
       bottomNavigationBar: FluwBottomBar(currentTab: currentTab, onSelected: _open),
     );
