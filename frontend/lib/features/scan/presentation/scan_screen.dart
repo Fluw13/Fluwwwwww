@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/scan/domain/gtin.dart';
 import 'package:fluw/features/scan/presentation/barcode_camera.dart';
+import 'package:fluw/features/scan/presentation/photo_recognition_panel.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
-  const ScanScreen({required this.onBarcode, super.key});
+  const ScanScreen({required this.onBarcode, required this.onOpenSearch, super.key});
 
   /// Opens the product with this barcode; completes when the user comes back, so scanning resumes only then.
   final Future<void> Function(String code) onBarcode;
+
+  /// Opens the search tab, which runs the search asked for through `searchRequestProvider`.
+  final VoidCallback onOpenSearch;
 
   @override
   ConsumerState<ScanScreen> createState() => _ScanScreenState();
@@ -22,6 +27,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   late final AppLifecycleListener _lifecycle;
   bool _isForeground = true;
   bool _isOpening = false;
+  bool _photoMode = false;
   String? _manualError;
 
   @override
@@ -78,11 +84,36 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final muted = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
     // TickerMode is off while another tab or a page on top is shown (go_router and Navigator both set it).
     final cameraActive = TickerMode.valuesOf(context).enabled && _isForeground && !_isOpening;
+    final modes = SegmentedButton<bool>(
+      segments: const [
+        ButtonSegment(value: false, icon: Icon(Icons.qr_code_scanner), label: Text('Mã vạch')),
+        ButtonSegment(value: true, icon: Icon(Icons.photo_camera_outlined), label: Text('Ảnh món ăn')),
+      ],
+      selected: {_photoMode},
+      onSelectionChanged: (selection) => setState(() => _photoMode = selection.single),
+    );
+    if (_photoMode) {
+      return ListView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        children: [
+          modes,
+          const SizedBox(height: AppSpacing.md),
+          PhotoRecognitionPanel(
+            onSearchFood: (query) {
+              ref.read(searchRequestProvider.notifier).request(query);
+              widget.onOpenSearch();
+            },
+          ),
+        ],
+      );
+    }
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       children: [
+        modes,
+        const SizedBox(height: AppSpacing.md),
         Text('Quét mã vạch', style: theme.textTheme.titleLarge),
         Text('Hướng camera vào mã vạch trên bao bì. Fluw tìm sản phẩm trên Open Food Facts.', style: muted),
         const SizedBox(height: AppSpacing.md),

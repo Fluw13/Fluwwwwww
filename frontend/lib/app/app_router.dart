@@ -84,7 +84,10 @@ Widget _screenFor(BuildContext context, AppTab tab) {
       onSetupProfile: () => context.push(AppRoutes.profileSetup),
     ),
     AppTab.search => SearchScreen(onOpenFood: (item) => context.push(AppRoutes.foodDetail, extra: item)),
-    AppTab.scan => ScanScreen(onBarcode: (code) => context.push<void>(AppRoutes.foodBarcode(code))),
+    AppTab.scan => ScanScreen(
+      onBarcode: (code) => context.push<void>(AppRoutes.foodBarcode(code)),
+      onOpenSearch: () => context.go(AppTab.search.path),
+    ),
     AppTab.note => NoteScreen(onAddFood: () => context.go(AppTab.search.path)),
     AppTab.profile => ProfileScreen(onEditProfile: () => context.push(AppRoutes.profileSetup)),
   };

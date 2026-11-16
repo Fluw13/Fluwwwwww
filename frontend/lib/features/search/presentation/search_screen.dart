@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/network/api_failure_message.dart';
+import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
@@ -23,6 +25,23 @@ class SearchScreen extends ConsumerStatefulWidget {
 class _SearchScreenState extends ConsumerState<SearchScreen> {
   final TextEditingController _query = TextEditingController();
   Set<QuickFilter> _filters = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Searches asked for by other tabs (a food recognized in a photo). Run after the frame: the screen may be built
+    // for the first time by that very request.
+    ref.listenManual<SearchRequest?>(searchRequestProvider, (_, request) {
+      if (request != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(searchRequestProvider.notifier).clear();
+            _search(request.query);
+          }
+        });
+      }
+    }, fireImmediately: true);
+  }
 
   @override
   void dispose() {

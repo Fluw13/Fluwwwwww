@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:fluw/core/network/api_failure.dart';
 import 'package:http/http.dart' as http;
 
-/// GETs JSON from the Fluw backend and turns every failure into an [ApiFailure].
+/// Talks JSON with the Fluw backend and turns every failure into an [ApiFailure].
 final class ApiClient {
   ApiClient({required this.httpClient, required this.baseUri, required this.timeout});
 
@@ -13,11 +13,26 @@ final class ApiClient {
   final Uri baseUri;
   final Duration timeout;
 
-  Future<Map<String, Object?>> getJson(String path, {Map<String, String>? query}) async {
-    final uri = baseUri.replace(path: path, queryParameters: query);
+  Future<Map<String, Object?>> getJson(String path, {Map<String, String>? query}) => _send(
+    () => httpClient.get(
+      baseUri.replace(path: path, queryParameters: query),
+      headers: {'Accept': 'application/json'},
+    ),
+  );
+
+  /// Sends raw bytes (a photo) and reads the JSON answer.
+  Future<Map<String, Object?>> postBytes(String path, List<int> bytes, {required String contentType}) => _send(
+    () => httpClient.post(
+      baseUri.replace(path: path),
+      headers: {'Accept': 'application/json', 'Content-Type': contentType},
+      body: bytes,
+    ),
+  );
+
+  Future<Map<String, Object?>> _send(Future<http.Response> Function() request) async {
     final http.Response response;
     try {
-      response = await httpClient.get(uri, headers: {'Accept': 'application/json'}).timeout(timeout);
+      response = await request().timeout(timeout);
     } on TimeoutException {
       throw const TimeoutFailure();
     } on IOException {

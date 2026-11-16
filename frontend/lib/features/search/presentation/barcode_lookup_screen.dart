@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/network/api_failure.dart';
+import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/empty_state.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/presentation/food_detail_screen.dart';
-import 'package:fluw/features/search/presentation/search_labels.dart';
 import 'package:fluw/features/search/presentation/search_loading_view.dart';
 
 /// Opened by a scanned or typed barcode: looks the product up once, then shows its detail screen.
