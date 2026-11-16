@@ -10,6 +10,8 @@
 	<array>
 		<string>vi</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Fluw dùng camera để quét mã vạch sản phẩm.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Fluw</string>
 	<key>CFBundleExecutable</key>
