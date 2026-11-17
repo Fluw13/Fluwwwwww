@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/network/api_failure_message.dart';
+import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
@@ -25,12 +27,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Set<QuickFilter> _filters = const {};
 
   @override
+  void initState() {
+    super.initState();
+    // Searches asked for by other tabs (a food recognized in a photo). Run after the frame: the screen may be built
+    // for the first time by that very request.
+    ref.listenManual<SearchRequest?>(searchRequestProvider, (_, request) {
+      if (request != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(searchRequestProvider.notifier).clear();
+            _search(request.query, englishQuery: request.englishQuery);
+          }
+        });
+      }
+    }, fireImmediately: true);
+  }
+
+  @override
   void dispose() {
     _query.dispose();
     super.dispose();
   }
 
-  Future<void> _search(String text) async {
+  Future<void> _search(String text, {String? englishQuery}) async {
     final query = normalizeQuery(text);
     if (query.length < minSearchLength || query.length > maxSearchLength) {
       return;
@@ -38,7 +57,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _query.text = query;
     FocusScope.of(context).unfocus();
     await ref.read(recentSearchesProvider.notifier).add(query);
-    await ref.read(searchControllerProvider.notifier).search(query);
+    await ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery);
   }
 
   @override
@@ -122,13 +141,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
       ],
       SearchLoading() => [const SearchLoadingView()],
-      SearchFailed(:final query, :final failure) => [
+      SearchFailed(:final query, :final failure, :final englishQuery) => [
         Text(apiFailureMessage(failure), style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
         const SizedBox(height: AppSpacing.sm),
         Align(
           alignment: Alignment.centerLeft,
           child: OutlinedButton(
-            onPressed: () => ref.read(searchControllerProvider.notifier).search(query),
+            onPressed: () => ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery),
             child: const Text('Thử lại'),
           ),
         ),

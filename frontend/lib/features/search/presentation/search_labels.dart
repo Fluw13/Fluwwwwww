@@ -1,5 +1,4 @@
 import 'package:fluw/core/format/decimal_text.dart';
-import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
@@ -45,10 +44,3 @@ String formatNutrientAmount(Nutrient nutrient, double value) {
   };
   return '$number ${nutrientUnit(nutrient)}';
 }
-
-String apiFailureMessage(ApiFailure failure) => switch (failure) {
-  NetworkFailure() => 'Không kết nối được máy chủ. Hãy kiểm tra mạng rồi thử lại.',
-  TimeoutFailure() => 'Máy chủ phản hồi quá lâu. Hãy thử lại sau ít phút.',
-  ServerFailure(:final message) => message,
-  InvalidResponseFailure() => 'Máy chủ trả dữ liệu không đọc được. Hãy thử lại sau.',
-};

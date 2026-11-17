@@ -83,3 +83,18 @@ test('hai lần tìm cùng từ khóa đến cùng lúc chỉ gọi mỗi nguồ
     assert.equal(openFoodFacts.search.mock.callCount(), 1);
     assert.equal(usdaClient.search.mock.callCount(), 1);
 });
+
+test('từ khóa tiếng Anh (món nhận diện từ ảnh) chỉ gửi cho USDA; sai thì 400; cache tách theo cả hai từ khóa', async () => {
+    const { service, openFoodFacts, usdaClient } = build();
+
+    await service.search('cà chua', { usdaQuery: ' tomato ' });
+    assert.equal(openFoodFacts.search.mock.calls[0].arguments[0], 'cà chua');
+    assert.equal(usdaClient.search.mock.calls[0].arguments[0], 'tomato');
+
+    await service.search('cà chua');
+    assert.equal(usdaClient.search.mock.calls[1].arguments[0], 'cà chua', 'không có từ tiếng Anh thì không dùng cache của lần có');
+
+    for (const usdaQuery of ['x', ['a', 'b'], 'y'.repeat(101)]) {
+        await assert.rejects(service.search('cà chua', { usdaQuery }), (error) => error.status === 400);
+    }
+});

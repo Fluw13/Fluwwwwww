@@ -15,12 +15,17 @@ import 'package:fluw/core/time/current_hour_provider.dart';
 import 'package:fluw/core/time/today_provider.dart';
 import 'package:fluw/features/reminders/data/notification_scheduler.dart';
 import 'package:fluw/features/reminders/data/reminder_settings_storage.dart';
+import 'package:fluw/features/scan/data/food_photo_picker.dart';
+import 'package:fluw/features/scan/data/photo_consent_storage.dart';
+import 'package:fluw/features/scan/presentation/barcode_camera.dart';
 import 'package:fluw/features/search/data/recent_searches_storage.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'fake_barcode_camera.dart';
+import 'fake_food_photo_picker.dart';
 import 'fake_notification_scheduler.dart';
 import 'in_memory_database.dart';
 
@@ -50,6 +55,9 @@ Future<SharedPreferences> pumpFluwApp(
         recentSearchesStorageProvider.overrideWithValue(RecentSearchesStorage(preferences)),
         reminderSettingsStorageProvider.overrideWithValue(ReminderSettingsStorage(preferences)),
         notificationSchedulerProvider.overrideWithValue(FakeNotificationScheduler()),
+        barcodeCameraProvider.overrideWithValue(FakeBarcodeCamera()),
+        foodPhotoPickerProvider.overrideWithValue(FakeFoodPhotoPicker()),
+        photoConsentStorageProvider.overrideWithValue(PhotoConsentStorage(preferences)),
         apiClientProvider.overrideWithValue(
           ApiClient(
             httpClient:
@@ -79,6 +87,14 @@ Future<SharedPreferences> pumpFluwApp(
   await tester.pumpAndSettle();
   return preferences;
 }
+
+/// The fake photo picker of the app started by [pumpFluwApp].
+FakeFoodPhotoPicker appPhotoPicker(WidgetTester tester) =>
+    appContainer(tester).read(foodPhotoPickerProvider) as FakeFoodPhotoPicker;
+
+/// The fake camera of the app started by [pumpFluwApp].
+FakeBarcodeCamera appBarcodeCamera(WidgetTester tester) =>
+    appContainer(tester).read(barcodeCameraProvider) as FakeBarcodeCamera;
 
 /// The fake notification system of the app started by [pumpFluwApp].
 FakeNotificationScheduler appNotifications(WidgetTester tester) =>

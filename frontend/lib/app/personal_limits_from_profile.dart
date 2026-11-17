@@ -1,5 +1,6 @@
 import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
@@ -52,5 +53,6 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
       BelowMinimumAge() => TargetsKind.belowMinimumAge,
       InvalidProfile() => TargetsKind.invalid,
     },
+    isAdult: ageInYears(birthDate: profile.birthDate, today: today) >= adultAgeYears,
   );
 }

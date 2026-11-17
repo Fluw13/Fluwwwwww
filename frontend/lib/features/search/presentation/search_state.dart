@@ -22,8 +22,11 @@ final class SearchLoaded extends SearchState {
 }
 
 final class SearchFailed extends SearchState {
-  const SearchFailed(this.query, this.failure);
+  const SearchFailed(this.query, this.failure, {this.englishQuery});
 
   final String query;
   final ApiFailure failure;
+
+  /// Kept so "Thử lại" searches USDA with the same English words.
+  final String? englishQuery;
 }

@@ -10,6 +10,10 @@
 	<array>
 		<string>vi</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Fluw dùng camera để quét mã vạch sản phẩm và chụp ảnh món ăn để nhận diện.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Fluw dùng ảnh bạn chọn để nhận diện món ăn.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Fluw</string>
 	<key>CFBundleExecutable</key>

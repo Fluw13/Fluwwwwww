@@ -8,6 +8,7 @@ import 'package:fluw/features/profile/presentation/profile_setup_screen.dart';
 import 'package:fluw/features/reminders/presentation/reminder_settings_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
+import 'package:fluw/features/search/presentation/barcode_lookup_screen.dart';
 import 'package:fluw/features/search/presentation/food_detail_screen.dart';
 import 'package:fluw/features/search/presentation/search_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,8 @@ abstract final class AppRoutes {
   static const String profileSetup = '/profile/setup';
   static const String foodDetail = '/search/food';
   static const String reminders = '/reminders';
+
+  static String foodBarcode(String code) => '/search/barcode/$code';
 }
 
 GoRouter createAppRouter() {
@@ -45,6 +48,21 @@ GoRouter createAppRouter() {
                         redirect: (context, state) => state.extra is FoodItem ? null : AppTab.search.path,
                         builder: (context, state) => FoodDetailScreen(item: state.extra! as FoodItem),
                       ),
+                    if (tab == AppTab.search)
+                      GoRoute(
+                        path: 'barcode/:code',
+                        parentNavigatorKey: rootNavigatorKey,
+                        builder: (context, state) => BarcodeLookupScreen(
+                          code: state.pathParameters['code']!,
+                          // Pop first: the scan tab waits for this page's push to complete before it scans again,
+                          // and a `go` that only replaces the page never completes it.
+                          onSearchByName: () {
+                            final router = GoRouter.of(context);
+                            router.pop();
+                            router.go(AppTab.search.path);
+                          },
+                        ),
+                      ),
                     if (tab == AppTab.profile)
                       GoRoute(
                         // Full screen above the tab bar, like the design's setup page with its own back button.
@@ -72,7 +90,10 @@ Widget _screenFor(BuildContext context, AppTab tab) {
       onSetupProfile: () => context.push(AppRoutes.profileSetup),
     ),
     AppTab.search => SearchScreen(onOpenFood: (item) => context.push(AppRoutes.foodDetail, extra: item)),
-    AppTab.scan => const ScanScreen(),
+    AppTab.scan => ScanScreen(
+      onBarcode: (code) => context.push<void>(AppRoutes.foodBarcode(code)),
+      onOpenSearch: () => context.go(AppTab.search.path),
+    ),
     AppTab.note => NoteScreen(onAddFood: () => context.go(AppTab.search.path)),
     AppTab.profile => ProfileScreen(onEditProfile: () => context.push(AppRoutes.profileSetup)),
   };

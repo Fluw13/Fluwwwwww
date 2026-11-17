@@ -20,21 +20,25 @@ final class SearchController extends Notifier<SearchState> {
   /// Only the newest search may update the state; an older answer that arrives late is dropped.
   int _latestRequest = 0;
 
-  Future<void> search(String rawQuery) async {
+  /// [englishQuery] comes with a food recognized in a photo, for USDA; dropped when it is not a valid query.
+  Future<void> search(String rawQuery, {String? englishQuery}) async {
+    bool isValid(String query) => query.length >= minSearchLength && query.length <= maxSearchLength;
     final query = normalizeQuery(rawQuery);
-    if (query.length < minSearchLength || query.length > maxSearchLength) {
+    if (!isValid(query)) {
       return;
     }
+    final english = englishQuery == null ? null : normalizeQuery(englishQuery);
+    final usdaQuery = english != null && isValid(english) ? english : null;
     final request = ++_latestRequest;
     state = SearchLoading(query);
     try {
-      final response = await ref.read(foodApiProvider).search(query);
+      final response = await ref.read(foodApiProvider).search(query, englishQuery: usdaQuery);
       if (request == _latestRequest) {
         state = SearchLoaded(response);
       }
     } on ApiFailure catch (failure) {
       if (request == _latestRequest) {
-        state = SearchFailed(query, failure);
+        state = SearchFailed(query, failure, englishQuery: usdaQuery);
       }
     }
   }

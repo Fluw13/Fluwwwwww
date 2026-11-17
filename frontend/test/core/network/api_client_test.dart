@@ -28,6 +28,27 @@ void main() {
     expect(called.toString(), 'https://api.test/api/foods/search?q=s%E1%BB%AFa+chua');
   });
 
+  test('gửi byte (ảnh) bằng POST với đúng kiểu nội dung, lỗi xử lý như GET', () async {
+    late http.Request sent;
+    final client = _client((request) async {
+      sent = request;
+      return _json({'isFood': true}, 200);
+    });
+
+    final body = await client.postBytes('/api/foods/recognize', [9, 8, 7], contentType: 'image/webp');
+
+    expect(body['isFood'], isTrue);
+    expect(sent.method, 'POST');
+    expect(sent.url.toString(), 'https://api.test/api/foods/recognize');
+    expect(sent.headers['Content-Type'], 'image/webp');
+    expect(sent.headers['Accept'], 'application/json');
+    expect(sent.bodyBytes, [9, 8, 7]);
+    await expectLater(
+      _client((request) async => throw http.ClientException('mất mạng')).postBytes('/x', [1], contentType: 'image/png'),
+      throwsA(isA<NetworkFailure>()),
+    );
+  });
+
   test('lỗi có body chuẩn thì giữ status, mã và lời nhắn của máy chủ', () async {
     final client = _client(
       (request) async => _json({

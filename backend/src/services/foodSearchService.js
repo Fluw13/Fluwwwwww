@@ -22,8 +22,8 @@ const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console 
         }
     };
 
-    const search = async (rawQuery) => {
-        const query = typeof rawQuery === 'string' ? rawQuery.trim().replace(/\s+/g, ' ') : '';
+    const cleanQuery = (raw) => {
+        const query = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
         if (query.length < MIN_QUERY_LENGTH || query.length > MAX_QUERY_LENGTH) {
             throw new HttpError(
                 400,
@@ -31,7 +31,17 @@ const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console 
                 `Từ khóa cần từ ${MIN_QUERY_LENGTH} đến ${MAX_QUERY_LENGTH} ký tự.`,
             );
         }
-        const cacheKey = query.toLowerCase();
+        return query;
+    };
+
+    /**
+     * `usdaQuery` is optional English words for USDA, whose food names are English only. A food recognized in a photo
+     * comes with both, so "cà chua" still finds raw tomatoes in USDA.
+     */
+    const search = async (rawQuery, { usdaQuery: rawUsdaQuery } = {}) => {
+        const query = cleanQuery(rawQuery);
+        const usdaQuery = rawUsdaQuery === undefined ? query : cleanQuery(rawUsdaQuery);
+        const cacheKey = `${query}\n${usdaQuery}`.toLowerCase();
         const cached = cache.get(cacheKey);
         if (cached) {
             return cached;
@@ -40,16 +50,16 @@ const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console 
         if (pending) {
             return pending;
         }
-        const request = searchAllSources(query, cacheKey).finally(() => inFlight.delete(cacheKey));
+        const request = searchAllSources(query, usdaQuery, cacheKey).finally(() => inFlight.delete(cacheKey));
         inFlight.set(cacheKey, request);
         return request;
     };
 
-    const searchAllSources = async (query, cacheKey) => {
+    const searchAllSources = async (query, usdaQuery, cacheKey) => {
         const results = await Promise.all([
             searchSource('openFoodFacts', () => openFoodFacts.search(query, RESULTS_PER_SOURCE)),
             usda.isConfigured
-                ? searchSource('usda', () => usda.search(query, RESULTS_PER_SOURCE))
+                ? searchSource('usda', () => usda.search(usdaQuery, RESULTS_PER_SOURCE))
                 : { name: 'usda', status: 'not_configured', items: [] },
         ]);
         if (results.every((result) => result.status !== 'ok')) {

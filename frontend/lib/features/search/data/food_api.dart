@@ -9,8 +9,9 @@ final class FoodApi {
 
   final ApiClient _client;
 
-  Future<SearchResponse> search(String query) async =>
-      searchResponseFromJson(await _client.getJson('/api/foods/search', query: {'q': query}));
+  /// [englishQuery] is sent to USDA instead of [query], whose food names are English only.
+  Future<SearchResponse> search(String query, {String? englishQuery}) async =>
+      searchResponseFromJson(await _client.getJson('/api/foods/search', query: {'q': query, 'en': ?englishQuery}));
 
   /// Returns null when the backend does not know the barcode, or rejects it as malformed (some Open Food Facts
   /// entries carry codes that fail the GTIN check); retrying would never help in either case.

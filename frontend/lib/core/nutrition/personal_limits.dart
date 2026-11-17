@@ -31,6 +31,7 @@ final class PersonalLimits {
     this.prefersSteamedOrBoiled = false,
     this.likesNuts = false,
     this.targetsKind,
+    this.isAdult = false,
   });
 
   static const PersonalLimits none = PersonalLimits.empty(ProfileStatus.none);
@@ -97,4 +98,8 @@ final class PersonalLimits {
 
   /// Null unless [profileStatus] is [ProfileStatus.loaded].
   final TargetsKind? targetsKind;
+
+  /// 18 or older by the stored birth date, even when the rest of the profile is incomplete. False without a profile.
+  /// Photo recognition is only offered to adults: the Gemini API terms bar services likely used by people under 18.
+  final bool isAdult;
 }

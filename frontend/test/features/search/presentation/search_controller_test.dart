@@ -67,4 +67,40 @@ void main() {
     expect(calls, 0);
     expect(container.read(searchControllerProvider), isA<SearchIdle>());
   });
+
+  test('từ tiếng Anh (món nhận diện từ ảnh) gửi kèm cho USDA, giữ cho nút Thử lại; từ sai thì bỏ', () async {
+    final asked = <Map<String, String>>[];
+    var fail = true;
+    final container = ProviderContainer(
+      overrides: [
+        apiClientProvider.overrideWithValue(
+          ApiClient(
+            httpClient: MockClient((request) async {
+              asked.add(request.url.queryParameters);
+              if (fail) {
+                throw http.ClientException('mất mạng');
+              }
+              return http.Response.bytes(utf8.encode(jsonEncode(searchBody('cà chua', [chickenItem]))), 200);
+            }),
+            baseUri: Uri.parse('https://api.test'),
+            timeout: const Duration(seconds: 5),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(searchControllerProvider.notifier);
+
+    await controller.search('cà chua', englishQuery: '  tomato ');
+    final failed = container.read(searchControllerProvider) as SearchFailed;
+    expect(asked.single, {'q': 'cà chua', 'en': 'tomato'});
+    expect(failed.englishQuery, 'tomato');
+
+    fail = false;
+    await controller.search(failed.query, englishQuery: failed.englishQuery);
+    expect(asked.last, {'q': 'cà chua', 'en': 'tomato'});
+
+    await controller.search('cà chua', englishQuery: 't');
+    expect(asked.last, {'q': 'cà chua'});
+  });
 }

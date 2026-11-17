@@ -18,9 +18,12 @@ import 'package:fluw/features/search/presentation/portion_input.dart';
 import 'package:fluw/features/search/presentation/search_labels.dart';
 
 class FoodDetailScreen extends ConsumerStatefulWidget {
-  const FoodDetailScreen({required this.item, super.key});
+  const FoodDetailScreen({required this.item, this.isFullProduct = false, super.key});
 
   final FoodItem item;
+
+  /// True when [item] already came from the barcode lookup, which has the allergens and the Vietnamese name.
+  final bool isFullProduct;
 
   @override
   ConsumerState<FoodDetailScreen> createState() => _FoodDetailScreenState();
@@ -34,7 +37,8 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   late bool _isLoadingFull = _needsFullProduct;
   bool _fullLoadFailed = false;
 
-  bool get _needsFullProduct => widget.item.source == FoodSource.openFoodFacts && widget.item.barcode != null;
+  bool get _needsFullProduct =>
+      !widget.isFullProduct && widget.item.source == FoodSource.openFoodFacts && widget.item.barcode != null;
 
   @override
   void initState() {

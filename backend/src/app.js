@@ -5,7 +5,7 @@ const notFound = require('./middlewares/notFound');
 const errorHandler = require('./middlewares/errorHandler');
 
 /** Services are passed in so tests can run the real routes without calling the data sources. */
-const createApp = ({ foodSearchService, barcodeService, rateLimit }) => {
+const createApp = ({ foodSearchService, barcodeService, recognitionService, rateLimit, recognizeRateLimit }) => {
     const app = express();
 
     app.disable('x-powered-by');
@@ -15,7 +15,11 @@ const createApp = ({ foodSearchService, barcodeService, rateLimit }) => {
     app.get('/health', (request, response) => {
         response.json({ status: 'ok' });
     });
-    app.use('/api/foods', createRateLimiter(rateLimit), createFoodRoutes({ foodSearchService, barcodeService }));
+    app.use(
+        '/api/foods',
+        createRateLimiter(rateLimit),
+        createFoodRoutes({ foodSearchService, barcodeService, recognitionService }, { recognizeRateLimit }),
+    );
 
     app.use(notFound);
     app.use(errorHandler);

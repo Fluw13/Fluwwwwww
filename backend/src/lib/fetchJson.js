@@ -5,12 +5,14 @@ const UpstreamError = require('../errors/upstreamError');
  * listed in acceptStatuses) or non-JSON body becomes an UpstreamError, so callers handle one failure type.
  */
 const createFetchJson = ({ fetch = globalThis.fetch, timeoutMs, userAgent }) => {
-    return async (source, url, { headers = {}, acceptStatuses = [] } = {}) => {
+    return async (source, url, { method = 'GET', body, headers = {}, acceptStatuses = [], timeoutMs: requestTimeoutMs } = {}) => {
         let response;
         try {
             response = await fetch(url, {
+                method,
+                body,
                 headers: { Accept: 'application/json', 'User-Agent': userAgent, ...headers },
-                signal: AbortSignal.timeout(timeoutMs),
+                signal: AbortSignal.timeout(requestTimeoutMs ?? timeoutMs),
             });
         } catch (error) {
             throw new UpstreamError(source, error.name);

@@ -9,6 +9,7 @@ import 'package:fluw/core/settings/preferences_loader.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/settings/theme_mode_storage.dart';
 import 'package:fluw/features/reminders/data/reminder_settings_storage.dart';
+import 'package:fluw/features/scan/data/photo_consent_storage.dart';
 import 'package:fluw/features/search/data/recent_searches_storage.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 
@@ -26,6 +27,7 @@ Future<void> main() async {
         themeModeStorageProvider.overrideWithValue(ThemeModeStorage(preferences)),
         recentSearchesStorageProvider.overrideWithValue(RecentSearchesStorage(preferences)),
         reminderSettingsStorageProvider.overrideWithValue(ReminderSettingsStorage(preferences)),
+        photoConsentStorageProvider.overrideWithValue(PhotoConsentStorage(preferences)),
         ...crossFeatureOverrides(),
       ],
       child: const FluwApp(),

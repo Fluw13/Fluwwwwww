@@ -2,7 +2,14 @@ const createApp = require('./src/app');
 const loadConfig = require('./src/config');
 const createServices = require('./src/createServices');
 
-const app = createApp(createServices(loadConfig()));
+const config = loadConfig();
+const app = createApp(createServices(config));
+
+// Which optional keys are set, so a missing variable on Render shows in the log. Never the keys themselves.
+console.log(
+    '[Config] USDA ' + (config.usdaApiKey ? 'bật' : 'tắt') + ', Gemini ' + (config.geminiApiKey ? 'bật' : 'tắt') +
+        ' (' + config.geminiModel + ')',
+);
 
 const PORT = process.env.PORT || 5000;
 // Hosts such as Render send SIGTERM before stopping an instance during deploys; in-flight requests get time to finish.

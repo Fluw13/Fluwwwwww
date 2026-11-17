@@ -94,4 +94,18 @@ void main() {
     );
     expect(of(buildProfile(heightCm: 50)).targetsKind, TargetsKind.invalid);
   });
+
+  test('người lớn theo ngày sinh (kể cả hồ sơ thiếu số liệu); tròn 18 tuổi đúng ngày là người lớn', () {
+    bool adult(HealthProfile profile) => personalLimitsFromProfile(profile, today: fixtureToday).isAdult;
+
+    expect(adult(buildProfile()), isTrue);
+    expect(adult(buildProfile(birthDate: CalendarDate(2008, 11, 11))), isTrue);
+    expect(adult(buildProfile(birthDate: CalendarDate(2008, 11, 12))), isFalse);
+    expect(
+      adult(buildProfile(weeklyChangeKg: null)),
+      isTrue,
+      reason: 'hồ sơ thiếu tốc độ giảm cân nhưng vẫn biết tuổi',
+    );
+    expect(PersonalLimits.none.isAdult, isFalse);
+  });
 }
