@@ -54,7 +54,13 @@ GoRouter createAppRouter() {
                         parentNavigatorKey: rootNavigatorKey,
                         builder: (context, state) => BarcodeLookupScreen(
                           code: state.pathParameters['code']!,
-                          onSearchByName: () => context.go(AppTab.search.path),
+                          // Pop first: the scan tab waits for this page's push to complete before it scans again,
+                          // and a `go` that only replaces the page never completes it.
+                          onSearchByName: () {
+                            final router = GoRouter.of(context);
+                            router.pop();
+                            router.go(AppTab.search.path);
+                          },
                         ),
                       ),
                     if (tab == AppTab.profile)

@@ -9,7 +9,7 @@
 | Tính năng | Mô tả | Trạng thái |
 |---|---|---|
 | Tra cứu | Tìm calo, protein (đạm), đường, chất béo của đồ đóng gói, trái cây, đồ tươi, món nấu chín, bánh kẹo | Xong tìm kiếm, lọc nhanh, tìm gần đây; món Việt chưa có |
-| Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm tươi (cà chua, hành...) | Xong: quét mã vạch trên máy, nhập mã bằng tay, nhận diện tên món qua ảnh (Google Gemini) rồi tra số liệu |
+| Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm tươi (cà chua, hành...) | Xong: quét mã vạch trên máy, nhập mã bằng tay, nhận diện tên món qua ảnh (Google Gemini, từ 18 tuổi) rồi tra số liệu. Chưa thử Gemini thật và camera trên điện thoại thật |
 | Thông tin sản phẩm | Tên, ảnh, thương hiệu, chỉ số dinh dưỡng theo khẩu phần bạn nhập, đối chiếu dị ứng và chỉ tiêu theo hồ sơ, ghi nguồn dữ liệu | Xong |
 | Nhật ký | Lịch theo tuần, thêm/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong; đánh giá cuối ngày làm cùng Trang chủ |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong |
@@ -72,7 +72,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 - Hồ sơ sức khỏe, Nhật ký và cân nặng **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
 - Khi tra cứu, app chỉ gửi từ khóa hoặc mã vạch lên máy chủ Fluw, không kèm dữ liệu sức khỏe. Mỗi lần mở app, app gọi máy chủ một lần (`/health`, không kèm dữ liệu) để máy chủ gói miễn phí thức dậy sớm.
 - Quét mã vạch chạy trên điện thoại (Android: Google ML Kit, iPhone: Apple Vision); hình camera không rời máy, chỉ mã vạch được gửi lên máy chủ Fluw để tra sản phẩm. ML Kit có thể gửi cho Google số liệu về hiệu năng và mức sử dụng (không có hình camera).
-- Nhận diện món qua ảnh: chỉ khi bạn chụp hoặc chọn ảnh, và app hỏi bạn đồng ý trước lần đầu. Ảnh đi qua máy chủ Fluw tới Google Gemini để nhận ra tên món, không kèm dữ liệu sức khỏe. Máy chủ Fluw không lưu ảnh; với gói miễn phí, Google có thể dùng ảnh để cải thiện sản phẩm, nên đừng chụp người hay giấy tờ. Số liệu dinh dưỡng vẫn lấy từ Open Food Facts/USDA, không lấy từ AI.
+- Nhận diện món qua ảnh: chỉ dành cho người từ 18 tuổi (theo điều khoản của Google Gemini), chỉ khi bạn chụp hoặc chọn ảnh, và app hỏi bạn đồng ý trước lần đầu (rút lại được ngay trong màn Quét). Trước khi gửi, app xóa thông tin vị trí (GPS), thời gian chụp và tên máy trong ảnh. Ảnh đi qua máy chủ Fluw tới Google Gemini để nhận ra tên món, không kèm dữ liệu sức khỏe. Máy chủ Fluw không lưu ảnh; với gói miễn phí, Google có thể dùng ảnh (kể cả cho người xem lại) để cải thiện sản phẩm, nên đừng chụp người hay giấy tờ. Số liệu dinh dưỡng vẫn lấy từ Open Food Facts/USDA, không lấy từ AI.
 - Ảnh sản phẩm tải thẳng từ máy chủ của Open Food Facts, nên Open Food Facts thấy địa chỉ IP của bạn như khi mở trang web của họ.
 - Dữ liệu sản phẩm lấy từ [Open Food Facts](https://world.openfoodfacts.org) (giấy phép ODbL) và [USDA FoodData Central](https://fdc.nal.usda.gov) (phạm vi công cộng). Xem đủ nguồn và giấy phép trong app: Hồ Sơ → Về Fluw → Nguồn dữ liệu và giấy phép.
 

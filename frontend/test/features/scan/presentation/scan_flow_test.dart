@@ -26,6 +26,9 @@ MockClient _backend({List<Uri>? calls, String? missing}) => MockClient((request)
   return _json({'item': yoghurtProduct});
 });
 
+Finder _buttonOf(String label) =>
+    find.ancestor(of: find.text(label), matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton));
+
 /// Taps after scrolling the finder into view: the square camera can push the rest of the page below the fold.
 Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
@@ -84,16 +87,59 @@ void main() {
     expect(calls, isEmpty);
   });
 
-  testWidgets('chưa có sản phẩm: nói rõ và cho tìm theo tên', (tester) async {
+  testWidgets('chưa có sản phẩm: "Tìm theo tên" mở Tra Cứu, quay lại Quét thì camera và nút Tra mã chạy lại', (
+    tester,
+  ) async {
     await pumpFluwApp(tester, httpClient: _backend(missing: '96385074'));
     await openScan(tester);
+    final camera = appBarcodeCamera(tester);
 
-    appBarcodeCamera(tester).scan('96385074');
+    camera.scan('96385074');
     await tester.pumpAndSettle();
     expect(find.text('Chưa có sản phẩm này'), findsOneWidget);
 
     await _tapVisible(tester, find.text('Tìm theo tên'));
     expect(find.byType(SearchScreen), findsOneWidget);
+    expect(find.byType(BarcodeLookupScreen), findsNothing);
+
+    await openScan(tester);
+    expect(camera.isActive, isTrue);
+    expect(find.text('Đang mở sản phẩm...'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Tra mã'), 300);
+    expect(tester.widget<ButtonStyleButton>(_buttonOf('Tra mã')).enabled, isTrue);
+  });
+
+  testWidgets('chưa có sản phẩm: "Quét mã khác" về màn Quét, camera chạy lại', (tester) async {
+    await pumpFluwApp(tester, httpClient: _backend(missing: '96385074'));
+    await openScan(tester);
+    final camera = appBarcodeCamera(tester);
+
+    camera.scan('96385074');
+    await tester.pumpAndSettle();
+    await _tapVisible(tester, find.text('Quét mã khác'));
+
+    expect(find.byType(BarcodeLookupScreen), findsNothing);
+    expect(camera.isActive, isTrue);
+  });
+
+  testWidgets('camera đọc cùng mã hai lần liền: chỉ mở một trang, tra một lần; camera tắt ngay khi đọc được', (
+    tester,
+  ) async {
+    final calls = <Uri>[];
+    await pumpFluwApp(tester, httpClient: _backend(calls: calls));
+    await openScan(tester);
+    final camera = appBarcodeCamera(tester);
+    final code = yoghurtProduct['barcode']! as String;
+
+    camera
+      ..scan(code)
+      ..scan(code);
+    await tester.pump();
+    expect(camera.isActive, isFalse, reason: 'tắt ngay, không đợi trang mới hiện xong');
+
+    await tester.pumpAndSettle();
+    expect(find.byType(BarcodeLookupScreen), findsOneWidget);
+    expect(calls, hasLength(1));
   });
 
   testWidgets('lỗi mạng khi tra mã: báo lỗi và thử lại được', (tester) async {
@@ -122,14 +168,18 @@ void main() {
 
     await tester.scrollUntilVisible(find.widgetWithText(TextField, 'Mã vạch (8–14 chữ số)'), 300);
     await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Mã vạch (8–14 chữ số)'), '12345');
+    final field = find.widgetWithText(TextField, 'Mã vạch (8–14 chữ số)');
+    await tester.enterText(field, '12345');
     await _tapVisible(tester, find.text('Tra mã'));
     expect(find.textContaining('8, 12, 13 hoặc 14 chữ số'), findsOneWidget);
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Mã vạch (8–14 chữ số)'),
-      yoghurtProduct['barcode']! as String,
-    );
+    await tester.enterText(field, '8934673607828');
+    await tester.pump();
+    expect(find.textContaining('8, 12, 13 hoặc 14 chữ số'), findsNothing, reason: 'sửa mã thì lỗi cũ biến mất');
+    await _tapVisible(tester, find.text('Tra mã'));
+    expect(find.textContaining('số kiểm tra không khớp'), findsOneWidget, reason: 'đủ 13 số nhưng gõ sai một số');
+
+    await tester.enterText(field, yoghurtProduct['barcode']! as String);
     await _tapVisible(tester, find.text('Tra mã'));
     expect(find.byType(FoodDetailScreen), findsOneWidget);
   });

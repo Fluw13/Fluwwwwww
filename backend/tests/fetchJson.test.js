@@ -70,3 +70,26 @@ test('status lỗi thì hủy body để trả kết nối', async () => {
     await assert.rejects(fetchJson('src', 'https://example.test'), UpstreamError);
     assert.ok(cancelled);
 });
+
+test('gửi được POST có body; hẹn giờ riêng của request thay cho hẹn giờ chung', async () => {
+    let request;
+    const fetchJson = createFetchJson({
+        fetch: (url, options) =>
+            new Promise((resolve, reject) => {
+                request = options;
+                const timer = setTimeout(() => resolve(new Response('{"ok":true}')), 30);
+                options.signal.addEventListener('abort', () => {
+                    clearTimeout(timer);
+                    reject(options.signal.reason);
+                });
+            }),
+        timeoutMs: 5,
+        userAgent: 'x',
+    });
+
+    const result = await fetchJson('src', 'https://example.test', { method: 'POST', body: '{"a":1}', timeoutMs: 500 });
+
+    assert.deepEqual(result.body, { ok: true });
+    assert.equal(request.method, 'POST');
+    assert.equal(request.body, '{"a":1}');
+});

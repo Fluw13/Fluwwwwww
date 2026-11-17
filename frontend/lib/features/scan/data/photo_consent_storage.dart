@@ -25,6 +25,15 @@ class PhotoConsentStorage {
       // Asked again next time.
     }
   }
+
+  /// Withdrawing is as easy as giving: the next photo asks again.
+  Future<void> withdrawConsent() async {
+    try {
+      await _preferences?.remove(key);
+    } on Object {
+      // Still recorded as given; the user can withdraw again.
+    }
+  }
 }
 
 final photoConsentStorageProvider = Provider<PhotoConsentStorage>(

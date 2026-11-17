@@ -21,10 +21,11 @@ const createRecognitionService = ({ gemini, logger = console }) => ({
         try {
             return await gemini.recognizeFood({ image, mimeType });
         } catch (error) {
+            // Every failure is logged, so a bad key or a region the free tier does not cover shows up on Render.
+            logger.error('[Recognition]', error instanceof HttpError ? `${error.code} ${error.detail ?? ''}`.trim() : error.message);
             if (error instanceof HttpError) {
                 throw error;
             }
-            logger.error('[Recognition]', error.message);
             throw new HttpError(
                 503,
                 'RECOGNITION_UNAVAILABLE',

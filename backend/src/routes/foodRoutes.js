@@ -8,6 +8,10 @@ const MAX_IMAGE_BYTES = '4mb';
 
 // Express 5 forwards rejected promises from async handlers to errorHandler, so no try/catch is needed here.
 const createFoodRoutes = (services, { recognizeRateLimit = { windowMs: 60 * 1000, limit: 6 } } = {}) => {
+    const recognizeLimiter = createRateLimiter({
+        ...recognizeRateLimit,
+        message: 'Bạn gửi ảnh quá nhanh, vui lòng thử lại sau ít phút.',
+    });
     const controller = createFoodController(services);
     const router = express.Router();
     router.get('/search', controller.search);
@@ -15,7 +19,7 @@ const createFoodRoutes = (services, { recognizeRateLimit = { windowMs: 60 * 1000
     // A stricter cap: every photo spends the free daily quota of the vision model that all users share.
     router.post(
         '/recognize',
-        createRateLimiter(recognizeRateLimit),
+        recognizeLimiter,
         express.raw({ type: [...IMAGE_TYPES], limit: MAX_IMAGE_BYTES }),
         controller.recognize,
     );

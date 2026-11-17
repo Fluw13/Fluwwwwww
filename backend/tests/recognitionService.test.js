@@ -51,8 +51,12 @@ test('Gemini lỗi mạng/quá giờ/trả sai thì 503 RECOGNITION_UNAVAILABLE 
     assert.match(logged[0], /^\[Recognition\]/);
 
     await assert.rejects(
-        failing(new HttpError(503, 'RECOGNITION_BUSY', 'x')).recognize({ image: Buffer.from('a'), contentType: 'image/png' }),
+        failing(new HttpError(503, 'RECOGNITION_BUSY', 'x', 'HTTP 429 RESOURCE_EXHAUSTED')).recognize({
+            image: Buffer.from('a'),
+            contentType: 'image/png',
+        }),
         (error) => error.code === 'RECOGNITION_BUSY',
     );
-    assert.equal(logged.length, 1);
+    assert.equal(logged.length, 2, 'lỗi đã có mã vẫn ghi log để thấy trên Render');
+    assert.equal(logged[1], '[Recognition] RECOGNITION_BUSY HTTP 429 RESOURCE_EXHAUSTED');
 });

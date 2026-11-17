@@ -180,20 +180,29 @@ features/<tên>/
   - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `QuickFilter` (ít đường <5 g, giàu protein >20 g, dưới 200 kcal theo 100 g/ml; thiếu số liệu thì không đạt), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
   - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt; người dùng tự nhập khẩu phần 1–2.000), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn.
   - Chưa làm: "Đã lưu" và nhập món thủ công (M3b).
-- **`features/scan/` (M5):** tab Quét Món có 2 chế độ (`SegmentedButton`): Mã vạch và Ảnh món ăn.
+- **`features/scan/` (M5):** tab Quét Món có 2 chế độ (`SegmentedButton`): Mã vạch và Ảnh món ăn, giữ cả hai trong `IndexedStack` để mã đang gõ hay kết quả nhận diện còn nguyên khi đổi qua lại.
   - Mã vạch (M5a):
     - `mobile_scanner` 7.5.0, chạy trên máy: Android dùng ML Kit gói sẵn trong app, iPhone dùng Apple Vision. Chỉ đọc EAN-13, EAN-8, UPC-A (`noDuplicates`).
-    - `domain/gtin`: kiểm chữ số kiểm tra (8/12/13/14 số); camera đọc nhầm thì bỏ qua, không gọi máy chủ. Có ô nhập mã bằng tay.
-    - `BarcodeCamera` (interface) + `LiveBarcodeCamera`. Camera chỉ chạy khi tab Quét đang hiện (`TickerMode`), app ở trước màn hình, đang ở chế độ Mã vạch và không đang mở sản phẩm.
+    - `domain/gtin`: kiểm chữ số kiểm tra (8/12/13/14 số); camera đọc nhầm thì bỏ qua, không gọi máy chủ. Có ô nhập mã bằng tay: sai độ dài và sai chữ số kiểm tra báo khác nhau (`hasGtinLength`), sửa mã thì lỗi cũ biến mất.
+    - `BarcodeCamera` (interface) + `LiveBarcodeCamera`. Camera chỉ chạy khi tab Quét đang hiện (`TickerMode`, mở sản phẩm cũng tắt nó ngay) và đang ở chế độ Mã vạch; `_isOpening` chặn mở hai trang khi camera đọc cùng mã hai lần.
+    - `BarcodeCameraView`:
+      - Lệnh bật/tắt chạy lần lượt rồi so với trạng thái mới nhất, vì mobile_scanner bỏ qua lệnh tắt lúc đang mở (rời tab ngay sau khi mở vẫn tắt được camera).
+      - Tự xử lý vòng đời app theo cách của mobile_scanner cho controller tự tạo: tắt khi `inactive` (khung hình vẫn chạy nên lệnh không bị treo; `hidden`/`paused` thì không còn khung hình), bật khi `resumed`, bỏ qua khi chưa có quyền camera (hộp thoại xin quyền làm app `inactive`).
+      - Bị từ chối quyền thì không tự bật lại (Android trước 11 sẽ hỏi mãi); màn lỗi có "Thử lại".
+      - Nhận `controller` để test (`FakeController` kế thừa `MobileScannerController`, mock method channel `dev.steenbakker.mobile_scanner/scanner/method` vì bản debug gọi lệnh dừng trước).
     - Quét được → route `/search/barcode/:code` (`BarcodeLookupScreen` ở `features/search`): tra `/barcode` một lần rồi mở `FoodDetailScreen(isFullProduct: true)` (không tra lại); không có thì "Tìm theo tên" / "Quét mã khác"; lỗi mạng có "Thử lại".
-    - Android: quyền `CAMERA` + `uses-feature` camera `required="false"`. iOS: `NSCameraUsageDescription`.
+    - "Tìm theo tên" phải `pop()` rồi mới `go()`: tab Quét chờ `push` của trang này hoàn tất mới quét tiếp, mà `go` của go_router 18 bỏ trang đi không hoàn tất nó (camera tắt mãi).
+    - Android: quyền `CAMERA` + `uses-feature` camera và `camera.autofocus` `required="false"`. iOS: `NSCameraUsageDescription`. Vùng camera có semantics.
   - Ảnh món ăn (M5b):
-    - `PhotoRecognitionPanel`: lần đầu hỏi đồng ý gửi ảnh (`PhotoConsentStorage`, shared_preferences `photo_recognition_consent`; không có kho hoặc lỗi thì hỏi lại). Hộp thoại nói rõ ảnh đi qua máy chủ Fluw tới Google Gemini, gói miễn phí Google có thể dùng ảnh, đừng chụp người hay giấy tờ.
-    - `FoodPhotoPicker` (interface) + `ImageFoodPhotoPicker` (`image_picker`, tối đa 1280 px, chất lượng 80); `contentTypeOf` theo mime rồi theo đuôi file. Android chọn ảnh bằng trình chọn của hệ thống, không cần quyền đọc bộ nhớ; chụp ảnh thì `image_picker` tự xin quyền camera.
-    - `RecognitionApi` gọi `POST /api/foods/recognize`, bỏ món sai dạng.
-    - Kết quả ghi "AI (Google Gemini) gợi ý, có thể sai". Chọn món → `searchRequestProvider` (`core/search/`, so theo identity nên cùng từ khóa vẫn chạy lại) + mở tab Tra Cứu; `SearchScreen` chạy tìm rồi xóa yêu cầu. Số liệu dinh dưỡng luôn từ OFF/USDA, không từ AI.
-    - Lỗi hiện lời nhắn của máy chủ; 413 → "Ảnh quá lớn". Ảnh không có món ăn thì nói rõ. Đang nhận diện thì tắt nút, báo có thể gần một phút khi máy chủ ngủ.
+    - **Chỉ người từ 18 tuổi** (`PersonalLimits.isAdult`, tính từ ngày sinh kể cả khi hồ sơ thiếu số liệu): điều khoản Gemini API cấm dịch vụ dễ được người dưới 18 tuổi dùng, mà Fluw hỗ trợ 14–17 tuổi. Chưa có hồ sơ, hồ sơ hỏng, dưới 18 thì chỉ hiện lời giải thích, không có nút gửi ảnh.
+    - `PhotoRecognitionPanel`: lần đầu hỏi đồng ý gửi ảnh (`PhotoConsentStorage`, shared_preferences `photo_recognition_consent`; không có kho hoặc lỗi thì hỏi lại). Hộp thoại nói rõ: ảnh đi qua máy chủ Fluw tới Google Gemini, Fluw xóa vị trí và thời gian chụp, không lưu ảnh; gói miễn phí Google có thể dùng ảnh và cho người xem lại; đừng chụp người hay giấy tờ; rút lại được. Nút "Rút lại đồng ý gửi ảnh" (`withdrawConsent`, Nghị định 13 yêu cầu rút được).
+    - `FoodPhotoPicker` (interface, trả `Uint8List?`) + `ImageFoodPhotoPicker` (`image_picker`, tối đa 1280 px, chất lượng 80). `image_picker` đổi sang JPEG (PNG giữ PNG) nhưng chép lại EXIF gồm cả GPS và giữ tên file gốc (`scaled_x.heic`). Android chọn ảnh bằng trình chọn của hệ thống, không cần quyền đọc bộ nhớ; chụp ảnh thì `image_picker` tự xin quyền camera.
+    - `domain/photo_metadata` (`removePhotoMetadata`): đọc định dạng từ byte đầu; JPEG bỏ APP1 (EXIF, XMP), APP13 (IPTC), COM và mọi thứ sau dấu kết thúc ảnh; PNG bỏ `eXIf`, `tEXt`, `zTXt`, `iTXt`, `tIME`. Định dạng khác hoặc file hỏng thì không gửi (`UnsupportedPhotoFormat`). Test dùng ảnh mẫu thật có GPS ở `test/fixtures/photos/` (sinh bằng Pillow).
+    - `RecognitionApi` xóa metadata rồi gọi `POST /api/foods/recognize`, bỏ món sai dạng; mỗi món có `englishQuery` (từ tiếng Anh cho USDA).
+    - Kết quả ghi "AI (Google Gemini) gợi ý, có thể sai". Chọn món → `searchRequestProvider` (`core/search/`, so theo identity nên cùng từ khóa vẫn chạy lại; mang theo `englishQuery`) + mở tab Tra Cứu; `SearchScreen` chạy tìm (gửi `en` cho USDA, giữ cho "Thử lại") rồi xóa yêu cầu. Số liệu dinh dưỡng luôn từ OFF/USDA, không từ AI.
+    - Lỗi hiện lời nhắn của máy chủ; 413 → "Ảnh quá lớn"; không mở được camera/thư viện ảnh; ảnh không phải JPEG/PNG. Ảnh không có món ăn thì nói rõ. Đang mở camera/thư viện hoặc đang nhận diện thì tắt cả hai nút. Trạng thái và kết quả nằm trong `Semantics(liveRegion)`.
     - iOS: `NSPhotoLibraryUsageDescription`.
+    - Chưa làm: `retrieveLostData` của `image_picker` (Android có thể tắt app khi đang mở camera trên máy yếu; người dùng chụp lại).
   - Test: `pumpFluwApp` thay camera bằng `FakeBarcodeCamera` (`appBarcodeCamera(tester)`) và bộ chọn ảnh bằng `FakeFoodPhotoPicker` (`appPhotoPicker(tester)`).
 - `core/nutrition/` (dùng chung cho tra cứu, Nhật ký, gợi ý):
   - `Nutrient`: kcal, protein, carb, đường, béo, béo bão hòa, natri (mg).
@@ -333,10 +342,12 @@ tests/                    node:test, helper startServer
   - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.1` (không ghi thông tin cá nhân của FLuw).
   - `createApp(services)` nhận service để test; `src/createServices.js` lắp nguồn thật, `server.js` gọi một lần.
   - Chạy thử ở môi trường agent: Node cần `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` mới đi qua proxy (Render không cần).
-- **Nhận diện ảnh (M1c):** `POST /api/foods/recognize`, thân là ảnh thô (`Content-Type` image/jpeg, png, webp, heic, heif), tối đa 4 MB (`express.raw`), rate limit riêng 6 lượt/phút mỗi IP.
-  - Gemini REST `v1beta/models/{GEMINI_MODEL}:generateContent` (mặc định `gemini-flash-latest`), key ở header `x-goog-api-key`, hẹn giờ 25 s. `responseSchema` chỉ có tên món (`nameVi`) và từ khóa (`searchQuery`); prompt cấm ước lượng khối lượng, calo, chất dinh dưỡng.
-  - Trả `{ isFood, foods: [{ name, searchQuery }] }`, tối đa 3 món, bỏ trùng. Bị chặn an toàn (`blockReason`) thì coi là không có đồ ăn.
-  - Lỗi: chưa có `GEMINI_API_KEY` → 503 `RECOGNITION_NOT_CONFIGURED`; sai kiểu ảnh 415 `UNSUPPORTED_IMAGE`; ảnh rỗng 400 `IMAGE_REQUIRED`; quá 4 MB 413 `BAD_REQUEST`; Gemini 429 → 503 `RECOGNITION_BUSY`; Gemini 400 → 422 `IMAGE_UNREADABLE`; lỗi khác của Gemini → 503 `RECOGNITION_UNAVAILABLE` (log `[Recognition]`, không có ảnh).
+- **Nhận diện ảnh (M1c):** `POST /api/foods/recognize`, thân là ảnh thô (`Content-Type` image/jpeg, png, webp, heic, heif), tối đa 4 MB (`express.raw`), rate limit riêng 6 lượt/phút mỗi IP ("Bạn gửi ảnh quá nhanh"), cộng với giới hạn chung 30/phút.
+  - Gemini REST `v1beta/models/{GEMINI_MODEL}:generateContent` (mặc định `gemini-flash-latest`), key ở header `x-goog-api-key`, hẹn giờ 25 s. `responseSchema` chỉ có tên món (`nameVi`), từ khóa tiếng Việt (`searchQuery`) và tiếng Anh cho USDA (`searchQueryEn`); prompt cấm ước lượng khối lượng, calo, chất dinh dưỡng.
+  - `generationConfig` **chỉ** có `responseMimeType` + `responseSchema`: không `maxOutputTokens` (model có suy nghĩ tính cả token suy nghĩ vào giới hạn, 512 thì hết chỗ trả lời → `MAX_TOKENS` rỗng), không `temperature` (Google khuyên giữ mặc định cho Gemini 3, thấp hơn có thể lặp). Hẹn giờ 25 s chặn thời gian.
+  - Trả `{ isFood, foods: [{ name, searchQuery, searchQueryEn }] }` (`searchQueryEn` có thể `null`), tối đa 3 món, bỏ trùng; `isFood` true mà không còn món hợp lệ thì thành false. Bị chặn an toàn (`blockReason` hoặc `finishReason` SAFETY/IMAGE_SAFETY/...) thì coi là không có đồ ăn; phần `thought` bị bỏ; không có chữ trả lời thì `UpstreamError` ghi `finishReason`.
+  - Lỗi: chưa có `GEMINI_API_KEY` → 503 `RECOGNITION_NOT_CONFIGURED`; sai kiểu ảnh 415 `UNSUPPORTED_IMAGE`; ảnh rỗng 400 `IMAGE_REQUIRED`; quá 4 MB 413 `BAD_REQUEST`; Gemini 429 → 503 `RECOGNITION_BUSY`; Gemini 400 `INVALID_ARGUMENT` nói về ảnh (không phải `API_KEY_INVALID`) → 422 `IMAGE_UNREADABLE`; key sai, vùng không có gói miễn phí (`FAILED_PRECONDITION`), 403 và lỗi khác → 503 `RECOGNITION_UNAVAILABLE`. **Mọi lỗi đều ghi log** `[Recognition]` kèm status, lý do, lời nhắn của Gemini (`HttpError.detail`, không gửi cho app, không có ảnh hay key).
+- `GET /api/foods/search?q=&en=`: `en` (2–100 ký tự, tùy chọn) là từ tiếng Anh chỉ gửi cho USDA (tên USDA toàn tiếng Anh); cache tách theo cả hai từ khóa.
   - Không lưu, không ghi log ảnh. `fetchJson` nhận thêm `method`, `body`, `headers`, `acceptStatuses`, `timeoutMs`.
   - `server.js` ghi log `[Config]` lúc khởi động: USDA, Gemini bật hay tắt và model (không ghi key), để biết biến môi trường trên Render đã có chưa.
 - Hợp đồng với Render, không được đổi: chạy `node server.js` trong `backend/`, đọc `PORT`, có `GET /health`.
@@ -524,7 +535,9 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 - **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
 - **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
 - **Gemini:**
-  - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, chỉ gửi ảnh, không kèm dữ liệu sức khỏe.
+  - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên (kể cả cho người xem lại) để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, rút lại được, chỉ gửi ảnh đã xóa vị trí/thời gian chụp, không kèm dữ liệu sức khỏe.
+  - Điều khoản bổ sung của Gemini API: người dùng API phải từ 18 tuổi, và (theo bản 2024–2025, chưa xác nhận được bản hiện hành vì mạng agent chặn ai.google.dev) không dùng trong dịch vụ dễ được người dưới 18 tuổi dùng → nhận diện ảnh chỉ mở cho hồ sơ từ 18 tuổi.
+  - **Chưa gọi Gemini thật lần nào** (môi trường agent không gửi được key). Sau khi deploy, FLuw thử một ảnh trong app; lỗi thì xem log `[Recognition]` trên Render.
   - `gemini-flash-latest` là tên Google trỏ tới model Flash hiện hành; đổi bằng biến `GEMINI_MODEL` nếu cần cố định.
   - Điều khoản bổ sung của Gemini API yêu cầu gói trả phí khi phục vụ người dùng ở EEA, Thụy Sĩ, Anh. Kiểm lại điều khoản trước khi lên cửa hàng; nếu vẫn dùng gói miễn phí thì chỉ phát hành ở Việt Nam.
 
@@ -533,6 +546,21 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 17/11/2026 — M5: quét mã vạch, nhận diện ảnh (M5a, M5b) và API nhận diện (M1c)
+- **Merge PR #34** (M6b, `5226475`).
+- **Thêm:** `features/scan/` (domain 3, data 3, presentation 5), `features/search/presentation/barcode_lookup_screen`, route `/search/barcode/:code`, `core/search/search_request`, `core/network/api_failure_message`, `ApiClient.postBytes`, `PersonalLimits.isAdult`; backend `providers/gemini/client`, `services/recognitionService`, `POST /api/foods/recognize`, tham số `en` của tìm kiếm, log `[Config]`; gói `mobile_scanner`, `image_picker`. Chi tiết ở mục 3.
+- **Sửa theo review độc lập (trước khi push):**
+  - **Cao:** bấm "Tìm theo tên" rồi quay lại tab Quét thì camera tắt mãi, "Tra mã" bị khóa (`go` không hoàn tất `push`) → `pop()` rồi `go()`, có test.
+  - **Cao:** `maxOutputTokens: 512` với model có suy nghĩ thì Gemini trả rỗng → mọi ảnh báo lỗi → bỏ giới hạn token và `temperature`, xử lý `finishReason` (SAFETY → không có đồ ăn, MAX_TOKENS → lỗi có ghi lý do).
+  - Mọi lỗi 400 của Gemini (kể cả key sai, vùng không hỗ trợ) bị báo "ảnh không đọc được" và không ghi log → phân loại theo `status`/`reason`, ghi log mọi lỗi.
+  - Android hỏi quyền camera lặp lại sau khi bị từ chối; camera có thể chạy ngầm khi rời tab lúc đang mở → camera tự xử lý vòng đời như mobile_scanner, lệnh bật/tắt chạy lần lượt, bị từ chối thì chỉ thử lại khi bấm.
+  - Ảnh gửi đi còn EXIF có GPS (image_picker chép lại) → `removePhotoMetadata` trước khi gửi, định dạng lạ thì không gửi; hộp thoại đồng ý nói thêm chuyện người xem lại và rút lại được.
+  - Điều khoản Gemini cấm dịch vụ dễ được người dưới 18 tuổi dùng → chỉ mở nhận diện ảnh cho hồ sơ từ 18 tuổi.
+  - Đồ tươi không bao giờ tới USDA (từ khóa tiếng Việt) → Gemini trả thêm `searchQueryEn`, tìm kiếm có `en`.
+  - Thấp: kiểu ảnh lấy theo tên file sai → đọc byte đầu; sai chữ số kiểm tra báo riêng; giới hạn 6 ảnh/phút báo đúng chữ; semantics camera, `liveRegion`; đổi chế độ mất kết quả → `IndexedStack`; bấm hai lần khi đang mở thư viện ảnh → tắt nút; `uses-feature camera.autofocus`; rút lại đồng ý.
+  - 17 đột biến lọt (8 frontend, 9 backend) → thêm test camera giả, vòng đời, ghép `fetchJson` thật với client Gemini, `createServices` với model và hẹn giờ riêng; kiểm lại 23 đột biến frontend và 19 backend: 2 lọt → 1 thêm test, 1 là code thừa (`!_isOpening` trong điều kiện camera, mở trang đã tắt `TickerMode`) → bỏ.
+- **Test:** `flutter test` 456/456 (từ 420), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `npm test` 69/69 (từ 55); `flutter analyze`, `dart format` sạch. Chưa kiểm: gọi Gemini thật (môi trường agent không gửi được key), camera và chọn ảnh trên máy thật, APK (job `android-apk`).
 
 ### 15/11/2026 — M6b: nhắc ghi bữa ăn
 - **Merge PR #33** (M6a, `e714d28`).

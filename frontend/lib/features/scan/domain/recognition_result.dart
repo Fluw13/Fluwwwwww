@@ -1,16 +1,23 @@
-/// A food the vision model named in a photo. Only a name and a search term: the nutrition always comes from the food
+/// A food the vision model named in a photo. Only names and search terms: the nutrition always comes from the food
 /// sources, never from the model.
 final class RecognizedFood {
-  const RecognizedFood({required this.name, required this.searchQuery});
+  const RecognizedFood({required this.name, required this.searchQuery, required this.englishQuery});
 
   final String name;
   final String searchQuery;
 
-  @override
-  bool operator ==(Object other) => other is RecognizedFood && other.name == name && other.searchQuery == searchQuery;
+  /// English words for USDA, whose food names are English only; null when the model gave none.
+  final String? englishQuery;
 
   @override
-  int get hashCode => Object.hash(name, searchQuery);
+  bool operator ==(Object other) =>
+      other is RecognizedFood &&
+      other.name == name &&
+      other.searchQuery == searchQuery &&
+      other.englishQuery == englishQuery;
+
+  @override
+  int get hashCode => Object.hash(name, searchQuery, englishQuery);
 }
 
 final class RecognitionResult {

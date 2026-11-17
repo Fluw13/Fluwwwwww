@@ -1,7 +1,10 @@
+/// Only digits, and as many as a GTIN has. Lets the screen tell a wrong length from a typo in one digit.
+bool hasGtinLength(String code) => RegExp(r'^\d+$').hasMatch(code) && const {8, 12, 13, 14}.contains(code.length);
+
 /// A product barcode (GTIN-8, -12, -13 or -14) with a valid check digit, the same rule the backend applies before it
 /// asks Open Food Facts. Catches typos in a code typed by hand before any request is made.
 bool isValidGtin(String code) {
-  if (!RegExp(r'^\d+$').hasMatch(code) || !const {8, 12, 13, 14}.contains(code.length)) {
+  if (!hasGtinLength(code)) {
     return false;
   }
   final digits = [for (final rune in code.runes) rune - 0x30];

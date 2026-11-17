@@ -36,7 +36,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             ref.read(searchRequestProvider.notifier).clear();
-            _search(request.query);
+            _search(request.query, englishQuery: request.englishQuery);
           }
         });
       }
@@ -49,7 +49,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.dispose();
   }
 
-  Future<void> _search(String text) async {
+  Future<void> _search(String text, {String? englishQuery}) async {
     final query = normalizeQuery(text);
     if (query.length < minSearchLength || query.length > maxSearchLength) {
       return;
@@ -57,7 +57,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _query.text = query;
     FocusScope.of(context).unfocus();
     await ref.read(recentSearchesProvider.notifier).add(query);
-    await ref.read(searchControllerProvider.notifier).search(query);
+    await ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery);
   }
 
   @override
@@ -141,13 +141,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ),
       ],
       SearchLoading() => [const SearchLoadingView()],
-      SearchFailed(:final query, :final failure) => [
+      SearchFailed(:final query, :final failure, :final englishQuery) => [
         Text(apiFailureMessage(failure), style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error)),
         const SizedBox(height: AppSpacing.sm),
         Align(
           alignment: Alignment.centerLeft,
           child: OutlinedButton(
-            onPressed: () => ref.read(searchControllerProvider.notifier).search(query),
+            onPressed: () => ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery),
             child: const Text('Thử lại'),
           ),
         ),
