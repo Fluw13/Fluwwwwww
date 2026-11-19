@@ -38,6 +38,7 @@ test('món SR Legacy: đủ 7 chỉ số theo 100 g, dị ứng là chưa biết
             sodiumMg: 1,
         },
         allergenTags: null,
+        traceTags: null,
         attribution: {
             source: 'USDA FoodData Central',
             license: 'CC0 1.0',
@@ -65,6 +66,8 @@ test('số vô lý thì là chưa có dữ liệu', () => {
 
     assert.equal(item.nutrients.proteinG, null);
     assert.equal(item.nutrients.energyKcal, null);
+    assert.equal(toFoodItem(food([{ nutrientId: 1093, value: 38758 }])).nutrients.sodiumMg, 38758);
+    assert.equal(toFoodItem(food([{ nutrientId: 1093, value: 40001 }])).nutrients.sodiumMg, null);
 });
 
 test('thiếu chỉ số thì null; dữ liệu hỏng thì bỏ món', () => {

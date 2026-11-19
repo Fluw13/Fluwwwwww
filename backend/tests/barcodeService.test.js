@@ -2,13 +2,16 @@ const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const createBarcodeService = require('../src/services/barcodeService');
 const createTtlCache = require('../src/lib/ttlCache');
+const createBudget = require('../src/lib/budget');
+const UpstreamError = require('../src/errors/upstreamError');
 
-const build = (getProduct) => {
+const build = (getProduct, { budget = createBudget({ name: 'off' }), logger = { error: () => {} } } = {}) => {
     const openFoodFacts = { getProduct: mock.fn(getProduct) };
     const service = createBarcodeService({
         openFoodFacts,
+        budget,
         cache: createTtlCache({ maxEntries: 10 }),
-        logger: { error: () => {} },
+        logger,
     });
     return { service, openFoodFacts };
 };
@@ -54,7 +57,7 @@ test('mã không có trong Open Food Facts chỉ nhớ 1 giờ, mã có thì nh�
     let time = 0;
     const cache = createTtlCache({ maxEntries: 10, now: () => time });
     const openFoodFacts = { getProduct: mock.fn(async (code) => (code === '96385074' ? null : { id: code })) };
-    const service = createBarcodeService({ openFoodFacts, cache, logger: { error: () => {} } });
+    const service = createBarcodeService({ openFoodFacts, budget: createBudget({ name: 'off' }), cache, logger: { error: () => {} } });
 
     await assert.rejects(service.lookUp('96385074'));
     await service.lookUp('8934673607827');
@@ -63,4 +66,29 @@ test('mã không có trong Open Food Facts chỉ nhớ 1 giờ, mã có thì nh�
     await service.lookUp('8934673607827');
 
     assert.equal(openFoodFacts.getProduct.mock.callCount(), 3);
+});
+
+test('hết hạn mức tra sản phẩm của máy chủ thì 503 SOURCES_UNAVAILABLE, có ghi log, không gọi nguồn; mã đã cache vẫn trả', async () => {
+    const logged = [];
+    const { service, openFoodFacts } = build(async (code) => ({ id: `off:${code}` }), {
+        budget: createBudget({ name: 'openFoodFacts product', limits: [{ max: 1, windowMs: 60 * 1000 }] }),
+        logger: { error: (...parts) => logged.push(parts.join(' ')) },
+    });
+
+    await service.lookUp('8934673607827');
+    await assert.rejects(service.lookUp('96385074'), (error) => error.status === 503 && error.code === 'SOURCES_UNAVAILABLE');
+    assert.deepEqual(await service.lookUp('8934673607827'), { item: { id: 'off:8934673607827' } });
+
+    assert.equal(openFoodFacts.getProduct.mock.callCount(), 1);
+    assert.deepEqual(logged, ['[Barcode] openFoodFacts product: 1 calls per 60 s']);
+});
+
+test('Open Food Facts trả 429 thì các lần tra sau trả 503 ngay, không gọi lại trong lúc nghỉ', async () => {
+    const { service, openFoodFacts } = build(async () => {
+        throw new UpstreamError('openFoodFacts', 'HTTP 429', 429);
+    });
+
+    await assert.rejects(service.lookUp('96385074'), (error) => error.status === 503);
+    await assert.rejects(service.lookUp('8934673607827'), (error) => error.code === 'SOURCES_UNAVAILABLE');
+    assert.equal(openFoodFacts.getProduct.mock.callCount(), 1);
 });

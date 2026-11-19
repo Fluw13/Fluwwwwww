@@ -1,4 +1,4 @@
-const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, toNutrientValue } = require('../../models/nutrients');
+const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, MAX_SODIUM_MG_PER_100, toNutrientValue } = require('../../models/nutrients');
 
 // FoodData Central nutrient ids, first match wins. Foundation foods often report energy only through Atwater
 // factors (2048 "specific" fits the food better than 2047 "general") and total sugars under 1063 instead of 2000.
@@ -9,8 +9,7 @@ const NUTRIENT_IDS = {
     sugarsG: { ids: [2000, 1063], max: MAX_GRAMS_PER_100 },
     fatG: { ids: [1004], max: MAX_GRAMS_PER_100 },
     saturatedFatG: { ids: [1258], max: MAX_GRAMS_PER_100 },
-    // mg per 100 g, so at most 100,000.
-    sodiumMg: { ids: [1093], max: MAX_GRAMS_PER_100 * 1000 },
+    sodiumMg: { ids: [1093], max: MAX_SODIUM_MG_PER_100 },
 };
 
 const valuesById = (foodNutrients) => {
@@ -48,6 +47,7 @@ const toFoodItem = (food) => {
         nutrients,
         // FoodData Central has no allergen tags; null tells the app that allergen data is unknown.
         allergenTags: null,
+        traceTags: null,
         attribution: {
             source: 'USDA FoodData Central',
             license: 'CC0 1.0',

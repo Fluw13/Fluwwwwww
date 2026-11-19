@@ -1,12 +1,14 @@
+const BudgetExceededError = require('../errors/budgetExceededError');
 const HttpError = require('../errors/httpError');
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 
 /**
  * Asks the vision model which foods a photo shows. The photo is only passed through: it is never stored or logged,
- * and nothing about the user is sent with it.
+ * and nothing about the user is sent with it. `budget` caps calls for the whole server, so the free quota that every
+ * user shares cannot be used up by a few clients.
  */
-const createRecognitionService = ({ gemini, logger = console }) => ({
+const createRecognitionService = ({ gemini, budget, logger = console }) => ({
     recognize: async ({ image, contentType }) => {
         if (!gemini.isConfigured) {
             throw new HttpError(503, 'RECOGNITION_NOT_CONFIGURED', 'Máy chủ chưa bật nhận diện ảnh. Hãy tìm theo tên món.');
@@ -19,12 +21,19 @@ const createRecognitionService = ({ gemini, logger = console }) => ({
             throw new HttpError(400, 'IMAGE_REQUIRED', 'Chưa có ảnh để nhận diện.');
         }
         try {
-            return await gemini.recognizeFood({ image, mimeType });
+            return await budget.run(() => gemini.recognizeFood({ image, mimeType }));
         } catch (error) {
             // Every failure is logged, so a bad key or a region the free tier does not cover shows up on Render.
             logger.error('[Recognition]', error instanceof HttpError ? `${error.code} ${error.detail ?? ''}`.trim() : error.message);
             if (error instanceof HttpError) {
                 throw error;
+            }
+            if (error instanceof BudgetExceededError || error.upstreamStatus === 429) {
+                throw new HttpError(
+                    503,
+                    'RECOGNITION_BUSY',
+                    'Đã hết lượt nhận diện ảnh miễn phí lúc này. Hãy thử lại sau hoặc tìm theo tên món.',
+                );
             }
             throw new HttpError(
                 503,
