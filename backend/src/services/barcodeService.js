@@ -4,7 +4,8 @@ const isValidGtin = require('../lib/gtin');
 const FOUND_TTL_MS = 24 * 60 * 60 * 1000;
 const NOT_FOUND_TTL_MS = 60 * 60 * 1000;
 
-const createBarcodeService = ({ openFoodFacts, cache, logger = console }) => {
+/** `budget` caps product lookups for the whole server; over it, the lookup fails like an unreachable source. */
+const createBarcodeService = ({ openFoodFacts, budget, cache, logger = console }) => {
     const lookUp = async (barcode) => {
         if (!isValidGtin(barcode)) {
             throw new HttpError(400, 'INVALID_BARCODE', 'Mã vạch không hợp lệ. Hãy quét lại hoặc kiểm tra các chữ số.');
@@ -12,7 +13,7 @@ const createBarcodeService = ({ openFoodFacts, cache, logger = console }) => {
         let item = cache.get(barcode);
         if (item === undefined) {
             try {
-                item = await openFoodFacts.getProduct(barcode);
+                item = await budget.run(() => openFoodFacts.getProduct(barcode));
             } catch (error) {
                 logger.error('[Barcode]', error.message);
                 throw new HttpError(503, 'SOURCES_UNAVAILABLE', 'Chưa tra cứu được nguồn dữ liệu, vui lòng thử lại sau.');

@@ -27,6 +27,7 @@ test('sản phẩm thật (sữa chua Vinamilk): đúng tên tiếng Việt, đ�
             sodiumMg: 36,
         },
         allergenTags: ['en:milk'],
+        traceTags: null,
         attribution: {
             source: 'Open Food Facts',
             license: 'ODbL',
@@ -106,4 +107,18 @@ test('không có mã thì bỏ; không có tên tiếng Việt thì dùng tên c
     assert.equal(toFoodItem({ product_name: 'X' }), null);
     assert.equal(toFoodItem({ code: '1', product_name: 'Milk' }).name, 'Milk');
     assert.equal(toFoodItem({ code: '1', product_name: '  ' }).name, null);
+});
+
+test('traces_tags ("có thể chứa") thành traceTags: thiếu trường là null (chưa biết), danh sách rỗng giữ rỗng', () => {
+    assert.deepEqual(toFoodItem({ code: '1', traces_tags: ['en:milk', 'en:nuts'] }).traceTags, ['en:milk', 'en:nuts']);
+    assert.deepEqual(toFoodItem({ code: '1', traces_tags: [] }).traceTags, []);
+    assert.equal(toFoodItem({ code: '1' }).traceTags, null);
+    assert.equal(toFoodItem({ code: '1', traces_tags: 'en:milk' }).traceTags, null);
+    assert.equal(searchFixture.hits.map(toFoodItem)[0].traceTags, null);
+});
+
+test('natri tối đa 40.000 mg/100 g (muối ăn khoảng 39.300 mg); hơn thế là số nhập sai', () => {
+    assert.equal(toFoodItem({ code: '1', nutriments: { sodium_100g: 39.3 } }).nutrients.sodiumMg, 39300);
+    assert.equal(toFoodItem({ code: '1', nutriments: { sodium_100g: 40 } }).nutrients.sodiumMg, 40000);
+    assert.equal(toFoodItem({ code: '1', nutriments: { sodium_100g: 40.5 } }).nutrients.sodiumMg, null);
 });

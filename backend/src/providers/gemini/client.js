@@ -124,12 +124,7 @@ const createGeminiClient = ({ fetchJson, apiKey, model, timeoutMs }) => ({
         }
         const detail = describeError(status, body);
         if (status === 429) {
-            throw new HttpError(
-                503,
-                'RECOGNITION_BUSY',
-                'Đã hết lượt nhận diện ảnh miễn phí lúc này. Hãy thử lại sau hoặc tìm theo tên món.',
-                detail,
-            );
+            throw new UpstreamError('gemini', detail, status);
         }
         // Only a 400 about the picture itself is the user's to fix; a bad key, a region the free tier does not
         // serve, or a rejected request is the server's problem.
@@ -147,4 +142,3 @@ const createGeminiClient = ({ fetchJson, apiKey, model, timeoutMs }) => ({
 });
 
 module.exports = createGeminiClient;
-module.exports.parseRecognition = parseRecognition;

@@ -6,9 +6,10 @@ const config = loadConfig();
 const app = createApp(createServices(config));
 
 // Which optional keys are set, so a missing variable on Render shows in the log. Never the keys themselves.
+const { perMinute, perDay, concurrent } = config.geminiBudget;
 console.log(
     '[Config] USDA ' + (config.usdaApiKey ? 'bật' : 'tắt') + ', Gemini ' + (config.geminiApiKey ? 'bật' : 'tắt') +
-        ' (' + config.geminiModel + ')',
+        ' (' + config.geminiModel + ', ' + perMinute + '/phút, ' + perDay + '/ngày, ' + concurrent + ' cùng lúc)',
 );
 
 const PORT = process.env.PORT || 5000;

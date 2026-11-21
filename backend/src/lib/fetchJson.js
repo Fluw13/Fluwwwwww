@@ -20,7 +20,7 @@ const createFetchJson = ({ fetch = globalThis.fetch, timeoutMs, userAgent }) => 
         if (!response.ok && !acceptStatuses.includes(response.status)) {
             // An unread body keeps the connection busy until garbage collection.
             await response.body?.cancel().catch(() => {});
-            throw new UpstreamError(source, `HTTP ${response.status}`);
+            throw new UpstreamError(source, `HTTP ${response.status}`, response.status);
         }
         try {
             return { status: response.status, body: await response.json() };

@@ -11,6 +11,7 @@ const FIELDS = [
     'nutrition_data_per',
     'nutriments',
     'allergens_tags',
+    'traces_tags',
     'image_front_small_url',
     'serving_size',
 ].join(',');

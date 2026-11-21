@@ -8,14 +8,15 @@ const CACHE_TTL_MS = 60 * 60 * 1000;
 /**
  * Searches every source at once. One failing source does not fail the search: its status says so and the app can
  * tell the user that some results may be missing. Only a search where every source failed is an error.
+ * `budgets` cap calls to each source for the whole server; a source over its cap counts as unavailable.
  */
-const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console }) => {
+const createFoodSearchService = ({ openFoodFacts, usda, budgets, cache, logger = console }) => {
     // Identical searches arriving together share one round of upstream calls.
     const inFlight = new Map();
 
     const searchSource = async (name, run) => {
         try {
-            return { name, status: 'ok', items: await run() };
+            return { name, status: 'ok', items: await budgets[name].run(run) };
         } catch (error) {
             logger.error('[Search]', name, error.message);
             return { name, status: 'unavailable', items: [] };
@@ -23,7 +24,8 @@ const createFoodSearchService = ({ openFoodFacts, usda, cache, logger = console 
     };
 
     const cleanQuery = (raw) => {
-        const query = typeof raw === 'string' ? raw.trim().replace(/\s+/g, ' ') : '';
+        // NFC so Vietnamese typed with combining marks matches the same cache entry and the same words upstream.
+        const query = typeof raw === 'string' ? raw.normalize('NFC').trim().replace(/\s+/g, ' ') : '';
         if (query.length < MIN_QUERY_LENGTH || query.length > MAX_QUERY_LENGTH) {
             throw new HttpError(
                 400,

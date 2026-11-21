@@ -1,4 +1,4 @@
-const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, toNutrientValue } = require('../../models/nutrients');
+const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, MAX_SODIUM_MG_PER_100, toNutrientValue } = require('../../models/nutrients');
 
 const KJ_PER_KCAL = 4.184;
 const LIQUID_QUANTITY = /\d\s*(ml|cl|dl|l)\b/i;
@@ -48,8 +48,8 @@ const energyKcalOf = (nutriments) => {
 };
 
 const sodiumMgOf = (nutriments) => {
-    const sodiumGrams = grams(nutriments, 'sodium_100g');
-    return sodiumGrams === null ? null : sodiumGrams * 1000;
+    const sodiumGrams = toNutrientValue(nutriments.sodium_100g);
+    return sodiumGrams === null ? null : toNutrientValue(sodiumGrams * 1000, MAX_SODIUM_MG_PER_100);
 };
 
 /** Turns an Open Food Facts product into the API's food item; returns null when the product has no barcode. */
@@ -80,8 +80,9 @@ const toFoodItem = (product) => {
             sodiumMg: sodiumMgOf(nutriments),
         },
         // null when the field is missing. An empty list only means none were recorded, not that the product is
-        // free of allergens; the app must not present either as "safe".
+        // free of allergens; the app must not present either as "safe". traceTags ("may contain") follow the same rule.
         allergenTags: Array.isArray(product.allergens_tags) ? product.allergens_tags : null,
+        traceTags: Array.isArray(product.traces_tags) ? product.traces_tags : null,
         attribution: {
             source: 'Open Food Facts',
             license: 'ODbL',

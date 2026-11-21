@@ -1,6 +1,8 @@
+const compression = require('compression');
 const express = require('express');
 const createFoodRoutes = require('./routes/foodRoutes');
 const createRateLimiter = require('./middlewares/rateLimiter');
+const noSniff = require('./middlewares/noSniff');
 const notFound = require('./middlewares/notFound');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -11,6 +13,9 @@ const createApp = ({ foodSearchService, barcodeService, recognitionService, rate
     app.disable('x-powered-by');
     // Render puts one proxy in front of the app; without this every client would share the proxy's IP.
     app.set('trust proxy', 1);
+    app.use(noSniff);
+    // Search answers are 10–15 KB of JSON and shrink several times; Render's free plan meters outbound traffic.
+    app.use(compression());
 
     app.get('/health', (request, response) => {
         response.json({ status: 'ok' });

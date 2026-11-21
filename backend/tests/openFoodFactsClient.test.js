@@ -20,7 +20,8 @@ test('tra mã vạch gọi API sản phẩm v2, chỉ lấy các trường cần
 
     assert.equal(item.id, 'off:8934673607827');
     assert.equal(calls[0].url.origin + calls[0].url.pathname, 'https://world.openfoodfacts.org/api/v2/product/8934673607827.json');
-    assert.ok(calls[0].url.searchParams.get('fields').includes('allergens_tags'));
+    assert.ok(calls[0].url.searchParams.get('fields').split(',').includes('allergens_tags'));
+    assert.ok(calls[0].url.searchParams.get('fields').split(',').includes('traces_tags'));
     assert.deepEqual(calls[0].options.acceptStatuses, [404]);
 });
 

@@ -115,18 +115,22 @@ test('phần suy nghĩ (thought) bị bỏ; hết chỗ trả lời (MAX_TOKENS)
     );
 });
 
-test('hết lượt miễn phí (429) thì 503 RECOGNITION_BUSY; ảnh hỏng (400) thì 422; câu trả lời hỏng thì UpstreamError', async () => {
+test('hết lượt miễn phí (429) thì UpstreamError mang status 429; ảnh hỏng (400) thì 422; câu trả lời hỏng thì UpstreamError', async () => {
     const image = { image: Buffer.from('a'), mimeType: 'image/jpeg' };
 
     await assert.rejects(clientReturning(429, {}).recognizeFood(image), (error) => {
-        assert.ok(error instanceof HttpError);
-        assert.equal(error.status, 503);
-        assert.equal(error.code, 'RECOGNITION_BUSY');
+        assert.ok(error instanceof UpstreamError);
+        assert.equal(error.upstreamStatus, 429);
+        assert.equal(error.message, 'gemini: HTTP 429');
         return true;
     });
     await assert.rejects(
         clientReturning(400, { error: { status: 'INVALID_ARGUMENT', message: 'Unable to process input image.' } }).recognizeFood(image),
-        (error) => error.code === 'IMAGE_UNREADABLE' && error.status === 422 && /Unable to process input image/.test(error.detail),
+        (error) =>
+            error instanceof HttpError &&
+            error.code === 'IMAGE_UNREADABLE' &&
+            error.status === 422 &&
+            /Unable to process input image/.test(error.detail),
     );
     // Key, region and request problems are the server's: logged as UpstreamError (503), not blamed on the photo.
     for (const [status, body] of [
@@ -159,12 +163,15 @@ test('qua fetchJson thật: POST có body, hẹn giờ riêng, đọc được b
             return new Response(JSON.stringify(reply.body), { status: reply.status });
         },
         timeoutMs: 1,
-        userAgent: 'FluwApp/0.1',
+        userAgent: 'FluwApp/0.2',
     });
     const client = createGeminiClient({ fetchJson, apiKey: 'test-key', model: 'gemini-test', timeoutMs: 25000 });
     const image = { image: Buffer.from('ảnh'), mimeType: 'image/webp' };
 
-    await assert.rejects(client.recognizeFood(image), (error) => error.code === 'RECOGNITION_BUSY' && /RESOURCE_EXHAUSTED/.test(error.detail));
+    await assert.rejects(
+        client.recognizeFood(image),
+        (error) => error.upstreamStatus === 429 && error.message === 'gemini: HTTP 429 RESOURCE_EXHAUSTED Quota exceeded',
+    );
     assert.equal(requests[0].options.method, 'POST');
     assert.equal(requests[0].options.headers['x-goog-api-key'], 'test-key');
     assert.equal(JSON.parse(requests[0].options.body).contents[0].parts[0].inlineData.mimeType, 'image/webp');

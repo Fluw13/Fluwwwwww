@@ -13,13 +13,13 @@ test('gửi User-Agent riêng, header thêm, và có hẹn giờ', async () => {
             return new Response('{"ok":true}');
         },
         timeoutMs: 100,
-        userAgent: 'FluwApp/0.1',
+        userAgent: 'FluwApp/0.2',
     });
 
     const result = await fetchJson('src', 'https://example.test/a', { headers: { 'X-Api-Key': 'k' } });
 
     assert.deepEqual(result, { status: 200, body: { ok: true } });
-    assert.equal(request.options.headers['User-Agent'], 'FluwApp/0.1');
+    assert.equal(request.options.headers['User-Agent'], 'FluwApp/0.2');
     assert.equal(request.options.headers['X-Api-Key'], 'k');
     assert.ok(request.options.signal instanceof AbortSignal);
 });
@@ -92,4 +92,19 @@ test('gửi được POST có body; hẹn giờ riêng của request thay cho h�
     assert.deepEqual(result.body, { ok: true });
     assert.equal(request.method, 'POST');
     assert.equal(request.body, '{"a":1}');
+});
+
+test('status lỗi của nguồn nằm trong upstreamStatus (để biết nguồn báo 429); lỗi mạng thì null', async () => {
+    for (const status of [429, 500]) {
+        const fetchJson = createFetchJson({ fetch: respond(status, '{}'), timeoutMs: 100, userAgent: 'x' });
+        await assert.rejects(fetchJson('src', 'https://example.test'), (error) => error.upstreamStatus === status);
+    }
+    const offline = createFetchJson({
+        fetch: async () => {
+            throw new TypeError('fetch failed');
+        },
+        timeoutMs: 100,
+        userAgent: 'x',
+    });
+    await assert.rejects(offline('src', 'https://example.test'), (error) => error instanceof UpstreamError && error.upstreamStatus === null);
 });

@@ -5,7 +5,9 @@ const errorHandler = require('../src/middlewares/errorHandler');
 const notFound = require('../src/middlewares/notFound');
 const startServer = require('./helpers/startServer');
 
-const app = createApp({ foodSearchService: {}, barcodeService: {} });
+// Big enough (over 1 KB) for compression to kick in, like a real search answer.
+const bigAnswer = { query: 'sữa chua', items: Array.from({ length: 40 }, (_, index) => ({ id: `off:${index}`, name: 'Sữa chua' })) };
+const app = createApp({ foodSearchService: { search: async () => bigAnswer }, barcodeService: {} });
 let server;
 
 before(async () => {
@@ -35,4 +37,24 @@ test('đường dẫn không tồn tại trả về 404 dạng JSON', async () =
     assert.deepEqual(await response.json(), {
         error: { code: 'NOT_FOUND', message: 'Không tìm thấy đường dẫn.' },
     });
+});
+
+test('mọi câu trả lời (kể cả lỗi) có X-Content-Type-Options: nosniff', async () => {
+    for (const path of ['/health', '/khong-ton-tai', '/api/foods/search?q=sua']) {
+        const response = await fetch(`${server.baseUrl}${path}`);
+        assert.equal(response.headers.get('x-content-type-options'), 'nosniff', path);
+    }
+});
+
+test('JSON lớn được nén gzip khi máy khách nhận gzip; /health vẫn trả JSON đọc được', async () => {
+    const compressed = await fetch(`${server.baseUrl}/api/foods/search?q=sua`, { headers: { 'Accept-Encoding': 'gzip' } });
+    const plain = await fetch(`${server.baseUrl}/api/foods/search?q=sua`, { headers: { 'Accept-Encoding': 'identity' } });
+    const health = await fetch(`${server.baseUrl}/health`, { headers: { 'Accept-Encoding': 'gzip' } });
+
+    assert.equal(compressed.headers.get('content-encoding'), 'gzip');
+    assert.deepEqual(await compressed.json(), bigAnswer);
+    assert.equal(plain.headers.get('content-encoding'), null);
+    assert.deepEqual(await plain.json(), bigAnswer);
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), { status: 'ok' });
 });
