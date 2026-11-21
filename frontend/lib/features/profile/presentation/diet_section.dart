@@ -57,7 +57,9 @@ class DietSection extends StatelessWidget {
           value: limitsSugar,
           onChanged: onLimitsSugarChanged,
           title: const Text('Tôi muốn giảm ngọt'),
-          subtitle: const Text('Giới hạn đường tổng dưới 5% năng lượng (mức tham khảo của WHO).'),
+          subtitle: const Text(
+            'Mức gợi ý đường tổng dưới 5% năng lượng (dựa trên khuyến nghị đường tự do của WHO 2015).',
+          ),
         ),
         for (final preference in FoodPreference.values)
           CheckboxListTile(

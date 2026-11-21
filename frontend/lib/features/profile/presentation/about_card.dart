@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 
-/// Where the data sources, every license (packages, fonts, data) and the privacy policy can be read.
+/// Where the data sources, how the targets are worked out, every license (packages, fonts, data) and the privacy
+/// policy can be read.
 class AboutCard extends StatelessWidget {
-  const AboutCard({required this.onOpenPrivacy, super.key});
+  const AboutCard({required this.onOpenPrivacy, required this.onOpenMethodology, super.key});
 
   final VoidCallback onOpenPrivacy;
+  final VoidCallback onOpenMethodology;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,14 @@ class AboutCard extends StatelessWidget {
         Text(
           'Fluw không phải thiết bị y tế; không chẩn đoán, điều trị hay phòng bệnh. Số liệu chỉ là ước tính.',
           style: theme.textTheme.bodyMedium,
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton.icon(
+            onPressed: onOpenMethodology,
+            icon: const Icon(Icons.calculate_outlined),
+            label: const Text('Cách Fluw tính'),
+          ),
         ),
         Align(
           alignment: AlignmentDirectional.centerStart,

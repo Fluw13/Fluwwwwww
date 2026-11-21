@@ -9,7 +9,7 @@ import 'package:fluw/features/reminders/domain/reminder_plan.dart';
 import 'package:fluw/features/reminders/domain/reminder_settings.dart';
 import 'package:fluw/features/reminders/domain/reminder_time.dart';
 
-PersonalLimits _limits({bool watchesSugar = false}) => PersonalLimits(
+PersonalLimits _limits({bool watchesSugar = false, double? sodiumMaxMg = 2000}) => PersonalLimits(
   profileStatus: ProfileStatus.loaded,
   severeAllergenTags: const {},
   mildAllergenTags: const {},
@@ -18,7 +18,7 @@ PersonalLimits _limits({bool watchesSugar = false}) => PersonalLimits(
   proteinMinG: 100,
   sugarsMaxG: 50,
   saturatedFatMaxG: 20,
-  sodiumMaxMg: 2000,
+  sodiumMaxMg: sodiumMaxMg,
   watchesSugar: watchesSugar,
   watchesSodium: false,
   watchesSaturatedFat: false,
@@ -138,7 +138,7 @@ void main() {
       ]),
       watchesSugar: true,
     );
-    expect(partial.body, contains('đường 3 / 50 g'));
+    expect(partial.body, contains('đường tổng 3 / gợi ý 50 g'));
     expect(partial.body, contains('Một số món thiếu số liệu.'));
     expect(partial.body, isNot(contains('giàu protein')), reason: 'protein chưa đủ số liệu thì không kết luận thiếu');
 
@@ -149,6 +149,20 @@ void main() {
       ]),
     );
     expect(unknownKcal.body, contains('Năng lượng chưa có dữ liệu / 2,000 kcal'));
+  });
+
+  test('natri vượt giới hạn (theo số hiện) thì nhắc, cho mọi người lớn; chưa vượt hay không có chỉ tiêu thì không', () {
+    String body(double sodium, {double? sodiumMaxMg = 2000}) => reminderMessage(
+      moment: ReminderMoment.evening,
+      intake: _intake([
+        {Nutrient.energyKcal: 1800, Nutrient.proteinG: 100, Nutrient.sodiumMg: sodium},
+      ]),
+      limits: _limits(sodiumMaxMg: sodiumMaxMg),
+    ).body;
+
+    expect(body(2100), contains('Natri đã vượt giới hạn 2,000 mg.'));
+    expect(body(2000.4), isNot(contains('Natri')), reason: 'hiện là 2,000 mg');
+    expect(body(5000, sodiumMaxMg: null), isNot(contains('Natri')));
   });
 
   test('theo dõi đường mà có món thiếu số đường thì nói thiếu số liệu, không hiện như tổng đủ', () {
@@ -162,7 +176,7 @@ void main() {
       intake: foods,
       limits: _limits(watchesSugar: true),
     );
-    expect(watching.body, contains('đường 3 / 50 g'));
+    expect(watching.body, contains('đường tổng 3 / gợi ý 50 g'));
     expect(watching.body, contains('Một số món thiếu số liệu.'));
 
     final notWatching = reminderMessage(moment: ReminderMoment.afternoon, intake: foods, limits: _limits());

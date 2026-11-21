@@ -8,8 +8,8 @@ import 'package:fluw/core/widgets/nutrient_progress.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 
 /// The day's totals against the profile's targets. Totals only count foods that have the number; when some lack it
-/// the card says so, so a partial sum is never read as the whole day. Sodium and saturated fat appear only for the
-/// conditions that track them.
+/// the card says so, so a partial sum is never read as the whole day. Sodium appears for every adult with targets;
+/// saturated fat only with high blood lipids.
 class DaySummaryCard extends StatelessWidget {
   const DaySummaryCard({required this.totals, required this.entryCount, required this.limits, super.key});
 
@@ -26,22 +26,23 @@ class DaySummaryCard extends StatelessWidget {
       Nutrient.proteinG,
       Nutrient.sugarsG,
       if (limits.watchesSaturatedFat) Nutrient.saturatedFatG,
-      if (limits.watchesSodium) Nutrient.sodiumMg,
+      if (limits.tracksSodium) Nutrient.sodiumMg,
     ];
     final hasMissing = shown.any((nutrient) => !totals[nutrient].isComplete);
     final note = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     Widget row(Nutrient nutrient) => switch (nutrient) {
       Nutrient.energyKcal => NutrientProgress(
+        nutrient: nutrient,
         label: 'Năng lượng',
         value: totals[nutrient].knownSum,
         target: limits.dailyKcal,
         unit: 'kcal',
         color: colors.energy,
         kind: NutrientTargetKind.calorieGoal,
-        whole: true,
       ),
       Nutrient.proteinG => NutrientProgress(
+        nutrient: nutrient,
         label: 'Protein (đạm)',
         value: totals[nutrient].knownSum,
         target: limits.proteinMinG,
@@ -50,14 +51,16 @@ class DaySummaryCard extends StatelessWidget {
         kind: NutrientTargetKind.minimum,
       ),
       Nutrient.sugarsG => NutrientProgress(
+        nutrient: nutrient,
         label: 'Đường tổng',
         value: totals[nutrient].knownSum,
         target: limits.sugarsMaxG,
         unit: 'g',
         color: colors.sugars,
-        kind: NutrientTargetKind.limit,
+        kind: NutrientTargetKind.suggestion,
       ),
       Nutrient.saturatedFatG => NutrientProgress(
+        nutrient: nutrient,
         label: 'Béo bão hòa',
         value: totals[nutrient].knownSum,
         target: limits.saturatedFatMaxG,
@@ -66,13 +69,13 @@ class DaySummaryCard extends StatelessWidget {
         kind: NutrientTargetKind.limit,
       ),
       Nutrient.sodiumMg => NutrientProgress(
+        nutrient: nutrient,
         label: 'Natri',
         value: totals[nutrient].knownSum,
         target: limits.sodiumMaxMg,
         unit: 'mg',
         color: theme.colorScheme.tertiary,
         kind: NutrientTargetKind.limit,
-        whole: true,
       ),
       _ => const SizedBox.shrink(),
     };

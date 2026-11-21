@@ -1,8 +1,9 @@
 import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/fluw_thresholds.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
-import 'package:fluw/features/home/domain/day_evaluation.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 
 enum AdviceKind { recommend, avoid, note }
 
@@ -100,6 +101,7 @@ List<Advice> adviceFor({
   final protein = today?[Nutrient.proteinG];
   final proteinEaten = protein?.knownSum;
   final sugars = today?[Nutrient.sugarsG];
+  final sodium = today?[Nutrient.sodiumMg];
 
   return [
     if (allergenNames.isNotEmpty)
@@ -109,24 +111,22 @@ List<Advice> adviceFor({
         kind: AdviceKind.avoid,
         title: 'Hạn chế đồ ngọt',
         body: _withIntake(
+          Nutrient.sugarsG,
           today == null ? null : sugars,
           limits.sugarsMaxG,
-          'g',
-          'đường tổng',
           'Nên tránh trà sữa, nước ngọt có ga, bánh kẹo, chè.',
         ),
       ),
-    if (limits.watchesSodium)
+    // Every adult has the sodium limit; high blood pressure gets the advice every day.
+    if (limits.watchesSodium || _isNearLimit(sodium?.knownSum, limits.sodiumMaxMg))
       Advice(
         kind: AdviceKind.avoid,
         title: 'Hạn chế muối',
         body: _withIntake(
-          today?[Nutrient.sodiumMg],
+          Nutrient.sodiumMg,
+          sodium,
           limits.sodiumMaxMg,
-          'mg',
-          'natri',
           'Nên bớt mì gói, nước mắm và nước chấm, dưa cà muối, đồ hộp.',
-          whole: true,
         ),
       ),
     if (limits.watchesSaturatedFat)
@@ -134,14 +134,15 @@ List<Advice> adviceFor({
         kind: AdviceKind.avoid,
         title: 'Hạn chế béo bão hòa',
         body: _withIntake(
+          Nutrient.saturatedFatG,
           today?[Nutrient.saturatedFatG],
           limits.saturatedFatMaxG,
-          'g',
-          'béo bão hòa',
           'Nên bớt đồ chiên rán, mỡ và da động vật, thịt mỡ.',
         ),
       ),
-    if (proteinMin != null && proteinEaten != null && (proteinEaten * 10).round() < (proteinMin * 10).round())
+    if (proteinMin != null &&
+        proteinEaten != null &&
+        isBelowAsShown(Nutrient.proteinG, amount: proteinEaten, target: proteinMin))
       Advice(
         kind: AdviceKind.recommend,
         title: 'Bổ sung protein (đạm)',
@@ -154,7 +155,7 @@ List<Advice> adviceFor({
       ),
     // Over is certain even with gaps, since the known total is the least that was eaten.
     if (kcalTarget != null && kcalEaten != null)
-      if (_roundedPercent(kcalEaten, kcalTarget) > 100 + calorieToleranceShare * 100)
+      if (isOverAsShown(Nutrient.energyKcal, amount: kcalEaten, target: kcalTarget * (1 + calorieToleranceShare)))
         Advice(
           kind: AdviceKind.note,
           title: 'Đã vượt mục tiêu calo',
@@ -163,7 +164,10 @@ List<Advice> adviceFor({
               'canh rau, nước lọc.',
         )
       // What is left is only known when every food has calories; a partial total would overstate it.
-      else if (entryCount > 0 && kcal!.isComplete && hour >= 18 && kcalTarget - kcalEaten >= 300)
+      else if (entryCount > 0 &&
+          kcal!.isComplete &&
+          hour >= eveningStartHour &&
+          kcalTarget - kcalEaten >= eveningKcalLeft)
         Advice(
           kind: AdviceKind.note,
           title: 'Còn khoảng ${formatWhole(kcalTarget - kcalEaten)} kcal hôm nay',
@@ -198,26 +202,37 @@ List<Advice> adviceFor({
   ];
 }
 
-bool _isNearLimit(double? eaten, double? max) => eaten != null && max != null && eaten >= max * 0.8;
+bool _isNearLimit(double? eaten, double? max) => eaten != null && max != null && eaten >= max * nearLimitShare;
 
-int _roundedPercent(double eaten, double target) => (eaten / target * 100).round();
-
-String _withIntake(NutrientTotal? eaten, double? max, String unit, String nutrient, String tip, {bool whole = false}) {
-  String format(double value) => '${whole ? formatWhole(value) : formatDecimal(value)} $unit';
+/// [nutrient] is total sugars, sodium or saturated fat. Total sugars has a suggestion, not a limit.
+String _withIntake(Nutrient nutrient, NutrientTotal? eaten, double? max, String tip) {
+  final unit = nutrient == Nutrient.sodiumMg ? 'mg' : 'g';
+  String format(double value) => '${formatShownAmount(nutrient, value)} $unit';
+  final name = switch (nutrient) {
+    Nutrient.sugarsG => 'đường tổng',
+    Nutrient.sodiumMg => 'natri',
+    _ => 'béo bão hòa',
+  };
+  final isSuggestion = nutrient == Nutrient.sugarsG;
   if (max == null) {
     return tip;
   }
+  final bound = isSuggestion ? 'mức gợi ý' : 'tối đa';
   final known = eaten?.knownSum;
   final String intake;
   if (eaten == null) {
-    intake = 'Giới hạn hôm nay: tối đa ${format(max)} $nutrient.';
+    intake = isSuggestion
+        ? 'Mức gợi ý hôm nay: dưới ${format(max)} $name.'
+        : 'Giới hạn hôm nay: tối đa ${format(max)} $name.';
   } else if (known == null) {
-    intake = 'Hôm nay chưa có dữ liệu $nutrient / tối đa ${format(max)}.';
+    intake = 'Hôm nay chưa có dữ liệu $name / $bound ${format(max)}.';
   } else {
     final atLeast = eaten.isComplete ? '' : 'ít nhất ';
-    intake = 'Hôm nay đã nạp $atLeast${format(known)} $nutrient / tối đa ${format(max)}.';
+    intake = 'Hôm nay đã nạp $atLeast${format(known)} $name / $bound ${format(max)}.';
   }
-  final over = known != null && _roundedPercent(known, max) > 100 ? ' Đã vượt giới hạn.' : '';
+  final over = known != null && isOverAsShown(nutrient, amount: known, target: max)
+      ? (isSuggestion ? ' Cao hơn mức gợi ý.' : ' Đã vượt giới hạn.')
+      : '';
   return '$intake$over $tip';
 }
 

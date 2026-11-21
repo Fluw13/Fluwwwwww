@@ -47,6 +47,7 @@ void main() {
     expect(limits.dailyKcal, isNull);
     expect(limits.sugarsMaxG, isNull);
     expect(limits.sodiumMaxMg, isNull);
+    expect(limits.tracksSodium, isFalse);
     expect(limits.proteinMinG, isNull);
     expect(limits.targetsKind, TargetsKind.belowMinimumAge);
   });
@@ -62,8 +63,17 @@ void main() {
     expect(limits.proteinMinG, isNull);
     expect(limits.sugarsMaxG, isNull);
     expect(limits.sodiumMaxMg, isNull);
+    expect(limits.tracksSodium, isFalse);
     expect(limits.targetsKind, TargetsKind.pregnancyOrBreastfeeding);
     expect(limits.isAdult, isTrue);
+  });
+
+  test('natri theo dõi cho mọi người lớn có chỉ tiêu, không chỉ khi có huyết áp cao', () {
+    final limits = personalLimitsFromProfile(buildProfile(), today: fixtureToday);
+
+    expect(limits.watchesSodium, isFalse);
+    expect(limits.tracksSodium, isTrue);
+    expect(limits.sodiumMaxMg, 2000);
   });
 
   test('giảm ngọt cũng làm đường được theo dõi', () {

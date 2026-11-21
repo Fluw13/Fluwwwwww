@@ -76,6 +76,29 @@ void main() {
     await scrollTo(tester, find.text('Nếu bạn có bệnh thận, hãy hỏi bác sĩ trước khi ăn nhiều đạm.'));
     expect(find.text('Tổng lượng nước (gồm cả nước trong thức ăn)'), findsOneWidget);
     expect(find.textContaining('cân nặng tham chiếu'), findsNothing);
+    expect(find.text('Đường tổng (mức gợi ý)'), findsOneWidget);
+    expect(find.text('Carb (bột đường)'), findsOneWidget);
+    expect(find.text('Tinh bột'), findsNothing);
+  });
+
+  testWidgets('tiểu đường và huyết áp cao: mô tả nói đúng việc Fluw làm, không gọi 5% là chuẩn cho người tiểu đường', (
+    tester,
+  ) async {
+    await openProfileTab(
+      tester,
+      saved: buildProfile(conditions: {HealthCondition.diabetes, HealthCondition.hypertension}),
+    );
+    await scrollTo(tester, find.text('Bệnh nền & ghi chú'));
+    await scrollTo(tester, find.textContaining('Theo dõi natri'));
+
+    final diabetes = find.textContaining('Theo dõi đường tổng: Fluw dùng mức gợi ý dưới 5% năng lượng');
+    expect(diabetes, findsOneWidget);
+    expect(find.textContaining('do bác sĩ chỉ định'), findsOneWidget);
+    expect(find.textContaining('giới hạn đường'), findsNothing);
+    final hypertension = tester.widget<Text>(find.textContaining('Theo dõi natri')).data!;
+    expect(hypertension, contains('tối đa 2,000 mg mỗi ngày'));
+    expect(hypertension, contains('mọi người lớn'));
+    expect(hypertension, isNot(contains('đang xây dựng')));
   });
 
   testWidgets('BMI trên 24,9: đạm và nước theo cân nặng tham chiếu, có ghi chú', (tester) async {
@@ -292,7 +315,8 @@ void main() {
     expect(dietary.allergies, {Allergen.crustaceans: AllergySeverity.severe, Allergen.peanuts: AllergySeverity.mild});
     expect(dietary.dietStyle, DietStyle.keto);
     expect(dietary.preferences, {FoodPreference.noOrganMeat});
-    await scrollTo(tester, find.text('Mức: Nặng'));
+    // The page comes back scrolled to the bottom, below the dietary card.
+    await scrollTo(tester, find.text('Mức: Nặng'), delta: -200);
     expect(find.text('Mức: Nặng'), findsOneWidget);
     expect(find.text('Mức: Nhẹ'), findsOneWidget);
   });
@@ -318,6 +342,30 @@ void main() {
     expect(((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile.weightKg, 68.5);
     await scrollTo(tester, find.textContaining('đã đi được 30%'), delta: -200);
     expect(find.textContaining('đã đi được 30%'), findsOneWidget);
+  });
+
+  testWidgets('mang thai hoặc cho con bú: chỉ hiện các lần cân, không hiện tiến độ tới cân nặng mong muốn', (
+    tester,
+  ) async {
+    await openProfileTab(
+      tester,
+      saved: buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, weightKg: 68, targetWeightKg: 60),
+    );
+    for (final (day, kg) in [(1, 70.0), (5, 68.0)]) {
+      await tester.runAsync(
+        () =>
+            appContainer(tester)
+                .read(weightLogRepositoryProvider)
+                .record(WeightEntry(date: CalendarDate(2026, 11, day), weightKg: kg)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
+    expect(find.text('70 kg'), findsOneWidget);
+    expect(find.text('68 kg'), findsOneWidget);
+    expect(find.textContaining('đã đi được'), findsNothing);
+    expect(find.textContaining('quãng đường'), findsNothing);
   });
 
   testWidgets('ô cân nặng trong hộp thoại báo lỗi khi ngoài giới hạn, không ghi gì', (tester) async {

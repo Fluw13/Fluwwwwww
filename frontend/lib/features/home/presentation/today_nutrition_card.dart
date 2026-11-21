@@ -3,6 +3,7 @@ import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/theme/nutrient_colors.dart';
 import 'package:fluw/core/widgets/nutrient_progress.dart';
@@ -32,7 +33,7 @@ class TodayNutritionCard extends StatelessWidget {
       Nutrient.carbohydratesG,
       Nutrient.fatG,
       if (limits.watchesSaturatedFat) Nutrient.saturatedFatG,
-      if (limits.watchesSodium) Nutrient.sodiumMg,
+      if (limits.tracksSodium) Nutrient.sodiumMg,
     ];
     final hasMissing = entryCount > 0 && shown.any((nutrient) => !totals[nutrient].isComplete);
     final carbsUnavailable = limits.targetsKind == TargetsKind.adult && limits.carbohydratesTargetG == null;
@@ -78,6 +79,7 @@ class TodayNutritionCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         NutrientProgress(
+          nutrient: Nutrient.proteinG,
           label: 'Protein (đạm)',
           value: totals[Nutrient.proteinG].knownSum,
           target: limits.proteinMinG,
@@ -87,25 +89,28 @@ class TodayNutritionCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         NutrientProgress(
+          nutrient: Nutrient.sugarsG,
           label: 'Đường tổng',
           value: totals[Nutrient.sugarsG].knownSum,
           target: limits.sugarsMaxG,
           unit: 'g',
           color: colors.sugars,
-          kind: NutrientTargetKind.limit,
+          kind: NutrientTargetKind.suggestion,
         ),
         const SizedBox(height: AppSpacing.sm),
         NutrientProgress(
-          label: 'Tinh bột',
+          nutrient: Nutrient.carbohydratesG,
+          label: 'Carb (bột đường)',
           value: totals[Nutrient.carbohydratesG].knownSum,
           target: limits.carbohydratesTargetG,
           unit: 'g',
           color: colors.carbohydrates,
           kind: NutrientTargetKind.target,
         ),
-        if (carbsUnavailable) Text('Mục tiêu tinh bột: chưa tính được với hồ sơ này.', style: muted),
+        if (carbsUnavailable) Text('Mục tiêu carb: chưa tính được với hồ sơ này.', style: muted),
         const SizedBox(height: AppSpacing.sm),
         NutrientProgress(
+          nutrient: Nutrient.fatG,
           label: 'Chất béo',
           value: totals[Nutrient.fatG].knownSum,
           target: limits.fatTargetG,
@@ -116,6 +121,7 @@ class TodayNutritionCard extends StatelessWidget {
         if (limits.watchesSaturatedFat) ...[
           const SizedBox(height: AppSpacing.sm),
           NutrientProgress(
+            nutrient: Nutrient.saturatedFatG,
             label: 'Béo bão hòa',
             value: totals[Nutrient.saturatedFatG].knownSum,
             target: limits.saturatedFatMaxG,
@@ -124,16 +130,16 @@ class TodayNutritionCard extends StatelessWidget {
             kind: NutrientTargetKind.limit,
           ),
         ],
-        if (limits.watchesSodium) ...[
+        if (limits.tracksSodium) ...[
           const SizedBox(height: AppSpacing.sm),
           NutrientProgress(
+            nutrient: Nutrient.sodiumMg,
             label: 'Natri',
             value: totals[Nutrient.sodiumMg].knownSum,
             target: limits.sodiumMaxMg,
             unit: 'mg',
             color: theme.colorScheme.tertiary,
             kind: NutrientTargetKind.limit,
-            whole: true,
           ),
         ],
         if (hasMissing) ...[
@@ -157,16 +163,21 @@ class TodayNutritionCard extends StatelessWidget {
     if (kcal == null) {
       return [Text('Chưa có dữ liệu calo của các món hôm nay', style: theme.textTheme.titleMedium)];
     }
-    // Compared as shown, so "Đã vượt 0 kcal" never appears.
-    if (kcal.round() > target.round()) {
+    if (isOverAsShown(Nutrient.energyKcal, amount: kcal, target: target)) {
       return [
         Text(isComplete ? 'Đã vượt' : 'Đã vượt ít nhất', style: muted),
-        Text('${formatWhole(kcal - target)} kcal', style: theme.textTheme.titleLarge),
+        Text(
+          '${formatWhole(shownDifference(Nutrient.energyKcal, amount: kcal, target: target))} kcal',
+          style: theme.textTheme.titleLarge,
+        ),
       ];
     }
     return [
       Text(isComplete ? 'Còn lại hôm nay' : 'Còn lại tối đa', style: muted),
-      Text('${formatWhole(target - kcal)} kcal', style: theme.textTheme.titleLarge),
+      Text(
+        '${formatWhole(shownDifference(Nutrient.energyKcal, amount: target, target: kcal))} kcal',
+        style: theme.textTheme.titleLarge,
+      ),
     ];
   }
 

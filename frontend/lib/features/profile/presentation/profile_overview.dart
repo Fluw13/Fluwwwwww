@@ -26,6 +26,7 @@ class ProfileOverview extends StatelessWidget {
     required this.today,
     required this.onEdit,
     required this.onOpenPrivacy,
+    required this.onOpenMethodology,
     required this.onEraseAllData,
     super.key,
   });
@@ -34,6 +35,9 @@ class ProfileOverview extends StatelessWidget {
   final CalendarDate today;
   final VoidCallback onEdit;
   final VoidCallback onOpenPrivacy;
+
+  /// Opens "Cách Fluw tính", the formulas and sources behind the targets.
+  final VoidCallback onOpenMethodology;
   final VoidCallback onEraseAllData;
 
   @override
@@ -79,6 +83,11 @@ class ProfileOverview extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         SectionCard(
           title: 'Chỉ tiêu mỗi ngày',
+          trailing: IconButton(
+            onPressed: onOpenMethodology,
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Cách Fluw tính',
+          ),
           children: [DailyTargetsView(targets: targets)],
         ),
         if (profile.conditions.isNotEmpty || note != null) ...[
@@ -105,7 +114,7 @@ class ProfileOverview extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         const AppearanceCard(),
         const SizedBox(height: AppSpacing.md),
-        AboutCard(onOpenPrivacy: onOpenPrivacy),
+        AboutCard(onOpenPrivacy: onOpenPrivacy, onOpenMethodology: onOpenMethodology),
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onEdit,

@@ -10,4 +10,8 @@ void main() {
     expect(formatNutrientAmount(Nutrient.fatG, 3.57), '3.6 g');
     expect(formatNutrientAmount(Nutrient.proteinG, 31.02), '31 g');
   });
+
+  test('tổng carbohydrate gọi là "Carb (bột đường)", không phải tinh bột', () {
+    expect(nutrientLabel(Nutrient.carbohydratesG), 'Carb (bột đường)');
+  });
 }

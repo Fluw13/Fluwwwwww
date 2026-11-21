@@ -1,5 +1,6 @@
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
 
@@ -20,7 +21,7 @@ String foodSourceLabel(FoodSource source) => switch (source) {
 String nutrientLabel(Nutrient nutrient) => switch (nutrient) {
   Nutrient.energyKcal => 'Năng lượng',
   Nutrient.proteinG => 'Protein (đạm)',
-  Nutrient.carbohydratesG => 'Tinh bột',
+  Nutrient.carbohydratesG => 'Carb (bột đường)',
   Nutrient.sugarsG => 'Đường tổng',
   Nutrient.fatG => 'Chất béo',
   Nutrient.saturatedFatG => 'Béo bão hòa',
@@ -34,10 +35,5 @@ String nutrientUnit(Nutrient nutrient) => switch (nutrient) {
 };
 
 /// kcal and mg read as whole numbers, as on nutrition labels and everywhere else in the app; grams keep one decimal.
-String formatNutrientAmount(Nutrient nutrient, double value) {
-  final number = switch (nutrient) {
-    Nutrient.energyKcal || Nutrient.sodiumMg => formatWhole(value),
-    _ => formatDecimal(value),
-  };
-  return '$number ${nutrientUnit(nutrient)}';
-}
+String formatNutrientAmount(Nutrient nutrient, double value) =>
+    '${formatShownAmount(nutrient, value)} ${nutrientUnit(nutrient)}';

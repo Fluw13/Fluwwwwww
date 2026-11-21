@@ -8,8 +8,9 @@ const double maxWeeklyChangeKg = 0.5;
 // About 7700 kcal per kg of body weight; gives the ±550 kcal/day for 0.5 kg/week that FLuw approved.
 const double _kcalPerKgBodyWeight = 7700;
 
-/// The least a weight-loss target may suggest without a doctor: the low-calorie diet of NIH/NHLBI starts at 1,200 kcal
-/// for women and 1,500 kcal for men. BMR is the energy at complete rest, not a safe intake, so it alone is no floor.
+/// The least a weight-loss target may suggest without a doctor: the lowest of the self-directed weight-loss eating
+/// plans NHLBI gives (1,200–1,500 kcal for women, 1,500–1,800 kcal for men, TLC guide 2005). Programs a doctor
+/// supervises may go lower. BMR is the energy at complete rest, not a safe intake, so it alone is no floor.
 double minimumIntakeKcal(BmrFormula formula) => switch (formula) {
   BmrFormula.female => 1200,
   BmrFormula.male => 1500,

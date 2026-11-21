@@ -1,7 +1,7 @@
-import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/features/reminders/domain/reminder_time.dart';
 
 enum ReminderMoment {
@@ -84,16 +84,19 @@ ReminderMessage reminderMessage({
   final kcal = totals[Nutrient.energyKcal].knownSum;
   final protein = totals[Nutrient.proteinG].knownSum;
   final sugars = totals[Nutrient.sugarsG].knownSum;
-  String amount(double? value, double? target, String unit, {bool whole = false}) {
-    String format(double number) => whole ? formatWhole(number) : formatDecimal(number);
+  final sodium = totals[Nutrient.sodiumMg].knownSum;
+  final sodiumMax = limits.sodiumMaxMg;
+  String amount(Nutrient nutrient, double? value, double? target, String unit, {String targetWord = ''}) {
+    String format(double number) => formatShownAmount(nutrient, number);
     final eaten = value == null ? 'chưa có dữ liệu' : format(value);
-    return target == null ? (value == null ? eaten : '$eaten $unit') : '$eaten / ${format(target)} $unit';
+    return target == null ? (value == null ? eaten : '$eaten $unit') : '$eaten / $targetWord${format(target)} $unit';
   }
 
   final parts = [
-    'Năng lượng ${amount(kcal, limits.dailyKcal, 'kcal', whole: true)}',
-    'protein ${amount(protein, limits.proteinMinG, 'g')}',
-    if (limits.watchesSugar) 'đường ${amount(sugars, limits.sugarsMaxG, 'g')}',
+    'Năng lượng ${amount(Nutrient.energyKcal, kcal, limits.dailyKcal, 'kcal')}',
+    'protein ${amount(Nutrient.proteinG, protein, limits.proteinMinG, 'g')}',
+    if (limits.watchesSugar)
+      'đường tổng ${amount(Nutrient.sugarsG, sugars, limits.sugarsMaxG, 'g', targetWord: 'gợi ý ')}',
   ];
   final proteinMin = limits.proteinMinG;
   // Only when protein is known for every food: with gaps the real amount may already be enough.
@@ -102,7 +105,10 @@ ReminderMessage reminderMessage({
       protein != null &&
       totals[Nutrient.proteinG].isComplete &&
       intake.unreadableCount == 0 &&
-      (protein * 10).round() < (proteinMin * 10).round();
+      isBelowAsShown(Nutrient.proteinG, amount: protein, target: proteinMin);
+  // Every adult has the sodium limit. Only said once over it, which stands even when some foods lack the number.
+  final sodiumOver =
+      sodiumMax != null && sodium != null && isOverAsShown(Nutrient.sodiumMg, amount: sodium, target: sodiumMax);
   final missing = [
     Nutrient.energyKcal,
     Nutrient.proteinG,
@@ -113,6 +119,7 @@ ReminderMessage reminderMessage({
     title: title,
     body: [
       '${moment == ReminderMoment.evening ? 'Hôm nay' : 'Đến giờ này'}: ${parts.join(', ')}.',
+      if (sodiumOver) 'Natri đã vượt giới hạn ${formatShownAmount(Nutrient.sodiumMg, sodiumMax)} mg.',
       if (missing) 'Một số món thiếu số liệu.',
       if (intake.unreadableCount > 0) '${intake.unreadableCount} món không đọc được nên chưa tính.',
       if (proteinShort && moment != ReminderMoment.evening) 'Bữa tới nên có món giàu protein.',

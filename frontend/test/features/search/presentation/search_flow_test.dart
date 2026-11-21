@@ -195,11 +195,13 @@ void main() {
     expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
     expect(find.text('Khẩu phần ghi trên bao bì: 1 portion (100 g)'), findsOneWidget);
 
+    await scrollTo(tester, find.widgetWithText(TextField, 'Khẩu phần bạn ăn'));
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '200');
     await tester.pumpAndSettle();
     await scrollTo(tester, find.text('29.4 g'));
     expect(find.text('29.4 g'), findsOneWidget);
     expect(find.text('Chưa có dữ liệu'), findsWidgets);
+    expect(find.text('USDA: carb gồm cả chất xơ.'), findsNothing, reason: 'Open Food Facts không tính chất xơ');
   });
 
   testWidgets('chi tiết món USDA: không có dữ liệu dị ứng thì nói rõ, không coi là an toàn', (tester) async {
@@ -225,6 +227,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.'), findsOneWidget);
+    await scrollTo(tester, find.text('USDA: carb gồm cả chất xơ.'));
+    expect(find.text('Carb (bột đường)'), findsOneWidget);
     await scrollTo(tester, find.textContaining('USDA FoodData Central (CC0 1.0)'));
     expect(find.textContaining('USDA FoodData Central (CC0 1.0)'), findsOneWidget);
   });
@@ -335,7 +339,7 @@ void main() {
   });
 
   testWidgets(
-    'khẩu phần lớn: đường vượt giới hạn (theo dõi vì tiểu đường), calo vượt mục tiêu nói khác, natri theo dõi vì huyết áp',
+    'khẩu phần lớn: đường cao hơn mức gợi ý (theo dõi vì tiểu đường), calo vượt mục tiêu nói khác, natri theo dõi vì huyết áp',
     (tester) async {
       await openSearch(tester, _backend([yoghurtSearchItem]));
       // Calorie target raised to BMR (1,239 kcal), so 2,000 g of yoghurt (1,988 kcal) goes over it.
@@ -355,10 +359,10 @@ void main() {
       await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '2000');
       await tester.pumpAndSettle();
 
-      expect(find.text('Vượt giới hạn cả ngày.'), findsWidgets);
+      expect(find.text('Cao hơn mức gợi ý cả ngày.'), findsOneWidget);
       expect(find.text('Vượt mục tiêu calo cả ngày.'), findsOneWidget);
-      expect(find.text('Natri (theo dõi theo bệnh nền)'), findsOneWidget);
-      expect(find.text('Đường tổng (theo dõi theo bệnh nền)'), findsOneWidget);
+      expect(find.text('Natri (bạn đang theo dõi)'), findsOneWidget);
+      expect(find.text('Đường tổng (mức gợi ý, bạn đang theo dõi)'), findsOneWidget);
     },
   );
 
@@ -390,7 +394,7 @@ void main() {
 
       await tester.tap(find.text('Vinamilk sữa chua dâu'));
       await tester.pumpAndSettle();
-      await scrollTo(tester, find.textContaining('Natri (theo dõi'));
+      await scrollTo(tester, find.textContaining('Natri (bạn đang theo dõi'));
       expect(tester.takeException(), isNull);
       await scrollTo(tester, find.textContaining('Nguồn: Open Food Facts'));
       expect(tester.takeException(), isNull);
