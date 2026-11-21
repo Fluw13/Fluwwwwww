@@ -7,9 +7,18 @@ import 'package:fluw/features/profile/presentation/profile_overview.dart';
 import 'package:fluw/features/profile/presentation/profile_setup_prompt.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({required this.onEditProfile, super.key});
+  const ProfileScreen({
+    required this.onEditProfile,
+    required this.onOpenPrivacy,
+    required this.onEraseAllData,
+    super.key,
+  });
 
   final VoidCallback onEditProfile;
+  final VoidCallback onOpenPrivacy;
+
+  /// Asks for confirmation, then erases everything Fluw keeps on the phone.
+  final VoidCallback onEraseAllData;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,10 +27,18 @@ class ProfileScreen extends ConsumerWidget {
         profile: profile,
         today: ref.watch(todayProvider),
         onEdit: onEditProfile,
+        onOpenPrivacy: onOpenPrivacy,
+        onEraseAllData: onEraseAllData,
       ),
-      AsyncData(value: NoProfile()) => ProfileSetupPrompt.empty(onPressed: onEditProfile),
-      AsyncData(value: UnreadableProfile()) => ProfileSetupPrompt.unreadable(onPressed: onEditProfile),
-      AsyncError() => ProfileSetupPrompt.loadFailed(onPressed: () => ref.invalidate(storedProfileProvider)),
+      AsyncData(value: NoProfile()) => ProfileSetupPrompt.empty(onPressed: onEditProfile, onOpenPrivacy: onOpenPrivacy),
+      AsyncData(value: UnreadableProfile()) => ProfileSetupPrompt.unreadable(
+        onPressed: onEditProfile,
+        onOpenPrivacy: onOpenPrivacy,
+      ),
+      AsyncError() => ProfileSetupPrompt.loadFailed(
+        onPressed: () => ref.invalidate(storedProfileProvider),
+        onOpenPrivacy: onOpenPrivacy,
+      ),
       _ => const Center(child: CircularProgressIndicator()),
     };
   }

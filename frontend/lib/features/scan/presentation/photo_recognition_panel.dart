@@ -42,12 +42,51 @@ final class _Failed extends _PhotoState {
   final String message;
 }
 
+enum _ConsentAnswer { agree, decline, readPolicy }
+
+/// Changing this text in substance means raising `PhotoConsentStorage.currentVersion`, so everyone is asked again.
+class _PhotoConsentDialog extends StatelessWidget {
+  const _PhotoConsentDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      scrollable: true,
+      title: const Text('Gửi ảnh để nhận diện món?'),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ảnh được gửi qua máy chủ Fluw (đặt tại Hoa Kỳ) tới Google Gemini để nhận ra tên món. Trước khi gửi, Fluw '
+            'xóa thông tin vị trí và thời gian chụp trong ảnh; máy chủ Fluw không lưu ảnh. Fluw dùng gói miễn phí của '
+            'Google nên Google có thể lưu ảnh, cho người xem lại và dùng để cải thiện sản phẩm của họ; đừng chụp '
+            'người, giấy tờ hay thông tin cá nhân. Bạn rút lại đồng ý được bất cứ lúc nào trong màn này, nhưng Fluw '
+            'không xóa được những ảnh đã gửi trước đó khỏi Google.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          const Text('Tính năng này chỉ dành cho người dùng ở Việt Nam.'),
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(_ConsentAnswer.readPolicy),
+            child: const Text('Đọc chính sách quyền riêng tư'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(context).pop(_ConsentAnswer.decline), child: const Text('Không')),
+        FilledButton(onPressed: () => Navigator.of(context).pop(_ConsentAnswer.agree), child: const Text('Đồng ý')),
+      ],
+    );
+  }
+}
+
 /// Photo → food names → search. The names come from AI and are labelled as such; the nutrition the user then sees
 /// comes from Open Food Facts or USDA. Asks for consent before the first photo leaves the phone; adults only.
 class PhotoRecognitionPanel extends ConsumerStatefulWidget {
-  const PhotoRecognitionPanel({required this.onSearchFood, super.key});
+  const PhotoRecognitionPanel({required this.onSearchFood, required this.onOpenPrivacy, super.key});
 
   final ValueChanged<RecognizedFood> onSearchFood;
+  final VoidCallback onOpenPrivacy;
 
   @override
   ConsumerState<PhotoRecognitionPanel> createState() => _PhotoRecognitionPanelState();
@@ -61,28 +100,20 @@ class _PhotoRecognitionPanelState extends ConsumerState<PhotoRecognitionPanel> {
     if (storage.hasConsent) {
       return true;
     }
-    final agreed = await showDialog<bool>(
+    final answer = await showDialog<_ConsentAnswer>(
       context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        title: const Text('Gửi ảnh để nhận diện món?'),
-        content: const Text(
-          'Ảnh được gửi qua máy chủ Fluw tới Google Gemini để nhận ra tên món. Fluw xóa thông tin vị trí và thời gian '
-          'chụp trong ảnh trước khi gửi và không lưu ảnh. Với gói miễn phí, Google có thể dùng ảnh và cho người xem '
-          'lại để cải thiện sản phẩm của họ, nên đừng chụp người, giấy tờ hay thông tin cá nhân. Bạn rút lại đồng ý '
-          'được bất cứ lúc nào.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Không')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Đồng ý')),
-        ],
-      ),
+      builder: (context) => const _PhotoConsentDialog(),
     );
-    if (agreed ?? false) {
-      await storage.giveConsent();
-      return true;
+    switch (answer) {
+      case _ConsentAnswer.agree:
+        await storage.giveConsent();
+        return true;
+      case _ConsentAnswer.readPolicy:
+        widget.onOpenPrivacy();
+        return false;
+      case _ConsentAnswer.decline || null:
+        return false;
     }
-    return false;
   }
 
   Future<void> _recognize(PhotoSource source) async {

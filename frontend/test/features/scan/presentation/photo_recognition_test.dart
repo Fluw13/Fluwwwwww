@@ -75,6 +75,9 @@ void main() {
     expect(find.text('Gửi ảnh để nhận diện món?'), findsOneWidget);
     expect(find.textContaining('xóa thông tin vị trí'), findsOneWidget);
     expect(find.textContaining('cho người xem lại'), findsOneWidget);
+    expect(find.textContaining('đặt tại Hoa Kỳ'), findsOneWidget);
+    expect(find.textContaining('không xóa được những ảnh đã gửi trước đó khỏi Google'), findsOneWidget);
+    expect(find.text('Tính năng này chỉ dành cho người dùng ở Việt Nam.'), findsOneWidget);
 
     await tester.tap(find.text('Không'));
     await tester.pumpAndSettle();
@@ -102,7 +105,7 @@ void main() {
       await tester.tap(find.text('Đồng ý'));
       await tester.pumpAndSettle();
 
-      expect(preferences.getBool(PhotoConsentStorage.key), isTrue);
+      expect(preferences.getInt(PhotoConsentStorage.key), PhotoConsentStorage.currentVersion);
       expect(appPhotoPicker(tester).requests, [PhotoSource.camera]);
       expect(requests.single.headers['Content-Type'], 'image/jpeg');
       expect(requests.single.bodyBytes, removePhotoMetadata(FakeFoodPhotoPicker.photoWithLocation)!.bytes);
@@ -129,7 +132,7 @@ void main() {
     final answer = Completer<http.Response>();
     await pumpFluwApp(
       tester,
-      storedSettings: {PhotoConsentStorage.key: true},
+      storedSettings: {PhotoConsentStorage.key: PhotoConsentStorage.currentVersion},
       httpClient: MockClient((request) => answer.future),
     );
     await openPhotoMode(tester);
@@ -167,7 +170,7 @@ void main() {
       final requests = <http.Request>[];
       await pumpFluwApp(
         tester,
-        storedSettings: {PhotoConsentStorage.key: true},
+        storedSettings: {PhotoConsentStorage.key: PhotoConsentStorage.currentVersion},
         httpClient: MockClient((request) async {
           requests.add(request);
           return _json({
@@ -208,14 +211,14 @@ void main() {
   testWidgets('rút lại đồng ý thì lần gửi sau hỏi lại', (tester) async {
     final preferences = await pumpFluwApp(
       tester,
-      storedSettings: {PhotoConsentStorage.key: true},
+      storedSettings: {PhotoConsentStorage.key: PhotoConsentStorage.currentVersion},
       httpClient: MockClient((request) async => _json(_pho)),
     );
     await openPhotoMode(tester);
 
     await tester.tap(find.text('Rút lại đồng ý gửi ảnh'));
     await tester.pumpAndSettle();
-    expect(preferences.getBool(PhotoConsentStorage.key), isNull);
+    expect(preferences.getInt(PhotoConsentStorage.key), isNull);
     expect(find.text('Rút lại đồng ý gửi ảnh'), findsNothing);
 
     await tester.tap(find.text('Chọn ảnh'));
@@ -228,7 +231,7 @@ void main() {
     (tester) async {
       await pumpFluwApp(
         tester,
-        storedSettings: {PhotoConsentStorage.key: true},
+        storedSettings: {PhotoConsentStorage.key: PhotoConsentStorage.currentVersion},
         httpClient: MockClient((request) async => _json(_pho)),
       );
       await openPhotoMode(tester);
@@ -248,6 +251,44 @@ void main() {
       expect(live, findsOneWidget);
     },
   );
+
+  testWidgets('đồng ý với chữ cũ (phiên bản 1) không còn tính: hỏi lại, đồng ý thì lưu phiên bản mới', (tester) async {
+    final preferences = await pumpFluwApp(
+      tester,
+      storedSettings: {PhotoConsentStorage.legacyKey: true},
+      httpClient: MockClient((request) async => _json(_pho)),
+    );
+    await openPhotoMode(tester);
+    expect(find.text('Rút lại đồng ý gửi ảnh'), findsNothing);
+
+    await tester.tap(find.text('Chọn ảnh'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gửi ảnh để nhận diện món?'), findsOneWidget);
+    await tester.tap(find.text('Đồng ý'));
+    await tester.pumpAndSettle();
+
+    expect(preferences.getInt(PhotoConsentStorage.key), 2);
+    expect(preferences.containsKey(PhotoConsentStorage.legacyKey), isFalse);
+    expect(find.text('Phở bò'), findsOneWidget);
+  });
+
+  testWidgets('"Đọc chính sách quyền riêng tư" trong hộp đồng ý mở màn chính sách, không gửi ảnh', (tester) async {
+    final preferences = await pumpFluwApp(tester, httpClient: MockClient((request) async => _json(_pho)));
+    await openPhotoMode(tester);
+
+    await tester.tap(find.text('Chụp ảnh'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Đọc chính sách quyền riêng tư'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quyền riêng tư và điều khoản'), findsOneWidget);
+    expect(appPhotoPicker(tester).requests, isEmpty);
+    expect(preferences.containsKey(PhotoConsentStorage.key), isFalse);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Chụp ảnh'), findsOneWidget, reason: 'quay về đúng chế độ Ảnh món ăn');
+  });
 
   testWidgets('320x568 cỡ chữ 310%: hộp đồng ý và danh sách món không tràn', (tester) async {
     tester.view

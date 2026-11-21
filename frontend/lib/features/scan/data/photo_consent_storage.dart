@@ -6,13 +6,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PhotoConsentStorage {
   const PhotoConsentStorage(this._preferences);
 
-  static const String key = 'photo_recognition_consent';
+  /// The version of the consent text the user agreed to.
+  static const String key = 'photo_recognition_consent_version';
+
+  /// Raised whenever the consent text changes in substance, so everyone is asked again with the new text. Version 2
+  /// added the server's country, that Google keeps photos sent before a withdrawal, and the policy.
+  static const int currentVersion = 2;
+
+  /// Version 1 stored `true` here; it no longer counts as consent.
+  static const String legacyKey = 'photo_recognition_consent';
 
   final SharedPreferences? _preferences;
 
   bool get hasConsent {
     try {
-      return _preferences?.getBool(key) ?? false;
+      return _preferences?.getInt(key) == currentVersion;
     } on Object {
       return false;
     }
@@ -20,7 +28,8 @@ class PhotoConsentStorage {
 
   Future<void> giveConsent() async {
     try {
-      await _preferences?.setBool(key, true);
+      await _preferences?.setInt(key, currentVersion);
+      await _preferences?.remove(legacyKey);
     } on Object {
       // Asked again next time.
     }
@@ -30,6 +39,7 @@ class PhotoConsentStorage {
   Future<void> withdrawConsent() async {
     try {
       await _preferences?.remove(key);
+      await _preferences?.remove(legacyKey);
     } on Object {
       // Still recorded as given; the user can withdraw again.
     }

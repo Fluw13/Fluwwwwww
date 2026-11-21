@@ -10,13 +10,15 @@ import 'package:fluw/features/scan/presentation/barcode_camera.dart';
 import 'package:fluw/features/scan/presentation/photo_recognition_panel.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
-  const ScanScreen({required this.onBarcode, required this.onOpenSearch, super.key});
+  const ScanScreen({required this.onBarcode, required this.onOpenSearch, required this.onOpenPrivacy, super.key});
 
   /// Opens the product with this barcode; completes when the user comes back, so scanning resumes only then.
   final Future<void> Function(String code) onBarcode;
 
   /// Opens the search tab, which runs the search asked for through `searchRequestProvider`.
   final VoidCallback onOpenSearch;
+
+  final VoidCallback onOpenPrivacy;
 
   @override
   ConsumerState<ScanScreen> createState() => _ScanScreenState();
@@ -102,6 +104,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                 ref.read(searchRequestProvider.notifier).request(food.searchQuery, englishQuery: food.englishQuery);
                 widget.onOpenSearch();
               },
+              onOpenPrivacy: widget.onOpenPrivacy,
             ),
           ],
         ),

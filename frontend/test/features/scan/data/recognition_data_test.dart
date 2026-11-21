@@ -93,6 +93,11 @@ void main() {
     await storage.withdrawConsent();
     expect(storage.hasConsent, isFalse);
 
+    SharedPreferences.setMockInitialValues({PhotoConsentStorage.legacyKey: true});
+    expect(PhotoConsentStorage(await SharedPreferences.getInstance()).hasConsent, isFalse, reason: 'chữ cũ');
+    SharedPreferences.setMockInitialValues({PhotoConsentStorage.key: PhotoConsentStorage.currentVersion - 1});
+    expect(PhotoConsentStorage(await SharedPreferences.getInstance()).hasConsent, isFalse, reason: 'phiên bản cũ');
+
     const noStore = PhotoConsentStorage(null);
     await noStore.giveConsent();
     expect(noStore.hasConsent, isFalse);
