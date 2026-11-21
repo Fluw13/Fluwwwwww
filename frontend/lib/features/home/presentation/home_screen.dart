@@ -5,6 +5,7 @@ import 'package:fluw/core/diary/diary_target.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
 import 'package:fluw/core/nutrition/personal_limits_provider.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
+import 'package:fluw/core/time/clock_provider.dart';
 import 'package:fluw/core/time/current_hour_provider.dart';
 import 'package:fluw/core/time/today_provider.dart';
 import 'package:fluw/features/home/domain/day_evaluation.dart';
@@ -64,7 +65,9 @@ class HomeScreen extends ConsumerWidget {
             day: todayDay?.day,
             unreadableCount: todayDay?.unreadableCount ?? 0,
             onAddFood: (slot) {
-              ref.read(diaryTargetProvider.notifier).choose(DiaryTarget(day: today, slot: slot));
+              // The diary day from the same clock as the eating time: at 00:00:30 it is still yesterday's diary.
+              final day = DiaryTarget.current(ref.read(clockProvider)()).day;
+              ref.read(diaryTargetProvider.notifier).choose(DiaryTarget(day: day, slot: slot));
               onOpenSearch();
             },
             onOpenNote: onOpenNote,

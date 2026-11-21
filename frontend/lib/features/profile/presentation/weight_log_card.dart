@@ -38,7 +38,10 @@ class WeightLogCard extends ConsumerWidget {
         else if (log.isLoading && !log.hasValue)
           const LinearProgressIndicator()
         else if (entries.isEmpty)
-          Text('Chưa ghi lần nào. Ghi đều để thấy tiến độ đến cân nặng mong muốn.', style: theme.textTheme.bodyMedium)
+          Text(
+            _tracksGoal ? 'Chưa ghi lần nào. Ghi đều để thấy tiến độ đến cân nặng mong muốn.' : 'Chưa ghi lần nào.',
+            style: theme.textTheme.bodyMedium,
+          )
         else ...[
           if (progress != null) ...[
             Text(
@@ -68,10 +71,14 @@ class WeightLogCard extends ConsumerWidget {
     );
   }
 
+  /// Weight changes for other reasons while pregnant or breastfeeding, and Fluw sets no targets then: only the
+  /// weigh-ins show.
+  bool get _tracksGoal => profile.isPregnantOrBreastfeeding != true;
+
   /// Measured from the first weigh-in, and only while that weigh-in lies on the planned side of the target: after
   /// the target changes direction the old history says nothing about the new plan.
   double? _progress(List<WeightEntry> entries) {
-    if (entries.length < 2 || profile.plannedGoal == WeightGoal.maintain) {
+    if (!_tracksGoal || entries.length < 2 || profile.plannedGoal == WeightGoal.maintain) {
       return null;
     }
     final start = entries.first.weightKg;

@@ -278,7 +278,7 @@ void main() {
     expect(find.text('Sữa thứ Hai sau'), findsNothing);
   });
 
-  testWidgets('người lớn có huyết áp cao: tổng ngày có protein tối thiểu, đường tối đa, natri, báo vượt', (
+  testWidgets('người lớn có huyết áp cao: tổng ngày có protein tối thiểu, đường mức gợi ý, natri, báo vượt', (
     tester,
   ) async {
     await pumpFluwApp(tester);
@@ -292,11 +292,26 @@ void main() {
     await openNote(tester);
 
     expect(find.textContaining('/ cần ít nhất'), findsOneWidget);
-    expect(find.textContaining('/ tối đa'), findsNWidgets(2));
+    expect(find.textContaining('/ mức gợi ý'), findsOneWidget);
+    expect(find.textContaining('/ tối đa'), findsOneWidget);
     expect(find.text('Natri'), findsOneWidget);
     expect(find.text('Béo bão hòa'), findsNothing, reason: 'không có mỡ máu cao');
     expect(find.text('Vượt mục tiêu calo cả ngày.'), findsOneWidget);
-    expect(find.text('Vượt giới hạn cả ngày.'), findsOneWidget, reason: 'đường 100 g; natri chưa có dữ liệu');
+    expect(find.text('Cao hơn mức gợi ý cả ngày.'), findsOneWidget, reason: 'đường 100 g');
+    expect(find.text('Vượt giới hạn cả ngày.'), findsNothing, reason: 'natri chưa có dữ liệu');
+  });
+
+  testWidgets('người lớn không có huyết áp cao: tổng ngày vẫn so natri với 2,000 mg; không có béo bão hòa', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    await addEntry(tester, _entry('a', 'Phở', DateTime(2026, 11, 11, 7, 30)));
+    await openNote(tester);
+
+    expect(find.text('Natri'), findsOneWidget);
+    expect(find.text('Chưa có dữ liệu / tối đa 2,000 mg'), findsOneWidget);
+    expect(find.text('Béo bão hòa'), findsNothing);
   });
 
   testWidgets('hồ sơ không đọc được thì nói rõ chưa so được với chỉ tiêu', (tester) async {

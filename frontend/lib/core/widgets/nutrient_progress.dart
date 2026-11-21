@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/nutrient.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 
 enum NutrientTargetKind {
@@ -9,8 +10,12 @@ enum NutrientTargetKind {
   /// Protein: the lower end to reach; going over is fine.
   minimum,
 
-  /// Sugar, saturated fat, sodium: going over is a warning.
+  /// Saturated fat, sodium: going over is a warning.
   limit,
+
+  /// Total sugars: the 10% / 5% of energy is a suggestion made from WHO's advice on free sugars, which labels do not
+  /// give. Going over is said in the warning colour, never as an exceeded limit.
+  suggestion,
 
   /// Fat and carbohydrates: a plan to follow, shown without warnings.
   target,
@@ -20,42 +25,46 @@ enum NutrientTargetKind {
 /// mistaken for 0.
 class NutrientProgress extends StatelessWidget {
   const NutrientProgress({
+    required this.nutrient,
     required this.label,
     required this.value,
     required this.target,
     required this.unit,
     required this.color,
     required this.kind,
-    this.whole = false,
     super.key,
   });
 
+  /// Sets how the numbers are shown and compared.
+  final Nutrient nutrient;
   final String label;
   final double? value;
   final double? target;
   final String unit;
   final Color color;
   final NutrientTargetKind kind;
-  final bool whole;
-
-  String _format(double number) => whole ? formatWhole(number) : formatDecimal(number);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final value = this.value;
     final target = this.target;
-    final valueText = value == null ? 'Chưa có dữ liệu' : '${_format(value)} $unit';
+    final valueText = value == null ? 'Chưa có dữ liệu' : '${formatShownAmount(nutrient, value)} $unit';
     final targetWord = switch (kind) {
       NutrientTargetKind.calorieGoal || NutrientTargetKind.target => 'mục tiêu',
       NutrientTargetKind.minimum => 'cần ít nhất',
       NutrientTargetKind.limit => 'tối đa',
+      NutrientTargetKind.suggestion => 'mức gợi ý',
     };
-    final fullText = target == null ? valueText : '$valueText / $targetWord ${_format(target)} $unit';
-    // Judged on the rounded percentage, like the detail screen, so "100%" never comes with "over".
-    final percent = value == null || target == null || target <= 0 ? null : (value / target * 100).round();
-    final warnsOver = kind == NutrientTargetKind.calorieGoal || kind == NutrientTargetKind.limit;
-    final isOver = percent != null && percent > 100 && warnsOver;
+    final fullText = target == null
+        ? valueText
+        : '$valueText / $targetWord ${formatShownAmount(nutrient, target)} $unit';
+    final percent = value == null || target == null || target <= 0
+        ? null
+        : percentAsShown(nutrient, amount: value, target: target);
+    final warnsOver = kind != NutrientTargetKind.minimum && kind != NutrientTargetKind.target;
+    final isOver = percent != null && warnsOver && isOverAsShown(nutrient, amount: value!, target: target!);
+    final overColor = kind == NutrientTargetKind.suggestion ? theme.colorScheme.tertiary : theme.colorScheme.error;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,7 +81,7 @@ class NutrientProgress extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           LinearProgressIndicator(
             value: (value! / target!).clamp(0, 1).toDouble(),
-            color: isOver ? theme.colorScheme.error : color,
+            color: isOver ? overColor : color,
             minHeight: 8,
             borderRadius: BorderRadius.circular(4),
             semanticsLabel: label,
@@ -83,10 +92,11 @@ class NutrientProgress extends StatelessWidget {
         if (isOver)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xs),
-            child: Text(
-              kind == NutrientTargetKind.calorieGoal ? 'Vượt mục tiêu calo cả ngày.' : 'Vượt giới hạn cả ngày.',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-            ),
+            child: Text(switch (kind) {
+              NutrientTargetKind.calorieGoal => 'Vượt mục tiêu calo cả ngày.',
+              NutrientTargetKind.suggestion => 'Cao hơn mức gợi ý cả ngày.',
+              _ => 'Vượt giới hạn cả ngày.',
+            }, style: theme.textTheme.bodySmall?.copyWith(color: overColor)),
           ),
       ],
     );

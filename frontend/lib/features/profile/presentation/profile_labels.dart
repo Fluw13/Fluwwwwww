@@ -1,3 +1,5 @@
+import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/fluw_thresholds.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
@@ -7,6 +9,7 @@ import 'package:fluw/features/profile/domain/calorie_target.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/profile/domain/nutrient_targets.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
@@ -63,11 +66,13 @@ String healthConditionLabel(HealthCondition condition) => switch (condition) {
 /// Says only what Fluw really does with each condition; the note-only ones have no data to warn about.
 String healthConditionDescription(HealthCondition condition) => switch (condition) {
   HealthCondition.diabetes =>
-    'Fluw dùng giới hạn đường tổng chặt hơn: dưới 5% năng lượng mỗi ngày (mức tham khảo theo khuyến nghị chung của '
-        'WHO). Đây không phải chế độ ăn điều trị; hãy theo hướng dẫn của bác sĩ.',
+    'Theo dõi đường tổng: Fluw dùng mức gợi ý dưới 5% năng lượng mỗi ngày (dựa trên khuyến nghị đường tự do của WHO '
+        '2015). Đây không phải chế độ ăn điều trị: lượng carb (bột đường) phù hợp cho người tiểu đường do bác sĩ chỉ '
+        'định.',
   HealthCondition.hypertension =>
-    'Theo dõi natri: dưới 2.000 mg mỗi ngày (khuyến nghị chung của WHO), hiện ở Trang Chủ, Nhật ký và chi tiết sản '
-        'phẩm. Không thay thế hướng dẫn của bác sĩ.',
+    'Theo dõi natri: tối đa ${formatWhole(dailySodiumMaxMg)} mg mỗi ngày (khoảng 5 g muối, khuyến nghị của WHO cho '
+        'mọi người lớn). Với huyết áp cao, Trang Chủ luôn nhắc hạn chế muối và chi tiết sản phẩm cảnh báo khi một khẩu '
+        'phần chiếm từ ${formatWhole(watchedPortionShare * 100)}% mức này. Không thay thế hướng dẫn của bác sĩ.',
   HealthCondition.dyslipidemia =>
     'Giới hạn béo bão hòa dưới 7% năng lượng mỗi ngày (mức tham khảo). Không thay thế hướng dẫn của bác sĩ.',
   HealthCondition.stomach ||

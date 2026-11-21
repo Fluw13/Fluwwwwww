@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/fluw_thresholds.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/home/domain/day_evaluation.dart';
@@ -23,10 +25,11 @@ class DayEvaluationCard extends StatelessWidget {
     return SectionCard(
       title: title,
       children: [
+        // Only what Fluw tracks is judged: fibre, vegetables and fruit are not in the data, so no "balanced" claim.
         if (evaluation.isBalanced)
-          Text('Ăn khá cân đối so với chỉ tiêu.', style: theme.textTheme.bodyLarge)
+          Text('Đạt các chỉ tiêu Fluw đang theo dõi.', style: theme.textTheme.bodyLarge)
         else
-          Text('Một số chỉ số chưa đạt:', style: theme.textTheme.bodyLarge),
+          Text('Một số chỉ tiêu chưa đạt:', style: theme.textTheme.bodyLarge),
         const SizedBox(height: AppSpacing.sm),
         for (final verdict in evaluation.verdicts)
           Padding(
@@ -35,9 +38,19 @@ class DayEvaluationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  verdict.isGood ? Icons.check_circle_outline : Icons.error_outline,
+                  switch (verdict.status) {
+                    _ when verdict.isGood => Icons.check_circle_outline,
+                    VerdictStatus.maybeUnderLogged => Icons.info_outline,
+                    _ => Icons.error_outline,
+                  },
                   size: 20,
-                  color: verdict.isGood ? theme.colorScheme.primary : theme.colorScheme.error,
+                  color: switch (verdict.status) {
+                    _ when verdict.isGood => theme.colorScheme.primary,
+                    VerdictStatus.maybeUnderLogged => theme.colorScheme.onSurfaceVariant,
+                    // Total sugars has a suggestion, not a limit: the warning colour, not the error red.
+                    VerdictStatus.over when verdict.nutrient == Nutrient.sugarsG => theme.colorScheme.tertiary,
+                    _ => theme.colorScheme.error,
+                  },
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(child: Text(verdictText(verdict))),
@@ -63,21 +76,27 @@ String verdictText(NutrientVerdict verdict) {
     Nutrient.sugarsG => 'Đường tổng',
     Nutrient.saturatedFatG => 'Béo bão hòa',
     Nutrient.sodiumMg => 'Natri',
-    Nutrient.carbohydratesG => 'Tinh bột',
+    Nutrient.carbohydratesG => 'Carb (bột đường)',
     Nutrient.fatG => 'Chất béo',
   };
-  final gap = switch (verdict.nutrient) {
-    Nutrient.energyKcal => '${formatWhole(verdict.gap)} kcal',
-    Nutrient.sodiumMg => '${formatWhole(verdict.gap)} mg',
-    _ => '${formatDecimal(verdict.gap)} g',
+  final unit = switch (verdict.nutrient) {
+    Nutrient.energyKcal => 'kcal',
+    Nutrient.sodiumMg => 'mg',
+    _ => 'g',
   };
+  final gap = '${formatShownAmount(verdict.nutrient, verdict.gap)} $unit';
+  final isSugar = verdict.nutrient == Nutrient.sugarsG;
   return switch (verdict.status) {
-    VerdictStatus.onTarget => '$label: đạt mục tiêu',
+    VerdictStatus.onTarget => '$label: đạt mục tiêu (±${formatWhole(calorieToleranceShare * 100)}%)',
     VerdictStatus.reached => '$label: đủ mức tối thiểu',
+    VerdictStatus.withinLimit when isSugar => '$label: trong mức gợi ý',
     VerdictStatus.withinLimit => '$label: trong giới hạn',
+    VerdictStatus.maybeUnderLogged =>
+      '$label: có thể chưa ghi đủ món (mới ghi ${formatShownAmount(verdict.nutrient, verdict.eaten!)} $unit)',
     VerdictStatus.below when verdict.nutrient == Nutrient.energyKcal => '$label: thấp hơn mục tiêu $gap',
     VerdictStatus.below => '$label: thiếu $gap',
     VerdictStatus.over when verdict.nutrient == Nutrient.energyKcal => '$label: vượt mục tiêu $gap',
+    VerdictStatus.over when isSugar => '$label: cao hơn mức gợi ý $gap',
     VerdictStatus.over => '$label: vượt giới hạn $gap',
     VerdictStatus.incomplete => '$label: chưa đủ số liệu để đánh giá (${verdict.missingCount} món thiếu)',
     VerdictStatus.noData => '$label: chưa có dữ liệu',

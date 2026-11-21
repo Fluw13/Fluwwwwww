@@ -53,7 +53,7 @@ class DailyTargetsView extends StatelessWidget {
                   iconColor: colors.protein,
                 ),
                 TargetTile(
-                  label: 'Đường tổng tối đa',
+                  label: 'Đường tổng (mức gợi ý)',
                   value: '< ${formatWhole(nutrients.sugarsMaxGrams)}',
                   unit: 'g/ngày',
                   icon: Icons.cookie_outlined,
@@ -68,7 +68,7 @@ class DailyTargetsView extends StatelessWidget {
                   iconColor: colors.fat,
                 ),
                 TargetTile(
-                  label: 'Tinh bột',
+                  label: 'Carb (bột đường)',
                   value: switch (nutrients.carbohydratesGrams) {
                     final grams? => formatWhole(grams),
                     null => 'Chưa tính được',
