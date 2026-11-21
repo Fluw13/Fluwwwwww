@@ -13,6 +13,7 @@ final class HealthProfile {
     required this.displayName,
     required this.sex,
     required BmrFormula? bmrFormulaForOther,
+    required bool? isPregnantOrBreastfeeding,
     required this.birthDate,
     required this.heightCm,
     required this.weightKg,
@@ -26,6 +27,9 @@ final class HealthProfile {
     required this.limitsSugar,
     required this.dietary,
   }) : bmrFormulaForOther = sex == Sex.other ? bmrFormulaForOther : null,
+       isPregnantOrBreastfeeding = _formulaFor(sex, bmrFormulaForOther) == BmrFormula.female
+           ? isPregnantOrBreastfeeding
+           : null,
        conditions = Set.unmodifiable(conditions);
 
   /// Optional; only shown in the app.
@@ -35,6 +39,10 @@ final class HealthProfile {
 
   /// Kept only when [sex] is [Sex.other], so switching to male or female never leaves a stale choice behind.
   final BmrFormula? bmrFormulaForOther;
+
+  /// Asked only when the BMR formula is the female one, and kept only then; `null` means not answered yet, which
+  /// validation rejects for adults (rows saved before the question existed read as `null`).
+  final bool? isPregnantOrBreastfeeding;
 
   final CalendarDate birthDate;
   final double heightCm;
@@ -61,7 +69,9 @@ final class HealthProfile {
   final DietaryPreferences dietary;
 
   /// `null` only for [Sex.other] without a chosen formula, which validation rejects for adults.
-  BmrFormula? get bmrFormula => switch (sex) {
+  BmrFormula? get bmrFormula => _formulaFor(sex, bmrFormulaForOther);
+
+  static BmrFormula? _formulaFor(Sex sex, BmrFormula? bmrFormulaForOther) => switch (sex) {
     Sex.male => BmrFormula.male,
     Sex.female => BmrFormula.female,
     Sex.other => bmrFormulaForOther,
@@ -80,6 +90,7 @@ final class HealthProfile {
     String? Function()? displayName,
     Sex? sex,
     BmrFormula? Function()? bmrFormulaForOther,
+    bool? Function()? isPregnantOrBreastfeeding,
     CalendarDate? birthDate,
     double? heightCm,
     double? weightKg,
@@ -97,6 +108,9 @@ final class HealthProfile {
       displayName: displayName == null ? this.displayName : displayName(),
       sex: sex ?? this.sex,
       bmrFormulaForOther: bmrFormulaForOther == null ? this.bmrFormulaForOther : bmrFormulaForOther(),
+      isPregnantOrBreastfeeding: isPregnantOrBreastfeeding == null
+          ? this.isPregnantOrBreastfeeding
+          : isPregnantOrBreastfeeding(),
       birthDate: birthDate ?? this.birthDate,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
@@ -118,6 +132,7 @@ final class HealthProfile {
       other.displayName == displayName &&
       other.sex == sex &&
       other.bmrFormulaForOther == bmrFormulaForOther &&
+      other.isPregnantOrBreastfeeding == isPregnantOrBreastfeeding &&
       other.birthDate == birthDate &&
       other.heightCm == heightCm &&
       other.weightKg == weightKg &&
@@ -136,6 +151,7 @@ final class HealthProfile {
     displayName,
     sex,
     bmrFormulaForOther,
+    isPregnantOrBreastfeeding,
     birthDate,
     heightCm,
     weightKg,

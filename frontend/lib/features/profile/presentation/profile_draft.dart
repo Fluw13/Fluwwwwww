@@ -19,6 +19,7 @@ import 'package:fluw/features/profile/presentation/profile_labels.dart';
 enum ProfileField {
   sex,
   bmrFormula,
+  pregnancy,
   birthDate,
   height,
   weight,
@@ -37,6 +38,7 @@ final class ProfileDraft {
     this.displayName = '',
     this.sex,
     this.bmrFormulaForOther,
+    this.isPregnantOrBreastfeeding,
     this.birthDate,
     this.heightText = '',
     this.weightText = '',
@@ -58,6 +60,7 @@ final class ProfileDraft {
       displayName: profile.displayName ?? '',
       sex: profile.sex,
       bmrFormulaForOther: profile.bmrFormulaForOther,
+      isPregnantOrBreastfeeding: profile.isPregnantOrBreastfeeding,
       birthDate: profile.birthDate,
       // Two decimals match what the form accepts, so opening and saving again never changes a stored number.
       heightText: formatDecimal(profile.heightCm, maxFractionDigits: 2),
@@ -79,6 +82,7 @@ final class ProfileDraft {
   final String displayName;
   final Sex? sex;
   final BmrFormula? bmrFormulaForOther;
+  final bool? isPregnantOrBreastfeeding;
   final CalendarDate? birthDate;
   final String heightText;
   final String weightText;
@@ -104,12 +108,21 @@ final class ProfileDraft {
     return WeightGoal.fromWeights(currentKg: weightKg, targetKg: targetWeightKg);
   }
 
-  /// Adults who want to change weight pick a weekly speed; teens get no calorie target, so they never need one.
+  /// The pregnancy question is asked whenever the female BMR formula applies.
+  bool get asksPregnancy => switch (sex) {
+    Sex.female => true,
+    Sex.other => bmrFormulaForOther == BmrFormula.female,
+    Sex.male || null => false,
+  };
+
+  /// Adults who want to change weight pick a weekly speed; without a calorie target (under 18, pregnancy) there is
+  /// nothing to pick it for.
   bool needsWeeklyChange({required CalendarDate today}) {
     final birthDate = this.birthDate;
     final goal = this.goal;
     return birthDate != null &&
-        ageInYears(birthDate: birthDate, today: today) >= adultAgeYears &&
+        ageInYears(birthDate: birthDate, today: today) >= minimumAgeYears &&
+        !(asksPregnancy && isPregnantOrBreastfeeding == true) &&
         goal != null &&
         goal != WeightGoal.maintain;
   }
@@ -120,6 +133,7 @@ final class ProfileDraft {
       other.displayName == displayName &&
       other.sex == sex &&
       other.bmrFormulaForOther == bmrFormulaForOther &&
+      other.isPregnantOrBreastfeeding == isPregnantOrBreastfeeding &&
       other.birthDate == birthDate &&
       other.heightText == heightText &&
       other.weightText == weightText &&
@@ -140,6 +154,7 @@ final class ProfileDraft {
     displayName,
     sex,
     bmrFormulaForOther,
+    isPregnantOrBreastfeeding,
     birthDate,
     heightText,
     weightText,
@@ -188,6 +203,7 @@ final class ProfileDraft {
       displayName: _textOrNull(displayName),
       sex: sex,
       bmrFormulaForOther: sex == Sex.other ? bmrFormulaForOther : null,
+      isPregnantOrBreastfeeding: isPregnantOrBreastfeeding,
       birthDate: birthDate,
       heightCm: heightCm,
       weightKg: weightKg,
@@ -247,8 +263,11 @@ String? _textOrNull(String text) {
 ProfileField _fieldFor(ProfileIssue issue) => switch (issue) {
   ProfileIssue.birthDateInFuture || ProfileIssue.birthDateTooOld => ProfileField.birthDate,
   ProfileIssue.bmrFormulaMissing => ProfileField.bmrFormula,
+  ProfileIssue.pregnancyAnswerMissing => ProfileField.pregnancy,
   ProfileIssue.heightOutOfRange => ProfileField.height,
   ProfileIssue.weightOutOfRange => ProfileField.weight,
-  ProfileIssue.targetWeightOutOfRange => ProfileField.targetWeight,
+  ProfileIssue.targetWeightOutOfRange ||
+  ProfileIssue.targetBmiTooLow ||
+  ProfileIssue.loseWhenUnderweight => ProfileField.targetWeight,
   ProfileIssue.weeklyChangeMissing || ProfileIssue.weeklyChangeOutOfRange => ProfileField.weeklyChange,
 };

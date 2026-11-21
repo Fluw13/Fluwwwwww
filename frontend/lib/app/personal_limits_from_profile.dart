@@ -19,10 +19,6 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
   };
   final targets = calculateDailyTargets(profile, today: today);
   final adult = targets is AdultTargets ? targets : null;
-  final proteinMinG = switch (targets) {
-    AdultTargets(:final protein) || TeenTargets(:final protein) => protein.minGrams,
-    InvalidProfile() || BelowMinimumAge() => null,
-  };
 
   return PersonalLimits(
     profileStatus: ProfileStatus.loaded,
@@ -32,7 +28,7 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
       for (final allergen in profile.dietary.allergies.keys) allergen.openFoodFactsTag: allergenLabel(allergen),
     },
     dailyKcal: adult?.calories.kcal,
-    proteinMinG: proteinMinG,
+    proteinMinG: adult?.protein.minGrams,
     sugarsMaxG: adult?.nutrients.sugarsMaxGrams,
     saturatedFatMaxG: adult?.nutrients.saturatedFatMaxGrams,
     sodiumMaxMg: adult == null ? null : dailySodiumMaxMg,
@@ -49,10 +45,10 @@ PersonalLimits personalLimitsFromProfile(HealthProfile profile, {required Calend
     likesNuts: profile.dietary.preferences.contains(FoodPreference.likesNuts),
     targetsKind: switch (targets) {
       AdultTargets() => TargetsKind.adult,
-      TeenTargets() => TargetsKind.teen,
       BelowMinimumAge() => TargetsKind.belowMinimumAge,
+      PregnancyOrBreastfeeding() => TargetsKind.pregnancyOrBreastfeeding,
       InvalidProfile() => TargetsKind.invalid,
     },
-    isAdult: ageInYears(birthDate: profile.birthDate, today: today) >= adultAgeYears,
+    isAdult: ageInYears(birthDate: profile.birthDate, today: today) >= minimumAgeYears,
   );
 }

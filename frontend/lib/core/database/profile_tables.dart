@@ -28,6 +28,9 @@ class Profiles extends Table {
   /// Added in schema v3. Old rows derive it from the two weights.
   TextColumn get plannedGoal => text().nullable()();
 
+  /// Added in schema v5. `null` when not answered: rows from before the question existed, or not asked.
+  BoolColumn get pregnantOrBreastfeeding => boolean().nullable()();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 

@@ -65,7 +65,7 @@ class ProfileOverview extends StatelessWidget {
                   label: 'Cân nặng mong muốn',
                   value: formatDecimal(profile.targetWeightKg),
                   unit: 'kg',
-                  note: _goalNote(),
+                  note: _goalNote(targets),
                 ),
               ],
             ),
@@ -126,27 +126,38 @@ class ProfileOverview extends StatelessWidget {
     );
   }
 
-  String _goalNote() {
+  String _goalNote(DailyTargets targets) {
     if (profile.hasReachedTarget) {
       return 'Đã đạt cân nặng mong muốn';
     }
     final goal = profile.goal;
-    final weeklyChangeKg = profile.weeklyChangeKg;
     if (goal == WeightGoal.maintain) {
       return weightGoalLabel(goal);
     }
     final difference = formatDecimal((profile.targetWeightKg - profile.weightKg).abs());
     final summary = '${weightGoalLabel(goal)} $difference kg';
-    // A stored speed outside the allowed range must not crash the page; the targets card lists the issue.
-    if (weeklyChangeKg == null || !isValidWeeklyChangeKg(weeklyChangeKg)) {
+    // Only a valid adult profile has a calorie target and a valid speed; the targets card explains the other cases.
+    if (targets is! AdultTargets) {
       return summary;
     }
+    final calories = targets.calories;
+    final isRaised = calories.isRaisedToMinimum;
+    // A raised target changes the weight more slowly than the chosen speed.
+    final weeklyChangeKg = isRaised
+        ? weeklyChangeKgFromDailyGap(targets.tdee - calories.kcal)
+        : profile.weeklyChangeKg!;
+    // Compared as shown: a minimum at or above TDEE leaves no gap, and "0 kg/tuần" would mean never.
+    if ((weeklyChangeKg * 100).round() <= 0) {
+      return '$summary · chưa ước tính được thời gian';
+    }
+    final speed = formatDecimal(weeklyChangeKg, maxFractionDigits: 2);
     final weeks = estimateWeeksToTarget(
       currentKg: profile.weightKg,
       targetKg: profile.targetWeightKg,
       weeklyChangeKg: weeklyChangeKg,
     );
-    return '$summary · ${formatDecimal(weeklyChangeKg, maxFractionDigits: 2)} kg/tuần · khoảng $weeks tuần';
+    final slowing = goal == WeightGoal.lose ? 'cân thường giảm chậm dần' : 'cân thường tăng chậm dần';
+    return '$summary · ${isRaised ? '≈ ' : ''}$speed kg/tuần · ít nhất khoảng $weeks tuần (ước tính; $slowing)';
   }
 }
 

@@ -12,7 +12,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,6 +31,9 @@ class AppDatabase extends _$AppDatabase {
       },
       from3To4: (migrator, schema) async {
         await migrator.createTable(schema.noteEntries);
+      },
+      from4To5: (migrator, schema) async {
+        await migrator.addColumn(schema.profiles, schema.profiles.pregnantOrBreastfeeding);
       },
     ),
   );

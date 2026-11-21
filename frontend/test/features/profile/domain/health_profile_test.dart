@@ -74,6 +74,31 @@ void main() {
     expect(other.copyWith(sex: Sex.male), buildProfile(sex: Sex.male));
   });
 
+  test('câu trả lời mang thai: chỉ giữ khi theo công thức Nữ, đổi câu trả lời thì hồ sơ khác', () {
+    final female = buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: false);
+
+    expect(female.copyWith(isPregnantOrBreastfeeding: () => true), isNot(female));
+    expect(female.copyWith(isPregnantOrBreastfeeding: () => true).isPregnantOrBreastfeeding, isTrue);
+    expect(female.copyWith(isPregnantOrBreastfeeding: () => null).isPregnantOrBreastfeeding, isNull);
+    expect(female.copyWith(sex: Sex.male), buildProfile(sex: Sex.male));
+    expect(
+      buildProfile(
+        sex: Sex.other,
+        bmrFormulaForOther: BmrFormula.female,
+        isPregnantOrBreastfeeding: true,
+      ).isPregnantOrBreastfeeding,
+      isTrue,
+    );
+    expect(
+      buildProfile(
+        sex: Sex.other,
+        bmrFormulaForOther: BmrFormula.male,
+        isPregnantOrBreastfeeding: true,
+      ).isPregnantOrBreastfeeding,
+      isNull,
+    );
+  });
+
   test('đang giảm cân mà cân chạm hoặc vượt mục tiêu thì coi là đã đạt và chuyển sang giữ cân', () {
     final losing = buildProfile(weightKg: 70, targetWeightKg: 65);
 

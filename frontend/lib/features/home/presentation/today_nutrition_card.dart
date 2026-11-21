@@ -171,8 +171,8 @@ class TodayNutritionCard extends StatelessWidget {
   }
 
   String _noTargetReason() => switch ((limits.profileStatus, limits.targetsKind)) {
-    (ProfileStatus.loaded, TargetsKind.teen) => 'Dưới 18 tuổi: Fluw không tính calo.',
-    (ProfileStatus.loaded, TargetsKind.belowMinimumAge) => 'Fluw chỉ tính chỉ tiêu từ 14 tuổi.',
+    (ProfileStatus.loaded, TargetsKind.belowMinimumAge) => 'Fluw dành cho người từ 18 tuổi.',
+    (ProfileStatus.loaded, TargetsKind.pregnancyOrBreastfeeding) => 'Mang thai hoặc cho con bú: Fluw không tính calo.',
     (ProfileStatus.loaded, _) => 'Hồ sơ chưa đủ để tính mục tiêu calo.',
     (ProfileStatus.unreadable, _) => 'Không đọc được hồ sơ.',
     _ => 'Thiết lập hồ sơ để có mục tiêu calo.',

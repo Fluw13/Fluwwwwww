@@ -9,8 +9,8 @@ double calculateBmr({
   required double heightCm,
   required int ageYears,
 }) {
-  if (ageYears < adultAgeYears) {
-    throw ArgumentError.value(ageYears, 'ageYears', 'BMR chỉ áp dụng từ $adultAgeYears tuổi');
+  if (ageYears < minimumAgeYears) {
+    throw ArgumentError.value(ageYears, 'ageYears', 'BMR chỉ áp dụng từ $minimumAgeYears tuổi');
   }
   final base = 10 * weightKg + 6.25 * heightCm - 5 * ageYears;
   return switch (formula) {

@@ -2,12 +2,13 @@
 /// instead of silently showing no allergen warnings.
 enum ProfileStatus { none, loading, unreadable, loaded }
 
-/// Which kind of daily targets a readable profile gets, so each case is worded on its own: a 16-year-old or a
-/// 12-year-old must never be told to fix a profile that is fine.
-enum TargetsKind { adult, teen, belowMinimumAge, invalid }
+/// Which kind of daily targets a readable profile gets, so each case is worded on its own: someone under 18 or a
+/// pregnant woman must never be told to fix a profile that is fine.
+enum TargetsKind { adult, belowMinimumAge, pregnancyOrBreastfeeding, invalid }
 
 /// What the user's profile says about foods, in a form any feature can use without importing the profile feature.
-/// Built in `app/` from the stored profile. A null limit means there is no target for it (no profile, under 18).
+/// Built in `app/` from the stored profile. A null limit means there is no target for it (no profile, under 18,
+/// pregnancy).
 final class PersonalLimits {
   const PersonalLimits({
     required this.profileStatus,
@@ -64,7 +65,7 @@ final class PersonalLimits {
 
   final double? dailyKcal;
 
-  /// The lower end of the protein range; teens get theirs too, since protein is the one target they have.
+  /// The lower end of the protein range.
   final double? proteinMinG;
   final double? sugarsMaxG;
   final double? saturatedFatMaxG;

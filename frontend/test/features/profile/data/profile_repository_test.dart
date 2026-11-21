@@ -186,6 +186,18 @@ void main() {
     expect((emitted.last as LoadedProfile).profile.dietary.allergies, {Allergen.eggs: AllergySeverity.mild});
   });
 
+  test('câu trả lời mang thai lưu và đọc lại được; dòng cũ thiếu cột đọc thành "chưa trả lời"', () async {
+    final pregnant = buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, weeklyChangeKg: null);
+    await repository.save(pregnant);
+    expect(await repository.load(), _loaded(pregnant));
+
+    await repository.save(buildProfile(sex: Sex.female));
+    expect(((await repository.load()) as LoadedProfile).profile.isPregnantOrBreastfeeding, isFalse);
+
+    await database.update(database.profiles).write(const ProfilesCompanion(pregnantOrBreastfeeding: Value(null)));
+    expect(((await repository.load()) as LoadedProfile).profile.isPregnantOrBreastfeeding, isNull);
+  });
+
   test('hướng mục tiêu đã lưu được giữ khi cân nặng vượt mục tiêu; dòng cũ thiếu cột thì suy từ cân nặng', () async {
     final reached = buildProfile(weightKg: 64.8, targetWeightKg: 65, plannedGoal: WeightGoal.lose);
     await repository.save(reached);

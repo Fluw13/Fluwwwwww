@@ -8,6 +8,7 @@ import 'generated/schema_v1.dart' as v1;
 import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
+import 'generated/schema_v5.dart' as v5;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -150,6 +151,65 @@ void main() {
           v4.WeightEntriesData(date: '2026-11-10', weightKg: 60.5),
         ]);
         expect(await newDb.select(newDb.noteEntries).get(), isEmpty);
+      },
+    );
+  });
+
+  test('v4 lên v5 giữ nguyên hồ sơ và dị ứng; câu trả lời mang thai để trống (chưa trả lời)', () async {
+    const oldProfile = v4.ProfilesData(
+      id: 1,
+      displayName: 'Lan',
+      sex: 'female',
+      bmrFormula: null,
+      birthDate: '1995-07-20',
+      heightCm: 158,
+      weightKg: 60,
+      targetWeightKg: 55,
+      activityLevel: 'moderate',
+      trainingType: 'none',
+      weeklyChangeKg: 0.5,
+      conditionNote: null,
+      limitsSugar: 1,
+      dietStyle: 'vegan',
+      allergyNote: 'Kiwi',
+      plannedGoal: 'lose',
+    );
+    const expectedProfile = v5.ProfilesData(
+      id: 1,
+      displayName: 'Lan',
+      sex: 'female',
+      bmrFormula: null,
+      birthDate: '1995-07-20',
+      heightCm: 158,
+      weightKg: 60,
+      targetWeightKg: 55,
+      activityLevel: 'moderate',
+      trainingType: 'none',
+      weeklyChangeKg: 0.5,
+      conditionNote: null,
+      limitsSugar: 1,
+      dietStyle: 'vegan',
+      allergyNote: 'Kiwi',
+      plannedGoal: 'lose',
+      pregnantOrBreastfeeding: null,
+    );
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 4,
+      newVersion: 5,
+      createOld: v4.DatabaseAtV4.new,
+      createNew: v5.DatabaseAtV5.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) {
+        batch
+          ..insert(oldDb.profiles, oldProfile)
+          ..insert(oldDb.profileAllergies, const v4.ProfileAllergiesData(allergenKey: 'milk', severityKey: 'mild'));
+      },
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.profiles).get(), [expectedProfile]);
+        expect(await newDb.select(newDb.profileAllergies).get(), const [
+          v5.ProfileAllergiesData(allergenKey: 'milk', severityKey: 'mild'),
+        ]);
       },
     );
   });

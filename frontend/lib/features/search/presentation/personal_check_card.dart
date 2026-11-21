@@ -83,7 +83,10 @@ class PersonalCheckCard extends StatelessWidget {
         Text('Khẩu phần này chiếm trong chỉ tiêu cả ngày:', style: theme.textTheme.bodyMedium),
         for (final share in shares) _ShareRow(share: share),
       ] else if (!hasLimits)
-        Text('Hồ sơ hiện chưa có chỉ tiêu mỗi ngày (dưới 18 tuổi hoặc hồ sơ cần sửa).', style: muted)
+        Text(
+          'Hồ sơ hiện chưa có chỉ tiêu mỗi ngày (dưới 18 tuổi, mang thai hoặc cho con bú, hoặc hồ sơ cần sửa).',
+          style: muted,
+        )
       else
         Text('Chưa đủ số liệu của món để so với chỉ tiêu.', style: muted),
     ];

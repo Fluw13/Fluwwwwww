@@ -145,15 +145,17 @@ void main() {
     );
   });
 
-  test('dưới 18 tuổi: không nói về calo, nhắc hỏi chuyên gia; dưới 14 tuổi và hồ sơ lỗi có lời riêng', () {
-    expect(
-      _advice(_limits(kcal: null, proteinMin: 45, kind: TargetsKind.teen), {Nutrient.proteinG: 50}).single.title,
-      'Dưới 18 tuổi',
-    );
+  test('dưới 18 tuổi, mang thai hoặc cho con bú và hồ sơ lỗi: mỗi trường hợp một lời, không nói về calo', () {
     expect(
       _advice(_limits(kcal: null, proteinMin: null, kind: TargetsKind.belowMinimumAge), const {}).single.title,
-      'Fluw chỉ tính chỉ tiêu từ 14 tuổi',
+      'Fluw dành cho người từ 18 tuổi',
     );
+    final pregnancy = _advice(_limits(kcal: null, proteinMin: null, kind: TargetsKind.pregnancyOrBreastfeeding), {
+      Nutrient.energyKcal: 2500,
+      Nutrient.proteinG: 10,
+    }, hour: _evening).single;
+    expect(pregnancy.title, 'Mang thai hoặc cho con bú');
+    expect(pregnancy.body, contains('Hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng.'));
     expect(
       _advice(_limits(kcal: null, proteinMin: null, kind: TargetsKind.invalid), const {}).single.title,
       'Chưa tính được chỉ tiêu',

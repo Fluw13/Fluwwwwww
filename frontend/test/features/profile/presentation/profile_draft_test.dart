@@ -17,6 +17,7 @@ ProfileDraft _filled({
   String displayName = '  Lê An ',
   Sex sex = Sex.female,
   BmrFormula? bmrFormulaForOther,
+  bool? isPregnantOrBreastfeeding = false,
   CalendarDate? birthDate,
   String heightText = '165',
   String weightText = '58,5',
@@ -28,6 +29,7 @@ ProfileDraft _filled({
     displayName: displayName,
     sex: sex,
     bmrFormulaForOther: bmrFormulaForOther,
+    isPregnantOrBreastfeeding: isPregnantOrBreastfeeding,
     birthDate: birthDate ?? CalendarDate(1998, 3, 4),
     heightText: heightText,
     weightText: weightText,
@@ -96,10 +98,10 @@ void main() {
 
   test('giữ cân hoặc dưới 18 tuổi thì bỏ tốc độ cũ, không lưu lại', () {
     final maintain = _filled(targetWeightText: '58.5').toProfile(today: fixtureToday) as DraftValid;
-    final teen = _filled(birthDate: CalendarDate(2010, 1, 1)).toProfile(today: fixtureToday) as DraftValid;
+    final minor = _filled(birthDate: CalendarDate(2010, 1, 1)).toProfile(today: fixtureToday) as DraftValid;
 
     expect(maintain.profile.weeklyChangeKg, isNull);
-    expect(teen.profile.weeklyChangeKg, isNull);
+    expect(minor.profile.weeklyChangeKg, isNull);
     expect(_filled(birthDate: CalendarDate(2010, 1, 1)).needsWeeklyChange(today: fixtureToday), isFalse);
   });
 
@@ -111,6 +113,49 @@ void main() {
 
     expect((other as DraftValid).profile.bmrFormulaForOther, BmrFormula.male);
     expect((male as DraftValid).profile.bmrFormulaForOther, isNull);
+  });
+
+  group('mang thai hoặc cho con bú', () {
+    test('chỉ hỏi khi theo công thức Nữ', () {
+      expect(const ProfileDraft(sex: Sex.female).asksPregnancy, isTrue);
+      expect(const ProfileDraft(sex: Sex.other, bmrFormulaForOther: BmrFormula.female).asksPregnancy, isTrue);
+      expect(const ProfileDraft(sex: Sex.other, bmrFormulaForOther: BmrFormula.male).asksPregnancy, isFalse);
+      expect(const ProfileDraft(sex: Sex.other).asksPregnancy, isFalse);
+      expect(const ProfileDraft(sex: Sex.male).asksPregnancy, isFalse);
+      expect(const ProfileDraft().asksPregnancy, isFalse);
+    });
+
+    test('nữ chưa trả lời thì báo ở ô câu hỏi', () {
+      expect(_errorsOf(_filled(isPregnantOrBreastfeeding: null)), {
+        ProfileField.pregnancy: 'Cho biết bạn có đang mang thai hoặc cho con bú không.',
+      });
+    });
+
+    test('trả lời Có thì không hỏi tốc độ và bỏ tốc độ cũ', () {
+      final pregnant = _filled(isPregnantOrBreastfeeding: true);
+
+      expect(pregnant.needsWeeklyChange(today: fixtureToday), isFalse);
+      final profile = (pregnant.toProfile(today: fixtureToday) as DraftValid).profile;
+      expect(profile.isPregnantOrBreastfeeding, isTrue);
+      expect(profile.weeklyChangeKg, isNull);
+    });
+
+    test('câu trả lời cũ không làm người theo công thức Nam mất ô tốc độ', () {
+      expect(_filled(sex: Sex.male, isPregnantOrBreastfeeding: true).needsWeeklyChange(today: fixtureToday), isTrue);
+    });
+  });
+
+  test('giảm cân xuống dưới BMI 18,5 hoặc giảm khi đang thiếu cân thì báo ở ô cân nặng mong muốn', () {
+    // 165 cm: BMI 18.5 là 50,37 kg.
+    expect(_errorsOf(_filled(targetWeightText: '50')).keys, {ProfileField.targetWeight});
+    expect(
+      _errorsOf(_filled(targetWeightText: '50'))[ProfileField.targetWeight],
+      startsWith('Cân nặng mong muốn cho BMI dưới 18.5'),
+    );
+    expect(
+      _errorsOf(_filled(weightText: '50', targetWeightText: '48'))[ProfileField.targetWeight],
+      startsWith('Bạn đang thiếu cân'),
+    );
   });
 
   test('mở lại hồ sơ đã lưu thì ra bản nháp tạo lại đúng hồ sơ đó', () {
@@ -128,6 +173,8 @@ void main() {
     );
 
     expect((ProfileDraft.fromProfile(profile).toProfile(today: fixtureToday) as DraftValid).profile, profile);
+    final pregnant = buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, weeklyChangeKg: null);
+    expect((ProfileDraft.fromProfile(pregnant).toProfile(today: fixtureToday) as DraftValid).profile, pregnant);
   });
 
   test('hai bản nháp cùng nội dung thì bằng nhau, khác một ô thì khác', () {
@@ -135,5 +182,6 @@ void main() {
     expect(_filled().hashCode, _filled().hashCode);
     expect(_filled(heightText: '166'), isNot(_filled()));
     expect(_filled(conditionNote: 'Hen'), isNot(_filled()));
+    expect(_filled(isPregnantOrBreastfeeding: true), isNot(_filled()));
   });
 }
