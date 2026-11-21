@@ -15,8 +15,9 @@ double minimumIntakeKcal(BmrFormula formula) => switch (formula) {
   BmrFormula.male => 1500,
 };
 
-/// Which floor a weight-loss target was raised to.
-enum CalorieFloor { bmr, womenMinimum, menMinimum }
+/// Which floor a weight-loss target was raised to. [maintenance]: the minimum is at or above TDEE, so any target at
+/// the minimum would gain weight; the target stays at TDEE and no deficit is set.
+enum CalorieFloor { bmr, womenMinimum, menMinimum, maintenance }
 
 final class CalorieTarget {
   const CalorieTarget({required this.kcal, required this.raisedTo});
@@ -59,9 +60,12 @@ CalorieTarget calculateCalorieTarget({
           ? CalorieFloor.bmr
           : (formula == BmrFormula.female ? CalorieFloor.womenMinimum : CalorieFloor.menMinimum);
       final floorKcal = max(bmr, minimum);
-      return kcal < floorKcal
-          ? CalorieTarget(kcal: floorKcal, raisedTo: floor)
-          : CalorieTarget(kcal: kcal, raisedTo: null);
+      if (kcal >= floorKcal) {
+        return CalorieTarget(kcal: kcal, raisedTo: null);
+      }
+      return floorKcal >= tdee
+          ? CalorieTarget(kcal: tdee, raisedTo: CalorieFloor.maintenance)
+          : CalorieTarget(kcal: floorKcal, raisedTo: floor);
   }
 }
 

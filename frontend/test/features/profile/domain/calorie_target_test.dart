@@ -80,11 +80,19 @@ void main() {
     expect(result.isRaisedToMinimum, isFalse);
   });
 
-  test('mức tối thiểu cao hơn cả TDEE thì vẫn giữ mức tối thiểu', () {
+  test('mức tối thiểu cao hơn cả TDEE thì không đặt mức dư: mục tiêu bằng TDEE', () {
+    // 1.200 kcal lúc này cao hơn mức tiêu hao 1.080, tức là tăng cân.
     final result = target(goal: WeightGoal.lose, bmr: 900, tdee: 1080, weeklyChangeKg: 0.25);
 
+    expect(result.kcal, 1080);
+    expect(result.raisedTo, CalorieFloor.maintenance);
+  });
+
+  test('mức tối thiểu đúng bằng TDEE cũng thành mục tiêu giữ cân', () {
+    final result = target(goal: WeightGoal.lose, bmr: 1000, tdee: 1200, weeklyChangeKg: 0.25);
+
     expect(result.kcal, 1200);
-    expect(result.raisedTo, CalorieFloor.womenMinimum);
+    expect(result.raisedTo, CalorieFloor.maintenance);
   });
 
   test('mức tối thiểu chỉ áp cho giảm cân: giữ cân với TDEE dưới 1.200 thì vẫn bằng TDEE', () {

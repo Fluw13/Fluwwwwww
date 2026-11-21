@@ -115,6 +115,29 @@ void main() {
     expect(find.textContaining('bệnh thận'), findsNothing);
   });
 
+  testWidgets('TDEE dưới mức tối thiểu: muốn giảm cân thì mục tiêu bằng mức giữ cân, khuyên hỏi chuyên gia', (
+    tester,
+  ) async {
+    await openProfileTab(
+      tester,
+      saved: buildProfile(
+        sex: Sex.female,
+        birthDate: CalendarDate(1966, 1, 1),
+        weightKg: 45,
+        heightCm: 150,
+        targetWeightKg: 43,
+        activityLevel: ActivityLevel.sedentary,
+        trainingType: TrainingType.none,
+      ),
+    );
+
+    // BMR 926.5, TDEE 1,111.8: 1.200 kcal sẽ là ăn dư, nên mục tiêu giữ ở TDEE.
+    expect(find.text('Giảm cân 2 kg · chưa ước tính được thời gian'), findsOneWidget);
+    await scrollTo(tester, find.text('1,112 kcal/ngày'));
+    expect(find.textContaining('nên Fluw để mục tiêu bằng mức giữ cân'), findsOneWidget);
+    expect(find.text('1,200 kcal/ngày'), findsNothing);
+  });
+
   testWidgets('hồ sơ cũ của người dưới 18 tuổi vẫn mở được, không có BMI và chỉ tiêu', (tester) async {
     await openProfileTab(tester, saved: buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null));
 

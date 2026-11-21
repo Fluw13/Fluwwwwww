@@ -152,6 +152,9 @@ String _calorieNote(CalorieTarget calories, {required double tdee}) {
     CalorieFloor.bmr => 'Đã nâng lên bằng BMR (năng lượng cơ bản) $why',
     CalorieFloor.womenMinimum => 'Đã nâng lên mức tối thiểu $kcal kcal/ngày (nữ) $why',
     CalorieFloor.menMinimum => 'Đã nâng lên mức tối thiểu $kcal kcal/ngày (nam) $why',
+    CalorieFloor.maintenance =>
+      'Mức tiêu hao ước tính (TDEE) đã thấp hơn mức tối thiểu khi giảm cân (1,200 kcal nữ, 1,500 kcal nam), nên Fluw '
+          'để mục tiêu bằng mức giữ cân. Muốn giảm cân, hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng.',
     null => null,
   };
   if (raised != null) {
