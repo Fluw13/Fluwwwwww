@@ -50,7 +50,7 @@ void main() {
   test('ghi nguồn của mọi công thức, đúng tên nghiên cứu', () {
     for (final source in [
       'Mifflin MD, St Jeor ST',
-      'NIH/NHLBI',
+      'NHLBI (2005), Your Guide to Lowering Your Cholesterol with TLC',
       'Hector AJ, Phillips SM (2018)',
       'Morton RW và cs. (2018)',
       'Jäger R và cs. (2017)',

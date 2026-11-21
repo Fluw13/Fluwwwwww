@@ -47,11 +47,12 @@ final List<MethodSection> methodologySections = [
     ),
     MethodItem(
       'Mức tối thiểu khi giảm cân',
-      'Mục tiêu không thấp hơn BMR và không thấp hơn 1,200 kcal/ngày (nữ) hoặc 1,500 kcal/ngày (nam); ăn thấp hơn '
-          'cần bác sĩ theo dõi. Khi mức tối thiểu bằng hoặc cao hơn TDEE, mục tiêu giữ bằng TDEE (mức giữ cân).',
+      'Mục tiêu không thấp hơn BMR và không thấp hơn 1,200 kcal/ngày (nữ) hoặc 1,500 kcal/ngày (nam): mức thấp nhất '
+          'trong các kế hoạch ăn giảm cân NHLBI đưa cho người tự thực hiện. Chương trình có bác sĩ theo dõi có thể '
+          'dùng mức thấp hơn. Khi mức tối thiểu bằng hoặc cao hơn TDEE, mục tiêu giữ bằng TDEE (mức giữ cân).',
       sources: [
-        'NIH/NHLBI (2000), The Practical Guide: Identification, Evaluation, and Treatment of Overweight and Obesity '
-            'in Adults.',
+        'NHLBI (2005), Your Guide to Lowering Your Cholesterol with TLC: kế hoạch ăn giảm cân 1,200–1,500 kcal/ngày '
+            '(nữ), 1,500–1,800 kcal/ngày (nam).',
       ],
     ),
     MethodItem(
