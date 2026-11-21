@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:fluw/app/personal_limits_from_profile.dart';
 import 'package:fluw/core/diary/diary_reader.dart';
 import 'package:fluw/core/diary/food_logger.dart';
+import 'package:fluw/core/diary/recent_foods_reader.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/nutrition/personal_limits_provider.dart';
 import 'package:fluw/core/time/today_provider.dart';
@@ -15,6 +16,7 @@ import 'package:fluw/features/profile/data/stored_profile.dart';
 List<Override> crossFeatureOverrides() => [
   foodLoggerProvider.overrideWith((ref) => NoteFoodLogger(ref.watch(noteRepositoryProvider))),
   diaryReaderProvider.overrideWith((ref) => ref.watch(noteRepositoryProvider)),
+  recentFoodsReaderProvider.overrideWith((ref) => ref.watch(noteRepositoryProvider)),
   personalLimitsProvider.overrideWith(
     (ref) => switch (ref.watch(storedProfileProvider)) {
       AsyncData(value: LoadedProfile(:final profile)) => personalLimitsFromProfile(

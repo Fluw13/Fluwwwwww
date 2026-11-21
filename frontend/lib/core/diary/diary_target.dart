@@ -25,7 +25,7 @@ final class DiaryTarget {
 }
 
 /// Set by the diary when the user taps "add" in a slot, so the screen that logs the food starts on that day and slot.
-/// Cleared once a food is logged.
+/// Cleared once a food is logged, and when the user leaves the search and scan tabs without logging.
 final diaryTargetProvider = NotifierProvider<DiaryTargetNotifier, DiaryTarget?>(DiaryTargetNotifier.new);
 
 class DiaryTargetNotifier extends Notifier<DiaryTarget?> {

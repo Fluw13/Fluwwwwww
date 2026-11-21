@@ -14,6 +14,7 @@ import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
+import 'package:fluw/features/profile/domain/weight_entry.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 import '../../../helpers/in_memory_database.dart';
@@ -286,5 +287,25 @@ void main() {
     await subscription.cancel();
 
     expect(emitted, [isA<NoProfile>(), _loaded(first), _loaded(second), isA<NoProfile>()]);
+  });
+
+  test('lưu hồ sơ kèm lần cân hôm nay trong một transaction: lần cân lỗi thì hồ sơ cũng không được lưu', () async {
+    final today = CalendarDate(2026, 11, 11);
+    final profile = buildProfile(weightKg: 64);
+
+    await expectLater(
+      repository.save(
+        profile,
+        weighIn: WeightEntry(date: today, weightKg: double.nan),
+      ),
+      throwsArgumentError,
+    );
+    expect(await repository.load(), isA<NoProfile>());
+    expect(await database.select(database.weightEntries).get(), isEmpty);
+
+    await repository.save(profile, weighIn: WeightEntry(date: today, weightKg: 64));
+    expect(await repository.load(), _loaded(profile));
+    final weighIns = await database.select(database.weightEntries).get();
+    expect([for (final row in weighIns) (row.date, row.weightKg)], [('2026-11-11', 64.0)]);
   });
 }

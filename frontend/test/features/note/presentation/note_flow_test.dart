@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
@@ -11,12 +12,14 @@ import 'package:fluw/core/diary/food_logger.dart';
 import 'package:fluw/core/diary/logged_food.dart';
 import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/diary/note_entry.dart';
+import 'package:fluw/core/diary/note_window.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/note/data/note_providers.dart';
+import 'package:fluw/features/note/presentation/week_strip.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/search/presentation/add_to_note_bar.dart';
@@ -27,6 +30,17 @@ import '../../../fixtures/food_api_samples.dart';
 import '../../../helpers/load_app_fonts.dart';
 import '../../../helpers/pump_fluw_app.dart';
 import '../../profile/domain/profile_fixture.dart';
+
+final class _SlowLogger implements FoodLogger {
+  final Completer<void> done = Completer<void>();
+  final List<LoggedFood> logged = [];
+
+  @override
+  Future<void> log(LoggedFood food) async {
+    await done.future;
+    logged.add(food);
+  }
+}
 
 final class _FailingLogger implements FoodLogger {
   @override
@@ -173,7 +187,7 @@ void main() {
   ) async {
     await pumpFluwApp(tester, httpClient: chickenBackend);
     await openChickenDetail(tester);
-    final current = DiaryTarget.current(DateTime.now()).day;
+    final current = appTestToday;
 
     expect(find.text('Thêm vào Nhật ký hôm nay'), findsOneWidget);
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '0');
@@ -428,4 +442,171 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('sửa món: đổi khẩu phần và khung, Hoàn tác thì về như cũ', (tester) async {
+    await pumpFluwApp(tester);
+    await addEntry(tester, _entry('a', 'Phở bò', DateTime(2026, 11, 11, 7, 30), quantity: 300));
+    await openNote(tester);
+
+    await scrollTo(tester, find.byTooltip('Sửa Phở bò'));
+    await tester.tap(find.byTooltip('Sửa Phở bò'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sửa món'), findsOneWidget);
+    expect(find.text('Bữa: Sáng (06:00 - 12:00)'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '200');
+    await tester.tap(find.text('18–24h'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bữa: Tối (18:01 - 24:00)'), findsOneWidget);
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã sửa Phở bò'), findsOneWidget);
+    var stored = await storedOn(tester, DateTime(2026, 11, 11), DateTime(2026, 11, 12));
+    expect(stored.single.quantity, 200);
+    expect(stored.single.placement, (day: appTestToday, slot: MealSlot.evening));
+    expect(
+      stored.single.eatenAt.toLocal(),
+      DateTime(2026, 11, 11, 21),
+      reason: 'khung khác khung đang diễn ra: giờ cố định',
+    );
+
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+    stored = await storedOn(tester, DateTime(2026, 11, 11), DateTime(2026, 11, 12));
+    expect(stored.single.quantity, 300);
+    expect(stored.single.eatenAt.toLocal(), DateTime(2026, 11, 11, 7, 30));
+  });
+
+  testWidgets('sửa món: Hủy thì không đổi gì; đổi ngày bằng lịch thì món sang ngày đó, giờ cố định của khung', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester);
+    await addEntry(tester, _entry('a', 'Phở bò', DateTime(2026, 11, 11, 7, 30), quantity: 300));
+    await openNote(tester);
+    Future<void> openEditor() async {
+      await scrollTo(tester, find.byTooltip('Sửa Phở bò'));
+      await tester.tap(find.byTooltip('Sửa Phở bò'));
+      await tester.pumpAndSettle();
+    }
+
+    await openEditor();
+    await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '250');
+    await tester.tap(find.text('Hủy'));
+    await tester.pumpAndSettle();
+    expect((await storedOn(tester, DateTime(2026, 11, 11), DateTime(2026, 11, 12))).single.quantity, 300);
+
+    await openEditor();
+    await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '250');
+    await tester.tap(find.text('Đổi ngày'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('10'));
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ngày 10/11/2026'), findsOneWidget);
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    final moved = await storedOn(tester, DateTime(2026, 11, 10), DateTime(2026, 11, 11));
+    expect(moved.single.quantity, 250);
+    expect(
+      moved.single.eatenAt.toLocal(),
+      DateTime(2026, 11, 10, 9),
+      reason: 'sang ngày khác: giờ cố định của khung Sáng',
+    );
+    expect(find.text('Phở bò'), findsNothing, reason: 'món đã sang ngày 10, không còn ở ngày đang xem');
+  });
+
+  testWidgets('sửa món lỗi (món vừa bị xóa) thì báo, không nói đã sửa', (tester) async {
+    await pumpFluwApp(tester);
+    await addEntry(tester, _entry('a', 'Phở bò', DateTime(2026, 11, 11, 7, 30)));
+    await openNote(tester);
+    await scrollTo(tester, find.byTooltip('Sửa Phở bò'));
+    await tester.tap(find.byTooltip('Sửa Phở bò'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => appContainer(tester).read(noteRepositoryProvider).delete('a'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '120');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Không sửa được Phở bò. Vui lòng thử lại.'), findsOneWidget);
+    expect(find.text('Đã sửa Phở bò'), findsNothing);
+  });
+
+  testWidgets('đang tải tuần mới thì dải tuần vẫn hiện, chỉ phần dưới chờ', (tester) async {
+    final never = StreamController<NoteWindow>();
+    addTearDown(never.close);
+    await pumpFluwApp(tester, overrides: [weekNoteEntriesProvider.overrideWith((ref, monday) => never.stream)]);
+    await tester.tap(find.text(AppTab.note.label).last);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(WeekStrip), findsOneWidget);
+    expect(find.text('Tháng 11, 2026'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('bỏ dở "Thêm món" ở một khung: rời Tra Cứu sang tab khác thì bỏ khung đã chọn; sang Quét Món thì giữ', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester, httpClient: chickenBackend);
+    await openNote(tester);
+    await scrollTo(tester, find.text('Thêm món vào buổi tối'));
+    await tester.tap(find.text('Thêm món vào buổi tối'));
+    await tester.pumpAndSettle();
+    final target = DiaryTarget(day: appTestToday, slot: MealSlot.evening);
+    expect(appContainer(tester).read(diaryTargetProvider), target);
+
+    await tester.tap(find.text(AppTab.scan.label).last);
+    await tester.pumpAndSettle();
+    expect(appContainer(tester).read(diaryTargetProvider), target, reason: 'quét mã vẫn là cách thêm món');
+
+    await tester.tap(find.text(AppTab.home.label).last);
+    await tester.pumpAndSettle();
+    expect(appContainer(tester).read(diaryTargetProvider), isNull);
+
+    await openChickenDetail(tester);
+    expect(inAddBar(find.text('Sáng')), findsOneWidget, reason: 'về khung đang diễn ra (09:00), không phải Tối cũ');
+  });
+
+  testWidgets('rời Chi tiết khi đang ghi: món vẫn vào Nhật ký, báo đã thêm, không báo lỗi nhầm', (tester) async {
+    final logger = _SlowLogger();
+    await pumpFluwApp(tester, httpClient: chickenBackend, overrides: [foodLoggerProvider.overrideWithValue(logger)]);
+    await openChickenDetail(tester);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Thêm vào Nhật ký'));
+    await tester.pump();
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    logger.done.complete();
+    await tester.pumpAndSettle();
+
+    expect(logger.logged.single.quantity, 100);
+    expect(find.text('Không thêm được vào Nhật ký. Vui lòng thử lại.'), findsNothing);
+    expect(find.textContaining('Đã thêm Chicken, broiler'), findsOneWidget);
+  });
+
+  testWidgets('320x568 cỡ chữ 310%: bảng sửa món không tràn, thấy nút Lưu', (tester) async {
+    tester.view
+      ..physicalSize = const Size(320, 568)
+      ..devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 3.1;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await loadAppFonts();
+    await pumpFluwApp(tester);
+    await addEntry(tester, _entry('a', 'Bún bò Huế đặc biệt nhiều thịt', DateTime(2026, 11, 11, 7, 30)));
+    await openNote(tester);
+
+    await scrollTo(tester, find.byTooltip('Sửa Bún bò Huế đặc biệt nhiều thịt'));
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byTooltip('Sửa Bún bò Huế đặc biệt nhiều thịt'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Lưu thay đổi'));
+    await tester.pumpAndSettle();
+    expect(find.text('Lưu thay đổi').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

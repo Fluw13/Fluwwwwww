@@ -42,14 +42,16 @@ final class ApiClient {
       throw const NetworkFailure();
     }
 
+    // A 5xx that is not the backend's own error body comes from the host in front of it, not from Fluw.
+    final unreadable = response.statusCode >= 500 ? const ServerUnavailableFailure() : const InvalidResponseFailure();
     final Object? body;
     try {
       body = jsonDecode(utf8.decode(response.bodyBytes));
     } on FormatException {
-      throw const InvalidResponseFailure();
+      throw unreadable;
     }
     if (body is! Map<String, Object?>) {
-      throw const InvalidResponseFailure();
+      throw unreadable;
     }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
@@ -62,6 +64,6 @@ final class ApiClient {
         message: error['message']! as String,
       );
     }
-    throw const InvalidResponseFailure();
+    throw unreadable;
   }
 }

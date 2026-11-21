@@ -5,4 +5,5 @@ String apiFailureMessage(ApiFailure failure) => switch (failure) {
   TimeoutFailure() => 'Máy chủ phản hồi quá lâu. Hãy thử lại sau ít phút.',
   ServerFailure(:final message) => message,
   InvalidResponseFailure() => 'Máy chủ trả dữ liệu không đọc được. Hãy thử lại sau.',
+  ServerUnavailableFailure() => 'Máy chủ đang khởi động hoặc bận, hãy thử lại sau ít phút.',
 };
