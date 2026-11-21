@@ -29,6 +29,7 @@ ProfilesCompanion profileToRow(HealthProfile profile) {
     dietStyle: Value(dietStyleKeys[profile.dietary.dietStyle]),
     allergyNote: Value(profile.dietary.allergyNote),
     plannedGoal: Value(weightGoalKeys[profile.plannedGoal]),
+    pregnantOrBreastfeeding: Value(profile.isPregnantOrBreastfeeding),
   );
 }
 
@@ -56,6 +57,8 @@ HealthProfile? profileFromRow(ProfileRow row, Iterable<String> conditionKeys, Di
       final key? => valueForKey(bmrFormulaKeys, key),
       null => null,
     },
+    // Rows from before schema v5 read as "not answered"; validation then asks adult women to answer.
+    isPregnantOrBreastfeeding: row.pregnantOrBreastfeeding,
     birthDate: birthDate,
     heightCm: row.heightCm,
     weightKg: row.weightKg,

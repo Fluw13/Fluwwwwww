@@ -40,7 +40,7 @@ void main() {
         'note_entries',
       ]),
     );
-    expect(database.schemaVersion, 4);
+    expect(database.schemaVersion, 5);
   });
 
   test('bảng hồ sơ chỉ nhận đúng một dòng có id cố định', () async {

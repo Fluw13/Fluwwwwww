@@ -170,18 +170,20 @@ List<Advice> adviceFor({
           body: 'Nếu chưa ăn tối, đừng bỏ bữa: một bữa vừa phải giúp bạn gần mục tiêu hơn.',
         ),
     ...switch (limits.targetsKind) {
-      TargetsKind.teen => const [
-        Advice(
-          kind: AdviceKind.note,
-          title: 'Dưới 18 tuổi',
-          body: 'Fluw không tính calo cho người dưới 18 tuổi. Hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng.',
-        ),
-      ],
       TargetsKind.belowMinimumAge => const [
         Advice(
           kind: AdviceKind.note,
-          title: 'Fluw chỉ tính chỉ tiêu từ 14 tuổi',
+          title: 'Fluw dành cho người từ 18 tuổi',
           body: 'Hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng về lượng ăn phù hợp.',
+        ),
+      ],
+      TargetsKind.pregnancyOrBreastfeeding => const [
+        Advice(
+          kind: AdviceKind.note,
+          title: 'Mang thai hoặc cho con bú',
+          body:
+              'Nhu cầu năng lượng và đạm khi mang thai hoặc cho con bú khác người thường. '
+              'Hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng.',
         ),
       ],
       TargetsKind.invalid => const [

@@ -32,11 +32,11 @@ String activityLevelLabel(ActivityLevel level) => switch (level) {
 };
 
 String activityLevelDescription(ActivityLevel level) => switch (level) {
-  ActivityLevel.sedentary => 'Ngồi nhiều, hầu như không tập',
-  ActivityLevel.light => 'Tập nhẹ 1–3 buổi mỗi tuần',
-  ActivityLevel.moderate => 'Tập 3–5 buổi mỗi tuần',
-  ActivityLevel.active => 'Tập 6–7 buổi mỗi tuần',
-  ActivityLevel.veryActive => 'Lao động nặng hoặc tập 2 lần mỗi ngày',
+  ActivityLevel.sedentary => 'Làm việc ngồi, ít đi lại, hầu như không tập',
+  ActivityLevel.light => 'Đi lại vừa phải hoặc tập nhẹ 1–3 buổi mỗi tuần',
+  ActivityLevel.moderate => 'Đi lại nhiều hoặc tập 3–5 buổi mỗi tuần',
+  ActivityLevel.active => 'Đứng, đi lại gần cả ngày hoặc tập 6–7 buổi mỗi tuần',
+  ActivityLevel.veryActive => 'Lao động chân tay nặng hoặc tập 2 lần mỗi ngày',
 };
 
 String trainingTypeLabel(TrainingType type) => switch (type) {
@@ -47,7 +47,7 @@ String trainingTypeLabel(TrainingType type) => switch (type) {
 
 String trainingTypeDescription(TrainingType type) => switch (type) {
   TrainingType.none => 'Đi lại, việc nhà',
-  TrainingType.endurance => 'Chạy bộ, đạp xe, yoga',
+  TrainingType.endurance => 'Chạy bộ, đạp xe, bơi',
   TrainingType.strength => 'Tập tạ, tăng cơ',
 };
 
@@ -92,9 +92,16 @@ String profileIssueMessage(ProfileIssue issue) => switch (issue) {
   ProfileIssue.birthDateInFuture => 'Ngày sinh không được ở tương lai.',
   ProfileIssue.birthDateTooOld => 'Fluw chỉ tính cho người tối đa $maximumAgeYears tuổi.',
   ProfileIssue.bmrFormulaMissing => 'Chọn công thức để tính năng lượng cơ bản (BMR).',
+  ProfileIssue.pregnancyAnswerMissing => 'Cho biết bạn có đang mang thai hoặc cho con bú không.',
   ProfileIssue.heightOutOfRange => 'Chiều cao từ ${minHeightCm.round()} đến ${maxHeightCm.round()} cm.',
   ProfileIssue.weightOutOfRange => 'Cân nặng từ ${minWeightKg.round()} đến ${maxWeightKg.round()} kg.',
   ProfileIssue.targetWeightOutOfRange => 'Cân nặng mong muốn từ ${minWeightKg.round()} đến ${maxWeightKg.round()} kg.',
+  ProfileIssue.targetBmiTooLow =>
+    'Cân nặng mong muốn cho BMI dưới 18.5 (thiếu cân theo thang châu Á). Fluw không tính chỉ tiêu giảm cân tới mức '
+        'này. Hãy hỏi bác sĩ.',
+  ProfileIssue.loseWhenUnderweight =>
+    'Bạn đang thiếu cân (BMI dưới 18.5 theo thang châu Á). Fluw không tính chỉ tiêu giảm cân khi đang thiếu cân. '
+        'Hãy hỏi bác sĩ.',
   ProfileIssue.weeklyChangeMissing => 'Chọn tốc độ thay đổi cân nặng mỗi tuần.',
   ProfileIssue.weeklyChangeOutOfRange =>
     'Tốc độ thay đổi cân nặng phải lớn hơn 0 và không quá $maxWeeklyChangeKg kg mỗi tuần.',

@@ -345,7 +345,7 @@ void main() {
           sex: Sex.female,
           weightKg: 50,
           heightCm: 160,
-          targetWeightKg: 45,
+          targetWeightKg: 48,
           activityLevel: ActivityLevel.sedentary,
           conditions: {HealthCondition.diabetes, HealthCondition.hypertension},
         ),

@@ -153,6 +153,16 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _pregnantOrBreastfeedingMeta = const VerificationMeta('pregnantOrBreastfeeding');
+  @override
+  late final GeneratedColumn<bool> pregnantOrBreastfeeding = GeneratedColumn<bool>(
+    'pregnant_or_breastfeeding',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("pregnant_or_breastfeeding" IN (0, 1))'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -171,6 +181,7 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     dietStyle,
     allergyNote,
     plannedGoal,
+    pregnantOrBreastfeeding,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -257,6 +268,12 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
     if (data.containsKey('planned_goal')) {
       context.handle(_plannedGoalMeta, plannedGoal.isAcceptableOrUnknown(data['planned_goal']!, _plannedGoalMeta));
     }
+    if (data.containsKey('pregnant_or_breastfeeding')) {
+      context.handle(
+        _pregnantOrBreastfeedingMeta,
+        pregnantOrBreastfeeding.isAcceptableOrUnknown(data['pregnant_or_breastfeeding']!, _pregnantOrBreastfeedingMeta),
+      );
+    }
     return context;
   }
 
@@ -288,6 +305,10 @@ class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, ProfileRow>
       dietStyle: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}diet_style']),
       allergyNote: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}allergy_note']),
       plannedGoal: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}planned_goal']),
+      pregnantOrBreastfeeding: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pregnant_or_breastfeeding'],
+      ),
     );
   }
 
@@ -322,6 +343,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
 
   /// Added in schema v3. Old rows derive it from the two weights.
   final String? plannedGoal;
+
+  /// Added in schema v5. `null` when not answered: rows from before the question existed, or not asked.
+  final bool? pregnantOrBreastfeeding;
   const ProfileRow({
     required this.id,
     this.displayName,
@@ -339,6 +363,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     this.dietStyle,
     this.allergyNote,
     this.plannedGoal,
+    this.pregnantOrBreastfeeding,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -373,6 +398,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     if (!nullToAbsent || plannedGoal != null) {
       map['planned_goal'] = Variable<String>(plannedGoal);
     }
+    if (!nullToAbsent || pregnantOrBreastfeeding != null) {
+      map['pregnant_or_breastfeeding'] = Variable<bool>(pregnantOrBreastfeeding);
+    }
     return map;
   }
 
@@ -394,6 +422,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       dietStyle: dietStyle == null && nullToAbsent ? const Value.absent() : Value(dietStyle),
       allergyNote: allergyNote == null && nullToAbsent ? const Value.absent() : Value(allergyNote),
       plannedGoal: plannedGoal == null && nullToAbsent ? const Value.absent() : Value(plannedGoal),
+      pregnantOrBreastfeeding: pregnantOrBreastfeeding == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pregnantOrBreastfeeding),
     );
   }
 
@@ -416,6 +447,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       dietStyle: serializer.fromJson<String?>(json['dietStyle']),
       allergyNote: serializer.fromJson<String?>(json['allergyNote']),
       plannedGoal: serializer.fromJson<String?>(json['plannedGoal']),
+      pregnantOrBreastfeeding: serializer.fromJson<bool?>(json['pregnantOrBreastfeeding']),
     );
   }
   @override
@@ -438,6 +470,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       'dietStyle': serializer.toJson<String?>(dietStyle),
       'allergyNote': serializer.toJson<String?>(allergyNote),
       'plannedGoal': serializer.toJson<String?>(plannedGoal),
+      'pregnantOrBreastfeeding': serializer.toJson<bool?>(pregnantOrBreastfeeding),
     };
   }
 
@@ -458,6 +491,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     Value<String?> dietStyle = const Value.absent(),
     Value<String?> allergyNote = const Value.absent(),
     Value<String?> plannedGoal = const Value.absent(),
+    Value<bool?> pregnantOrBreastfeeding = const Value.absent(),
   }) => ProfileRow(
     id: id ?? this.id,
     displayName: displayName.present ? displayName.value : this.displayName,
@@ -475,6 +509,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     dietStyle: dietStyle.present ? dietStyle.value : this.dietStyle,
     allergyNote: allergyNote.present ? allergyNote.value : this.allergyNote,
     plannedGoal: plannedGoal.present ? plannedGoal.value : this.plannedGoal,
+    pregnantOrBreastfeeding: pregnantOrBreastfeeding.present
+        ? pregnantOrBreastfeeding.value
+        : this.pregnantOrBreastfeeding,
   );
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
     return ProfileRow(
@@ -494,6 +531,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       dietStyle: data.dietStyle.present ? data.dietStyle.value : this.dietStyle,
       allergyNote: data.allergyNote.present ? data.allergyNote.value : this.allergyNote,
       plannedGoal: data.plannedGoal.present ? data.plannedGoal.value : this.plannedGoal,
+      pregnantOrBreastfeeding: data.pregnantOrBreastfeeding.present
+          ? data.pregnantOrBreastfeeding.value
+          : this.pregnantOrBreastfeeding,
     );
   }
 
@@ -515,7 +555,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
           ..write('allergyNote: $allergyNote, ')
-          ..write('plannedGoal: $plannedGoal')
+          ..write('plannedGoal: $plannedGoal, ')
+          ..write('pregnantOrBreastfeeding: $pregnantOrBreastfeeding')
           ..write(')'))
         .toString();
   }
@@ -538,6 +579,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     dietStyle,
     allergyNote,
     plannedGoal,
+    pregnantOrBreastfeeding,
   );
   @override
   bool operator ==(Object other) =>
@@ -558,7 +600,8 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           other.limitsSugar == this.limitsSugar &&
           other.dietStyle == this.dietStyle &&
           other.allergyNote == this.allergyNote &&
-          other.plannedGoal == this.plannedGoal);
+          other.plannedGoal == this.plannedGoal &&
+          other.pregnantOrBreastfeeding == this.pregnantOrBreastfeeding);
 }
 
 class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
@@ -578,6 +621,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<String?> dietStyle;
   final Value<String?> allergyNote;
   final Value<String?> plannedGoal;
+  final Value<bool?> pregnantOrBreastfeeding;
   const ProfilesCompanion({
     this.id = const Value.absent(),
     this.displayName = const Value.absent(),
@@ -595,6 +639,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
     this.plannedGoal = const Value.absent(),
+    this.pregnantOrBreastfeeding = const Value.absent(),
   });
   ProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -613,6 +658,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.dietStyle = const Value.absent(),
     this.allergyNote = const Value.absent(),
     this.plannedGoal = const Value.absent(),
+    this.pregnantOrBreastfeeding = const Value.absent(),
   }) : sex = Value(sex),
        birthDate = Value(birthDate),
        heightCm = Value(heightCm),
@@ -638,6 +684,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Expression<String>? dietStyle,
     Expression<String>? allergyNote,
     Expression<String>? plannedGoal,
+    Expression<bool>? pregnantOrBreastfeeding,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -656,6 +703,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       if (dietStyle != null) 'diet_style': dietStyle,
       if (allergyNote != null) 'allergy_note': allergyNote,
       if (plannedGoal != null) 'planned_goal': plannedGoal,
+      if (pregnantOrBreastfeeding != null) 'pregnant_or_breastfeeding': pregnantOrBreastfeeding,
     });
   }
 
@@ -676,6 +724,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Value<String?>? dietStyle,
     Value<String?>? allergyNote,
     Value<String?>? plannedGoal,
+    Value<bool?>? pregnantOrBreastfeeding,
   }) {
     return ProfilesCompanion(
       id: id ?? this.id,
@@ -694,6 +743,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       dietStyle: dietStyle ?? this.dietStyle,
       allergyNote: allergyNote ?? this.allergyNote,
       plannedGoal: plannedGoal ?? this.plannedGoal,
+      pregnantOrBreastfeeding: pregnantOrBreastfeeding ?? this.pregnantOrBreastfeeding,
     );
   }
 
@@ -748,6 +798,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (plannedGoal.present) {
       map['planned_goal'] = Variable<String>(plannedGoal.value);
     }
+    if (pregnantOrBreastfeeding.present) {
+      map['pregnant_or_breastfeeding'] = Variable<bool>(pregnantOrBreastfeeding.value);
+    }
     return map;
   }
 
@@ -769,7 +822,8 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
           ..write('limitsSugar: $limitsSugar, ')
           ..write('dietStyle: $dietStyle, ')
           ..write('allergyNote: $allergyNote, ')
-          ..write('plannedGoal: $plannedGoal')
+          ..write('plannedGoal: $plannedGoal, ')
+          ..write('pregnantOrBreastfeeding: $pregnantOrBreastfeeding')
           ..write(')'))
         .toString();
   }
@@ -2096,6 +2150,7 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   Value<String?> dietStyle,
   Value<String?> allergyNote,
   Value<String?> plannedGoal,
+  Value<bool?> pregnantOrBreastfeeding,
 });
 typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<int> id,
@@ -2114,6 +2169,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<String?> dietStyle,
   Value<String?> allergyNote,
   Value<String?> plannedGoal,
+  Value<bool?> pregnantOrBreastfeeding,
 });
 
 class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -2169,6 +2225,9 @@ class $$ProfilesTableFilterComposer extends Composer<_$AppDatabase, $ProfilesTab
 
   ColumnFilters<String> get plannedGoal =>
       $composableBuilder(column: $table.plannedGoal, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get pregnantOrBreastfeeding =>
+      $composableBuilder(column: $table.pregnantOrBreastfeeding, builder: (column) => ColumnFilters(column));
 }
 
 class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -2225,6 +2284,9 @@ class $$ProfilesTableOrderingComposer extends Composer<_$AppDatabase, $ProfilesT
 
   ColumnOrderings<String> get plannedGoal =>
       $composableBuilder(column: $table.plannedGoal, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get pregnantOrBreastfeeding =>
+      $composableBuilder(column: $table.pregnantOrBreastfeeding, builder: (column) => ColumnOrderings(column));
 }
 
 class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $ProfilesTable> {
@@ -2274,6 +2336,9 @@ class $$ProfilesTableAnnotationComposer extends Composer<_$AppDatabase, $Profile
 
   GeneratedColumn<String> get plannedGoal =>
       $composableBuilder(column: $table.plannedGoal, builder: (column) => column);
+
+  GeneratedColumn<bool> get pregnantOrBreastfeeding =>
+      $composableBuilder(column: $table.pregnantOrBreastfeeding, builder: (column) => column);
 }
 
 class $$ProfilesTableTableManager
@@ -2317,6 +2382,7 @@ class $$ProfilesTableTableManager
                 Value<String?> dietStyle = const Value.absent(),
                 Value<String?> allergyNote = const Value.absent(),
                 Value<String?> plannedGoal = const Value.absent(),
+                Value<bool?> pregnantOrBreastfeeding = const Value.absent(),
               }) => ProfilesCompanion(
                 id: id,
                 displayName: displayName,
@@ -2334,6 +2400,7 @@ class $$ProfilesTableTableManager
                 dietStyle: dietStyle,
                 allergyNote: allergyNote,
                 plannedGoal: plannedGoal,
+                pregnantOrBreastfeeding: pregnantOrBreastfeeding,
               ),
           createCompanionCallback:
               ({
@@ -2353,6 +2420,7 @@ class $$ProfilesTableTableManager
                 Value<String?> dietStyle = const Value.absent(),
                 Value<String?> allergyNote = const Value.absent(),
                 Value<String?> plannedGoal = const Value.absent(),
+                Value<bool?> pregnantOrBreastfeeding = const Value.absent(),
               }) => ProfilesCompanion.insert(
                 id: id,
                 displayName: displayName,
@@ -2370,6 +2438,7 @@ class $$ProfilesTableTableManager
                 dietStyle: dietStyle,
                 allergyNote: allergyNote,
                 plannedGoal: plannedGoal,
+                pregnantOrBreastfeeding: pregnantOrBreastfeeding,
               ),
           withReferenceMapper: (p0) => p0
               .map(

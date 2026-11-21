@@ -8,6 +8,7 @@ import 'package:fluw/features/profile/domain/dietary_preferences.dart';
 import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
+import 'package:fluw/features/profile/domain/sex.dart';
 
 import '../features/profile/domain/profile_fixture.dart';
 
@@ -46,6 +47,23 @@ void main() {
     expect(limits.dailyKcal, isNull);
     expect(limits.sugarsMaxG, isNull);
     expect(limits.sodiumMaxMg, isNull);
+    expect(limits.proteinMinG, isNull);
+    expect(limits.targetsKind, TargetsKind.belowMinimumAge);
+  });
+
+  test('mang thai hoặc cho con bú: vẫn cảnh báo dị ứng, không có chỉ tiêu nào, vẫn là người lớn', () {
+    final limits = personalLimitsFromProfile(
+      buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, dietary: allergic),
+      today: fixtureToday,
+    );
+
+    expect(limits.severeAllergenTags, {'en:milk'});
+    expect(limits.dailyKcal, isNull);
+    expect(limits.proteinMinG, isNull);
+    expect(limits.sugarsMaxG, isNull);
+    expect(limits.sodiumMaxMg, isNull);
+    expect(limits.targetsKind, TargetsKind.pregnancyOrBreastfeeding);
+    expect(limits.isAdult, isTrue);
   });
 
   test('giảm ngọt cũng làm đường được theo dõi', () {
@@ -67,7 +85,8 @@ void main() {
     );
 
     expect(limits.fatTargetG, closeTo(2083.0625 * 0.25 / 9, 1e-6));
-    expect(limits.carbohydratesTargetG, closeTo((2083.0625 - 126 * 4 - 2083.0625 * 0.25) / 4, 1e-6));
+    expect(limits.proteinMinG, closeTo(112, 1e-6));
+    expect(limits.carbohydratesTargetG, closeTo((2083.0625 - 112 * 4 - 2083.0625 * 0.25) / 4, 1e-6));
     expect(limits.displayName, 'An');
     expect(limits.goalLabel, 'Giảm cân');
     expect(limits.targetsKind, TargetsKind.adult);
@@ -77,7 +96,7 @@ void main() {
     expect(limits.likesNuts, isTrue);
   });
 
-  test('keto, dưới 18 tuổi, dưới 14 tuổi, hồ sơ chưa hợp lệ', () {
+  test('keto, dưới 18 tuổi, hồ sơ chưa hợp lệ', () {
     PersonalLimits of(HealthProfile profile) => personalLimitsFromProfile(profile, today: fixtureToday);
     final keto = DietaryPreferences(
       allergies: const {},
@@ -87,7 +106,6 @@ void main() {
     );
 
     expect(of(buildProfile(dietary: keto)).limitsCarbohydrates, isTrue);
-    expect(of(buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null)).targetsKind, TargetsKind.teen);
     expect(
       of(buildProfile(birthDate: CalendarDate(2015, 1, 1), weeklyChangeKg: null)).targetsKind,
       TargetsKind.belowMinimumAge,

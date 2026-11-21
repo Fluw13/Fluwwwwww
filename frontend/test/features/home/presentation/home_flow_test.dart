@@ -16,6 +16,7 @@ import 'package:fluw/features/note/data/note_providers.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
+import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_setup_screen.dart';
 import 'package:fluw/features/scan/presentation/scan_screen.dart';
@@ -94,7 +95,7 @@ void main() {
       isSemantics(value: '600 kcal, mục tiêu 2,083 kcal'),
     );
     expect(find.text('1,483 kcal'), findsOneWidget, reason: 'còn lại 2,083 - 600');
-    expect(find.textContaining('30 g / cần ít nhất 126 g'), findsOneWidget);
+    expect(find.textContaining('30 g / cần ít nhất 112 g'), findsOneWidget);
     expect(find.textContaining('5 g / tối đa 26 g'), findsOneWidget, reason: 'tiểu đường: đường dưới 5% năng lượng');
 
     await scrollTo(tester, find.text('Phở bò'));
@@ -103,7 +104,7 @@ void main() {
 
     await scrollTo(tester, find.text('Đánh giá hôm qua'));
     expect(find.text('Năng lượng: thấp hơn mục tiêu 583 kcal'), findsOneWidget);
-    expect(find.text('Protein (đạm): thiếu 106 g'), findsOneWidget);
+    expect(find.text('Protein (đạm): thiếu 92 g'), findsOneWidget);
     expect(find.text('Đường tổng: vượt giới hạn 4 g'), findsOneWidget);
 
     await scrollTo(tester, find.text('Bổ sung protein (đạm)'));
@@ -183,8 +184,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Dưới 18 tuổi: Fluw không tính calo.'), findsOneWidget);
+    expect(find.text('Fluw dành cho người từ 18 tuổi.'), findsOneWidget);
     expect(find.textContaining('hồ sơ người lớn'), findsNothing);
+  });
+
+  testWidgets('mang thai hoặc cho con bú: không có mục tiêu calo, không bảo đi sửa hồ sơ', (tester) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(
+      () =>
+          appContainer(tester)
+              .read(profileRepositoryProvider)
+              .save(buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, weeklyChangeKg: null)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mang thai hoặc cho con bú: Fluw không tính calo.'), findsOneWidget);
+    expect(find.text('Hồ sơ chưa đủ để tính mục tiêu calo.'), findsNothing);
   });
 
   testWidgets('hồ sơ không đọc được: nút mở tab Hồ Sơ, không mở form trống có thể ghi đè', (tester) async {

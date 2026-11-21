@@ -3,6 +3,7 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
+import 'package:fluw/features/profile/domain/weight_goal.dart';
 
 import 'profile_fixture.dart';
 
@@ -40,7 +41,7 @@ void main() {
 
   test('chiều cao trong khoảng 100–250 cm, tính cả hai đầu', () {
     expect(issuesOf(heightCm: 100), isEmpty);
-    expect(issuesOf(heightCm: 250), isEmpty);
+    expect(issuesOf(heightCm: 250, weightKg: 160, targetWeightKg: 150), isEmpty);
     expect(issuesOf(heightCm: 99.9), {ProfileIssue.heightOutOfRange});
     expect(issuesOf(heightCm: 250.1), {ProfileIssue.heightOutOfRange});
   });
@@ -91,5 +92,65 @@ void main() {
       ),
       isEmpty,
     );
+  });
+
+  group('chặn giảm cân xuống thiếu cân (BMI dưới 18,5 thang châu Á, cắt xuống 0,1)', () {
+    // 175 cm: BMI 18.5 là 56,65625 kg.
+    test('cân nặng mong muốn 56,6 kg (BMI 18,4) là lỗi; 56,7 kg (BMI 18,5) thì được', () {
+      expect(issuesOf(targetWeightKg: 56.6), {ProfileIssue.targetBmiTooLow});
+      expect(issuesOf(targetWeightKg: 56.7), isEmpty);
+    });
+
+    test('đang thiếu cân thì không được giảm cân, chỉ báo một lỗi', () {
+      expect(issuesOf(weightKg: 56, targetWeightKg: 54), {ProfileIssue.loseWhenUnderweight});
+    });
+
+    test('đang thiếu cân vẫn được tăng cân hoặc giữ cân, kể cả mục tiêu chưa tới BMI 18,5', () {
+      expect(issuesOf(weightKg: 50, targetWeightKg: 55), isEmpty);
+      expect(issuesOf(weightKg: 56, targetWeightKg: 56, weeklyChangeKg: null), isEmpty);
+    });
+
+    test('đã giảm tới mục tiêu thì chuyển sang giữ cân, không báo lỗi', () {
+      final reached = buildProfile(weightKg: 56, targetWeightKg: 57, plannedGoal: WeightGoal.lose);
+
+      expect(validateProfile(reached, today: fixtureToday), isEmpty);
+    });
+
+    test('chiều cao sai thì chưa xét BMI', () {
+      expect(issuesOf(heightCm: 50, targetWeightKg: 21), {ProfileIssue.heightOutOfRange});
+    });
+  });
+
+  group('câu hỏi mang thai hoặc cho con bú', () {
+    Set<ProfileIssue> issuesFor({required Sex sex, BmrFormula? formula, bool? answer, CalendarDate? birthDate}) {
+      return validateProfile(
+        buildProfile(
+          sex: sex,
+          bmrFormulaForOther: formula,
+          isPregnantOrBreastfeeding: answer,
+          birthDate: birthDate,
+          weeklyChangeKg: birthDate == null ? 0.5 : null,
+        ),
+        today: fixtureToday,
+      );
+    }
+
+    test('người lớn theo công thức Nữ phải trả lời', () {
+      expect(issuesFor(sex: Sex.female), {ProfileIssue.pregnancyAnswerMissing});
+      expect(issuesFor(sex: Sex.other, formula: BmrFormula.female), {ProfileIssue.pregnancyAnswerMissing});
+      expect(issuesFor(sex: Sex.female, answer: false), isEmpty);
+    });
+
+    test('công thức Nam hoặc dưới 18 tuổi thì không hỏi', () {
+      expect(issuesFor(sex: Sex.male), isEmpty);
+      expect(issuesFor(sex: Sex.other, formula: BmrFormula.male), isEmpty);
+      expect(issuesFor(sex: Sex.female, birthDate: CalendarDate(2010, 1, 1)), isEmpty);
+    });
+
+    test('đang mang thai hoặc cho con bú thì không cần tốc độ đổi cân', () {
+      final pregnant = buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: true, weeklyChangeKg: null);
+
+      expect(validateProfile(pregnant, today: fixtureToday), isEmpty);
+    });
   });
 }

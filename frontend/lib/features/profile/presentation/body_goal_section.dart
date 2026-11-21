@@ -99,7 +99,8 @@ class BodyGoalSection extends StatelessWidget {
           FieldErrorText(errors[ProfileField.weeklyChange]),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Fluw giới hạn tối đa ${formatDecimal(maxWeeklyChangeKg)} kg mỗi tuần.',
+            'Fluw giới hạn tối đa ${formatDecimal(maxWeeklyChangeKg)} kg mỗi tuần. Số tuần là ước tính; cân thường '
+            'thay đổi chậm dần.',
             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
@@ -109,6 +110,8 @@ class BodyGoalSection extends StatelessWidget {
           isExpanded: true,
           decoration: InputDecoration(
             labelText: 'Mức vận động hằng ngày',
+            helperText: 'Tính cả công việc, đi lại và tập luyện. Fluw dùng hệ số vận động thông dụng (ước tính).',
+            helperMaxLines: 4,
             errorText: errors[ProfileField.activityLevel],
           ),
           selectedItemBuilder: (context) => [
@@ -161,7 +164,7 @@ class BodyGoalSection extends StatelessWidget {
       return text;
     }
     final weeks = estimateWeeksToTarget(currentKg: weightKg, targetKg: targetWeightKg, weeklyChangeKg: weeklyChangeKg);
-    return '$text · khoảng $weeks tuần';
+    return '$text · ít nhất khoảng $weeks tuần';
   }
 }
 

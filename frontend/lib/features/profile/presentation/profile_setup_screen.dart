@@ -43,6 +43,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   late final TextEditingController _allergyNote;
   Sex? _sex;
   BmrFormula? _bmrFormula;
+  bool? _isPregnantOrBreastfeeding;
   CalendarDate? _birthDate;
   ActivityLevel? _activityLevel;
   TrainingType? _trainingType;
@@ -79,6 +80,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _allergyNote = _controller(saved.allergyNote);
     _sex = saved.sex;
     _bmrFormula = saved.bmrFormulaForOther;
+    _isPregnantOrBreastfeeding = saved.isPregnantOrBreastfeeding;
     _birthDate = saved.birthDate;
     _activityLevel = saved.activityLevel;
     _trainingType = saved.trainingType;
@@ -105,6 +107,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     displayName: _name.text,
     sex: _sex,
     bmrFormulaForOther: _bmrFormula,
+    isPregnantOrBreastfeeding: _isPregnantOrBreastfeeding,
     birthDate: _birthDate,
     heightText: _height.text,
     weightText: _weight.text,
@@ -156,6 +159,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               onSexChanged: (sex) => _update(() => _sex = sex),
               bmrFormula: _bmrFormula,
               onBmrFormulaChanged: (formula) => _update(() => _bmrFormula = formula),
+              asksPregnancy: draft.asksPregnancy,
+              isPregnantOrBreastfeeding: _isPregnantOrBreastfeeding,
+              onPregnancyChanged: (answer) => _update(() => _isPregnantOrBreastfeeding = answer),
               birthDate: _birthDate,
               onBirthDateChanged: (date) => _update(() => _birthDate = date),
               today: today,

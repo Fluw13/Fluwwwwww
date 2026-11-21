@@ -9,6 +9,7 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/data/profile_repository.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
+import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
@@ -16,6 +17,7 @@ import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/domain/health_condition.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
+import 'package:fluw/features/profile/domain/training_type.dart';
 import 'package:fluw/features/profile/domain/weight_entry.dart';
 
 import '../../../helpers/load_app_fonts.dart';
@@ -70,15 +72,136 @@ void main() {
     expect(find.text('Bình thường'), findsOneWidget);
     await scrollTo(tester, find.text('2,083 kcal/ngày'));
     expect(find.text('2,083 kcal/ngày'), findsOneWidget);
-    expect(find.text('126–168 g/ngày'), findsOneWidget);
+    expect(find.text('112–168 g/ngày'), findsOneWidget);
+    await scrollTo(tester, find.text('Nếu bạn có bệnh thận, hãy hỏi bác sĩ trước khi ăn nhiều đạm.'));
+    expect(find.text('Tổng lượng nước (gồm cả nước trong thức ăn)'), findsOneWidget);
+    expect(find.textContaining('cân nặng tham chiếu'), findsNothing);
   });
 
-  testWidgets('dưới 18 tuổi không hiện BMI và calo, có lời khuyên gặp chuyên gia', (tester) async {
+  testWidgets('BMI trên 24,9: đạm và nước theo cân nặng tham chiếu, có ghi chú', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(weightKg: 100, targetWeightKg: 90));
+
+    await scrollTo(tester, find.textContaining('cân nặng tham chiếu'));
+    expect(
+      find.text('Đạm và nước tính theo cân nặng tham chiếu 76.3 kg (BMI 24.9), không theo cân nặng thật.'),
+      findsOneWidget,
+    );
+    expect(find.text('122–183 g/ngày'), findsOneWidget);
+  });
+
+  testWidgets('calo bị nâng lên 1.200 kcal: ghi rõ lý do và số tuần theo tốc độ thực tế', (tester) async {
+    await openProfileTab(
+      tester,
+      saved: buildProfile(
+        sex: Sex.female,
+        weightKg: 50,
+        heightCm: 150,
+        targetWeightKg: 48,
+        activityLevel: ActivityLevel.sedentary,
+        trainingType: TrainingType.none,
+      ),
+    );
+
+    // TDEE 1,411.8 − 1,200 = 211.8 kcal/ngày ≈ 0,19 kg/tuần; 2 kg cần ít nhất 11 tuần.
+    expect(
+      find.text('Giảm cân 2 kg · ≈ 0.19 kg/tuần · ít nhất khoảng 11 tuần (ước tính; cân thường giảm chậm dần)'),
+      findsOneWidget,
+    );
+    await scrollTo(tester, find.text('1,200 kcal/ngày'));
+    expect(
+      find.text('Đã nâng lên mức tối thiểu 1,200 kcal/ngày (nữ) để không ăn quá ít. Ăn thấp hơn cần bác sĩ theo dõi.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('bệnh thận'), findsNothing);
+  });
+
+  testWidgets('hồ sơ cũ của người dưới 18 tuổi vẫn mở được, không có BMI và chỉ tiêu', (tester) async {
     await openProfileTab(tester, saved: buildProfile(birthDate: CalendarDate(2010, 1, 1), weeklyChangeKg: null));
 
+    expect(tester.takeException(), isNull);
     expect(find.textContaining('BMI'), findsNothing);
-    await scrollTo(tester, find.textContaining('không tính calo'));
+    await scrollTo(tester, find.text('Fluw dành cho người từ 18 tuổi.'));
     expect(find.text('Năng lượng'), findsNothing);
+  });
+
+  testWidgets('mang thai hoặc cho con bú: chọn Có rồi lưu thì không còn số nào, chỉ lời khuyên hỏi bác sĩ', (
+    tester,
+  ) async {
+    await openProfileTab(tester, saved: buildProfile(sex: Sex.female));
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('Có'));
+    await tester.tap(find.text('Có'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tốc độ mỗi tuần'), findsNothing);
+    expect(find.textContaining('dị ứng vẫn được cảnh báo'), findsOneWidget);
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    final saved = ((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile;
+    expect(saved.isPregnantOrBreastfeeding, isTrue);
+    expect(saved.weeklyChangeKg, isNull);
+    expect(find.textContaining('BMI'), findsNothing);
+    await scrollTo(tester, find.textContaining('Nhu cầu năng lượng và đạm khi mang thai'), delta: -200);
+    expect(find.text('Năng lượng'), findsNothing);
+  });
+
+  testWidgets('hồ sơ nữ lưu trước khi có câu hỏi mang thai: báo cần trả lời, form báo lỗi ở câu hỏi', (tester) async {
+    await openProfileTab(tester, saved: buildProfile(sex: Sex.female, isPregnantOrBreastfeeding: null));
+
+    await scrollTo(tester, find.text('Hồ sơ cần sửa trước khi tính:'));
+    expect(find.text('• Cho biết bạn có đang mang thai hoặc cho con bú không.'), findsOneWidget);
+
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Còn 1 mục cần sửa trước khi lưu.'), findsOneWidget);
+    await scrollTo(tester, find.text('Cho biết bạn có đang mang thai hoặc cho con bú không.'));
+    expect(find.text('Cho biết bạn có đang mang thai hoặc cho con bú không.'), findsOneWidget);
+  });
+
+  testWidgets('cân nặng mong muốn cho BMI dưới 18,5 thì báo ngay dưới ô và không lưu', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+    await scrollTo(tester, find.text('Cập nhật hồ sơ'));
+    await tester.tap(find.text('Cập nhật hồ sơ'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng mong muốn'), '55');
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Cân nặng mong muốn cho BMI dưới 18.5'), findsOneWidget);
+    expect(((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile, buildProfile());
+
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '55');
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng mong muốn'), '53');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Bạn đang thiếu cân'), findsOneWidget);
+  });
+
+  testWidgets('bộ chọn ngày sinh không cho chọn ngày chưa đủ 18 tuổi', (tester) async {
+    await openProfileTab(tester);
+    await tester.tap(find.text('Thiết lập hồ sơ').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Chọn ngày sinh'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, '12/11/2008');
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ngoài phạm vi.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).last, '11/11/2008');
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    expect(find.text('11/11/2008 (18 tuổi)'), findsOneWidget);
   });
 
   testWidgets('hồ sơ hỏng thì báo không đọc được, không mở form trống lặng lẽ', (tester) async {
@@ -313,6 +436,9 @@ void main() {
     await tester.tap(find.text('Khác'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Theo công thức Nữ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Không'));
+    await scrollTo(tester, find.widgetWithText(TextField, 'Cân nặng mong muốn'));
     await tester.enterText(find.widgetWithText(TextField, 'Chiều cao'), '165');
     await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '58.5');
     await tester.enterText(find.widgetWithText(TextField, 'Cân nặng mong muốn'), '58.5');
@@ -337,6 +463,7 @@ void main() {
     expect(saved.birthDate, CalendarDate(1998, 3, 4));
     expect(saved.sex, Sex.other);
     expect(saved.bmrFormulaForOther, BmrFormula.female);
+    expect(saved.isPregnantOrBreastfeeding, isFalse);
     expect(saved.weightKg, 58.5);
     expect(saved.weeklyChangeKg, isNull);
     expect(find.text('Linh'), findsOneWidget);
@@ -365,6 +492,14 @@ void main() {
       await scrollTo(tester, find.text('Khác'), delta: 100);
       await tester.tap(find.text('Khác'));
       await tester.pumpAndSettle();
+      await scrollTo(tester, find.text('Theo công thức Nữ'), delta: 100);
+      await tester.tap(find.text('Theo công thức Nữ'));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.text('Có'), delta: 100);
+      await tester.tap(find.text('Có'));
+      await tester.pumpAndSettle();
+      await scrollTo(tester, find.textContaining('Nhu cầu năng lượng và đạm khi mang thai'), delta: 100);
+      expect(tester.takeException(), isNull);
       await scrollTo(tester, find.text('Lưu hồ sơ'), delta: 100);
       expect(tester.takeException(), isNull);
 

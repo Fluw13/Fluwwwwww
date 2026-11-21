@@ -16,6 +16,9 @@ class BasicInfoSection extends StatelessWidget {
     required this.onSexChanged,
     required this.bmrFormula,
     required this.onBmrFormulaChanged,
+    required this.asksPregnancy,
+    required this.isPregnantOrBreastfeeding,
+    required this.onPregnancyChanged,
     required this.birthDate,
     required this.onBirthDateChanged,
     required this.today,
@@ -30,6 +33,9 @@ class BasicInfoSection extends StatelessWidget {
   final ValueChanged<Sex> onSexChanged;
   final BmrFormula? bmrFormula;
   final ValueChanged<BmrFormula> onBmrFormulaChanged;
+  final bool asksPregnancy;
+  final bool? isPregnantOrBreastfeeding;
+  final ValueChanged<bool> onPregnancyChanged;
   final CalendarDate? birthDate;
   final ValueChanged<CalendarDate> onBirthDateChanged;
   final CalendarDate today;
@@ -105,6 +111,32 @@ class BasicInfoSection extends StatelessWidget {
           ),
           FieldErrorText(errors[ProfileField.bmrFormula]),
         ],
+        if (asksPregnancy) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text('Bạn đang mang thai hoặc cho con bú?', style: theme.textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.sm),
+          SegmentedButton<bool>(
+            emptySelectionAllowed: true,
+            segments: const [
+              ButtonSegment(value: true, label: Text('Có')),
+              ButtonSegment(value: false, label: Text('Không')),
+            ],
+            selected: {?isPregnantOrBreastfeeding},
+            onSelectionChanged: (selection) {
+              if (selection.isNotEmpty) {
+                onPregnancyChanged(selection.single);
+              }
+            },
+          ),
+          FieldErrorText(errors[ProfileField.pregnancy]),
+          if (isPregnantOrBreastfeeding == true) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Fluw sẽ không tính calo, đạm, BMI và nước; dị ứng vẫn được cảnh báo.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ],
+        ],
       ],
     );
   }
@@ -121,7 +153,7 @@ class BasicInfoSection extends StatelessWidget {
   }
 
   Future<void> _pickBirthDate(BuildContext context) async {
-    final lastDate = _toDateTime(today);
+    final lastDate = _toDateTime(latestAdultBirthDate(today));
     // The day after someone born on it would turn maximumAgeYears + 1 today, so every pickable date is a valid age.
     final firstDate = DateTime(today.year - maximumAgeYears - 1, today.month, today.day + 1);
     final current = birthDate;
