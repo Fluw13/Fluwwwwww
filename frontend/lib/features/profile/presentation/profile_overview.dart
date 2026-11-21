@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/core/widgets/erase_all_data_button.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/bmi.dart';
@@ -20,11 +21,20 @@ import 'package:fluw/features/profile/presentation/tile_grid.dart';
 import 'package:fluw/features/profile/presentation/weight_log_card.dart';
 
 class ProfileOverview extends StatelessWidget {
-  const ProfileOverview({required this.profile, required this.today, required this.onEdit, super.key});
+  const ProfileOverview({
+    required this.profile,
+    required this.today,
+    required this.onEdit,
+    required this.onOpenPrivacy,
+    required this.onEraseAllData,
+    super.key,
+  });
 
   final HealthProfile profile;
   final CalendarDate today;
   final VoidCallback onEdit;
+  final VoidCallback onOpenPrivacy;
+  final VoidCallback onEraseAllData;
 
   @override
   Widget build(BuildContext context) {
@@ -95,13 +105,15 @@ class ProfileOverview extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         const AppearanceCard(),
         const SizedBox(height: AppSpacing.md),
-        const AboutCard(),
+        AboutCard(onOpenPrivacy: onOpenPrivacy),
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onEdit,
           icon: const Icon(Icons.edit_outlined),
           label: const Text('Cập nhật hồ sơ'),
         ),
+        const SizedBox(height: AppSpacing.md),
+        EraseAllDataButton(onPressed: onEraseAllData),
       ],
     );
   }

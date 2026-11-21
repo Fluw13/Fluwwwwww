@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/core/time/today_provider.dart';
+import 'package:fluw/core/widgets/health_data_consent_dialog.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
@@ -25,7 +26,9 @@ import 'package:fluw/features/profile/presentation/diet_section.dart';
 import 'package:fluw/features/profile/presentation/profile_draft.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
-  const ProfileSetupScreen({super.key});
+  const ProfileSetupScreen({required this.onOpenPrivacy, super.key});
+
+  final VoidCallback onOpenPrivacy;
 
   @override
   ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
@@ -241,6 +244,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         setState(() => _showsErrors = true);
         messenger.showSnackBar(SnackBar(content: Text('Còn ${errors.length} mục cần sửa trước khi lưu.')));
       case DraftValid(:final profile):
+        // Nothing is stored before the user agrees to keep health data on the phone.
+        if (!await ensureHealthDataConsent(context, ref, onReadPolicy: widget.onOpenPrivacy) || !mounted) {
+          return;
+        }
         setState(() => _isSaving = true);
         try {
           await ref.read(profileRepositoryProvider).save(profile);

@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:fluw/app/app_tab.dart';
+import 'package:fluw/app/erase_all_data_flow.dart';
 import 'package:fluw/app/shell/app_shell.dart';
 import 'package:fluw/features/home/presentation/home_screen.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
+import 'package:fluw/features/privacy/presentation/privacy_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_setup_screen.dart';
 import 'package:fluw/features/reminders/presentation/reminder_settings_screen.dart';
@@ -17,6 +19,7 @@ abstract final class AppRoutes {
   static const String profileSetup = '/profile/setup';
   static const String foodDetail = '/search/food';
   static const String reminders = '/reminders';
+  static const String privacy = '/privacy';
 
   static String foodBarcode(String code) => '/search/barcode/$code';
 }
@@ -30,6 +33,20 @@ GoRouter createAppRouter() {
     routes: [
       // Opened from the header bell on any tab, so it sits outside the tab branches, above the tab bar.
       GoRoute(path: AppRoutes.reminders, builder: (context, state) => const ReminderSettingsScreen()),
+      // Opened from the profile tab, the setup form and the photo consent, so it also sits above the tab bar.
+      GoRoute(
+        path: AppRoutes.privacy,
+        builder: (context, state) => PrivacyScreen(
+          onEraseAllData: () async {
+            final router = GoRouter.of(context);
+            if (await confirmAndEraseAllData(context)) {
+              // The profile tab now offers to set up a new profile.
+              router.pop();
+              router.go(AppTab.profile.path);
+            }
+          },
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
@@ -68,7 +85,8 @@ GoRouter createAppRouter() {
                         // Full screen above the tab bar, like the design's setup page with its own back button.
                         path: 'setup',
                         parentNavigatorKey: rootNavigatorKey,
-                        builder: (context, state) => const ProfileSetupScreen(),
+                        builder: (context, state) =>
+                            ProfileSetupScreen(onOpenPrivacy: () => context.push(AppRoutes.privacy)),
                       ),
                   ],
                 ),
@@ -93,8 +111,13 @@ Widget _screenFor(BuildContext context, AppTab tab) {
     AppTab.scan => ScanScreen(
       onBarcode: (code) => context.push<void>(AppRoutes.foodBarcode(code)),
       onOpenSearch: () => context.go(AppTab.search.path),
+      onOpenPrivacy: () => context.push(AppRoutes.privacy),
     ),
     AppTab.note => NoteScreen(onAddFood: () => context.go(AppTab.search.path)),
-    AppTab.profile => ProfileScreen(onEditProfile: () => context.push(AppRoutes.profileSetup)),
+    AppTab.profile => ProfileScreen(
+      onEditProfile: () => context.push(AppRoutes.profileSetup),
+      onOpenPrivacy: () => context.push(AppRoutes.privacy),
+      onEraseAllData: () => confirmAndEraseAllData(context),
+    ),
   };
 }

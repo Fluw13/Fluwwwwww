@@ -34,8 +34,8 @@ class AllergiesSection extends StatelessWidget {
       accentColor: theme.colorScheme.error,
       children: [
         Text(
-          'Fluw sẽ cảnh báo khi sản phẩm trên Open Food Facts có ghi nhóm dị ứng bạn chọn (đang xây dựng). '
-          'Dữ liệu sản phẩm có thể thiếu, hãy luôn đọc nhãn.',
+          'Fluw cảnh báo khi Open Food Facts có ghi nhóm dị ứng bạn chọn cho sản phẩm đó. Fluw chưa xét mục '
+          '"có thể chứa" (vết), và dữ liệu có thể thiếu hoặc sai: luôn đọc nhãn trên bao bì.',
           style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         for (final MapEntry(key: allergen, value: severity) in allergies.entries) ...[

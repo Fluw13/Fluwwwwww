@@ -10,10 +10,18 @@ import '../domain/profile_fixture.dart';
 
 void main() {
   testWidgets('thẻ Về Fluw ghi nguồn dữ liệu và mở được trang giấy phép', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: AboutCard())));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: AboutCard(onOpenPrivacy: () {})),
+      ),
+    );
 
     expect(find.textContaining('Open Food Facts (ODbL)'), findsOneWidget);
     expect(find.textContaining('USDA FoodData Central (CC0)'), findsOneWidget);
+    expect(
+      find.textContaining('Fluw không phải thiết bị y tế; không chẩn đoán, điều trị hay phòng bệnh.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Nguồn dữ liệu và giấy phép'));
     await tester.pumpAndSettle();

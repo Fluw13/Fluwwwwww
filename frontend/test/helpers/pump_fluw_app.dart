@@ -7,6 +7,8 @@ import 'package:fluw/core/database/database_provider.dart';
 import 'package:fluw/core/network/api_client.dart';
 import 'package:fluw/core/network/api_client_provider.dart';
 import 'package:fluw/core/network/backend_warm_up.dart';
+import 'package:fluw/core/privacy/health_data_consent.dart';
+import 'package:fluw/core/settings/shared_preferences_provider.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/settings/theme_mode_storage.dart';
 import 'package:fluw/core/time/calendar_date.dart';
@@ -39,18 +41,22 @@ const int appTestHour = 9;
 /// saved. The database closes with the app, also when a test fails; reach it through [appContainer].
 /// Pass [httpClient] (a `MockClient`) to answer backend calls; without one any call fails the test as a network error.
 /// [overrides] apply in a child scope, so they replace the defaults above.
+/// Consent to store health data is given unless [healthDataConsent] is false, so tests about other things can save a
+/// profile through the form.
 Future<SharedPreferences> pumpFluwApp(
   WidgetTester tester, {
   Map<String, Object> storedSettings = const {},
   http.Client? httpClient,
   List<Override> overrides = const [],
+  bool healthDataConsent = true,
 }) async {
-  SharedPreferences.setMockInitialValues(storedSettings);
+  SharedPreferences.setMockInitialValues({if (healthDataConsent) ...grantedHealthDataConsent, ...storedSettings});
   final preferences = await SharedPreferences.getInstance();
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(preferences),
         themeModeStorageProvider.overrideWithValue(ThemeModeStorage(preferences)),
         recentSearchesStorageProvider.overrideWithValue(RecentSearchesStorage(preferences)),
         reminderSettingsStorageProvider.overrideWithValue(ReminderSettingsStorage(preferences)),
@@ -87,6 +93,12 @@ Future<SharedPreferences> pumpFluwApp(
   await tester.pumpAndSettle();
   return preferences;
 }
+
+/// Stored settings of a user who agreed to the current health data consent text.
+const Map<String, Object> grantedHealthDataConsent = {
+  HealthDataConsentStorage.versionKey: HealthDataConsentStorage.currentVersion,
+  HealthDataConsentStorage.agreedAtKey: '2026-11-01T02:00:00.000Z',
+};
 
 /// The fake photo picker of the app started by [pumpFluwApp].
 FakeFoodPhotoPicker appPhotoPicker(WidgetTester tester) =>

@@ -6,6 +6,7 @@ import 'package:fluw/app/fluw_app.dart';
 import 'package:fluw/core/licenses/data_licenses.dart';
 import 'package:fluw/core/licenses/font_licenses.dart';
 import 'package:fluw/core/settings/preferences_loader.dart';
+import 'package:fluw/core/settings/shared_preferences_provider.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/settings/theme_mode_storage.dart';
 import 'package:fluw/features/reminders/data/reminder_settings_storage.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(preferences),
         themeModeStorageProvider.overrideWithValue(ThemeModeStorage(preferences)),
         recentSearchesStorageProvider.overrideWithValue(RecentSearchesStorage(preferences)),
         reminderSettingsStorageProvider.overrideWithValue(ReminderSettingsStorage(preferences)),
