@@ -85,11 +85,11 @@ void main() {
     expect(find.text('Trong 100 ml'), findsOneWidget);
   });
 
-  testWidgets('lọc nhanh "Giàu protein" ẩn món không đạt và nói rõ số món bị ẩn', (tester) async {
+  testWidgets('lọc nhanh "Protein ≥ 20 g" ẩn món không đạt và nói rõ số món bị ẩn', (tester) async {
     await openSearch(tester, _backend([yoghurtSearchItem, colaItem, chickenItem]));
     await searchFor(tester, 'thịt');
 
-    await tester.tap(find.text('Giàu protein (>20 g)'));
+    await tester.tap(find.text('Protein ≥ 20 g'));
     await tester.pumpAndSettle();
 
     expect(find.text('1 kết quả cho "thịt"'), findsOneWidget);
@@ -238,7 +238,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '0');
     await tester.pumpAndSettle();
 
-    expect(find.text('Nhập từ 1 đến 2,000 g.'), findsOneWidget);
+    expect(find.text('Khẩu phần phải trong khoảng 1–2000 g.'), findsOneWidget);
     expect(find.text('–'), findsWidgets);
   });
 

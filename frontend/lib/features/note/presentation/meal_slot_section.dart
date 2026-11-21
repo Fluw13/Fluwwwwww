@@ -14,6 +14,7 @@ class MealSlotSection extends StatelessWidget {
     required this.slot,
     required this.entries,
     required this.totals,
+    required this.onEdit,
     required this.onDelete,
     required this.onAddFood,
     super.key,
@@ -22,6 +23,7 @@ class MealSlotSection extends StatelessWidget {
   final MealSlot slot;
   final List<NoteEntry> entries;
   final NutrientTotals totals;
+  final ValueChanged<NoteEntry> onEdit;
   final ValueChanged<NoteEntry> onDelete;
   final VoidCallback onAddFood;
 
@@ -48,7 +50,7 @@ class MealSlotSection extends StatelessWidget {
           ),
         const SizedBox(height: AppSpacing.sm),
         for (final entry in entries) ...[
-          NoteEntryTile(entry: entry, onDelete: () => onDelete(entry)),
+          NoteEntryTile(entry: entry, onEdit: () => onEdit(entry), onDelete: () => onDelete(entry)),
           const SizedBox(height: AppSpacing.sm),
         ],
         OutlinedButton.icon(

@@ -256,13 +256,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         }
         setState(() => _isSaving = true);
         try {
-          await ref.read(profileRepositoryProvider).save(profile);
           // A new or changed weight is also today's weigh-in, so the history and the profile never disagree.
-          if (profile.weightKg != _savedWeightKg) {
-            await ref
-                .read(weightLogRepositoryProvider)
-                .record(WeightEntry(date: ref.read(todayProvider), weightKg: profile.weightKg));
-          }
+          await ref
+              .read(profileRepositoryProvider)
+              .save(
+                profile,
+                weighIn: profile.weightKg == _savedWeightKg
+                    ? null
+                    : WeightEntry(date: ref.read(todayProvider), weightKg: profile.weightKg),
+              );
         } on Object {
           if (mounted) {
             setState(() => _isSaving = false);

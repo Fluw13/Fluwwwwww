@@ -162,4 +162,70 @@ void main() {
       );
     }
   });
+
+  test('món đã ăn gần đây: mỗi món một lần, lần ăn mới nhất trước, bỏ dòng hỏng, cập nhật khi thêm món', () async {
+    NoteEntry food(String id, String source, DateTime eatenAt, {double quantity = 150}) => NoteEntry(
+      id: id,
+      name: 'Món $source',
+      sourceFoodId: source,
+      facts: _entry(id, eatenAt).facts,
+      quantity: quantity,
+      eatenAt: eatenAt,
+    );
+    await repository.add(food('a', 'off:1', DateTime.utc(2026, 11, 9, 8), quantity: 100));
+    await repository.add(food('b', 'usda:2', DateTime.utc(2026, 11, 10, 8)));
+    await repository.add(food('c', 'off:1', DateTime.utc(2026, 11, 11, 8), quantity: 220));
+    await database
+        .into(database.noteEntries)
+        .insert(
+          NoteEntriesCompanion.insert(
+            id: 'bad',
+            name: 'Hỏng',
+            unit: 'oz',
+            quantity: 1,
+            eatenAtUtcMs: DateTime.utc(2026, 11, 12).millisecondsSinceEpoch,
+          ),
+        );
+
+    final stream = repository.watchRecentFoods(limit: 8);
+    final first = await stream.first;
+    expect(first.map((entry) => entry.id), ['c', 'b']);
+    expect(first.first.quantity, 220, reason: 'lần ghi mới nhất của món giữ khẩu phần lần đó');
+
+    expect((await repository.watchRecentFoods(limit: 1).first).map((entry) => entry.id), ['c']);
+
+    final emitted = <List<String>>[];
+    final subscription = stream.listen((foods) => emitted.add([for (final entry in foods) entry.id]));
+    await pumpEventQueue();
+    await repository.add(food('d', 'usda:3', DateTime.utc(2026, 11, 11, 12)));
+    await pumpEventQueue();
+    await subscription.cancel();
+    expect(emitted.last, ['d', 'c', 'b']);
+  });
+
+  test('sửa món: thay đúng món theo id (khẩu phần, giờ ăn); món đã bị xóa thì báo lỗi, không thêm mới', () async {
+    final original = _entry('a', DateTime.utc(2026, 11, 11, 1));
+    await repository.add(original);
+    await repository.add(_entry('b', DateTime.utc(2026, 11, 11, 2)));
+    final edited = NoteEntry(
+      id: 'a',
+      name: original.name,
+      sourceFoodId: original.sourceFoodId,
+      facts: original.facts,
+      quantity: 80,
+      eatenAt: DateTime.utc(2026, 11, 11, 3),
+    );
+
+    await repository.update(edited);
+    final stored = await repository
+        .watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12))
+        .first
+        .then((window) => window.entries);
+    expect(stored, [_entry('b', DateTime.utc(2026, 11, 11, 2)), edited]);
+
+    await repository.delete('a');
+    await expectLater(repository.update(edited), throwsStateError);
+    final after = await repository.watchBetween(DateTime.utc(2026, 11, 11), DateTime.utc(2026, 11, 12)).first;
+    expect(after.entries.map((entry) => entry.id), ['b']);
+  });
 }

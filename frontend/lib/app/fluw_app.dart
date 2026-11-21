@@ -5,6 +5,7 @@ import 'package:fluw/app/app_router.dart';
 import 'package:fluw/core/network/backend_warm_up.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/theme/app_theme.dart';
+import 'package:fluw/core/time/current_hour_provider.dart';
 import 'package:fluw/core/time/today_provider.dart';
 import 'package:fluw/features/reminders/presentation/reminder_sync.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,8 @@ class _FluwAppState extends ConsumerState<FluwApp> {
       onResume: () {
         // The date only changes while the app is in the background long enough to matter (overnight, birthdays).
         ref.invalidate(todayProvider);
+        // Timers stop while the phone sleeps, so the hour would stay at last night's (evening advice in the morning).
+        ref.invalidate(currentHourProvider);
         // The free server has gone back to sleep after 15 idle minutes.
         _wakeUpBackend();
       },

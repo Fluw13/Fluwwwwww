@@ -5,6 +5,7 @@ import 'package:fluw/core/diary/meal_slot_labels.dart';
 import 'package:fluw/core/diary/note_day.dart';
 import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/nutrition/nutrient_totals.dart';
+import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/nutrition/personal_limits_provider.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
@@ -14,6 +15,7 @@ import 'package:fluw/features/note/data/note_providers.dart';
 import 'package:fluw/features/note/data/note_repository.dart';
 import 'package:fluw/features/note/domain/week.dart';
 import 'package:fluw/features/note/presentation/day_summary_card.dart';
+import 'package:fluw/features/note/presentation/edit_note_entry_sheet.dart';
 import 'package:fluw/features/note/presentation/meal_slot_section.dart';
 import 'package:fluw/features/note/presentation/week_strip.dart';
 
@@ -56,80 +58,110 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
     }
   }
 
+  Future<void> _edit(NoteEntry entry) async {
+    final edited = await showEditNoteEntrySheet(context, entry);
+    if (edited == null || edited == entry || !mounted) {
+      return;
+    }
+    final repository = ref.read(noteRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await repository.update(edited);
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text('Không sửa được ${entry.name}. Vui lòng thử lại.')));
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Đã sửa ${entry.name}'),
+        action: SnackBarAction(label: 'Hoàn tác', onPressed: () => _undoEdit(repository, messenger, entry)),
+      ),
+    );
+  }
+
+  Future<void> _undoEdit(NoteRepository repository, ScaffoldMessengerState messenger, NoteEntry original) async {
+    try {
+      await repository.update(original);
+    } on Object {
+      messenger.showSnackBar(SnackBar(content: Text('Không hoàn tác được ${original.name}. Vui lòng sửa lại.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = ref.watch(todayProvider);
     final selected = _selected ?? today;
     final week = ref.watch(weekNoteEntriesProvider(mondayOf(selected)));
     final limits = ref.watch(personalLimitsProvider);
+    final days = groupNoteEntries(week.value?.entries ?? const []);
 
-    return week.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          const EmptyState(
-            icon: Icons.error_outline,
-            title: 'Không đọc được Nhật ký',
-            message: 'Dữ liệu trên máy chưa đọc được.',
-          ),
-          Center(
-            child: FilledButton(
-              onPressed: () => ref.invalidate(weekNoteEntriesProvider(mondayOf(selected))),
-              child: const Text('Thử lại'),
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      children: [
+        // Outside the loading state, so changing week keeps the row in place instead of a full-screen spinner.
+        WeekStrip(
+          selected: selected,
+          today: today,
+          daysWithEntries: {for (final candidate in days) candidate.date},
+          onSelected: (value) => setState(() => _selected = value),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        ...week.when(
+          skipLoadingOnReload: true,
+          loading: () => [const Center(child: CircularProgressIndicator())],
+          error: (error, stackTrace) => [
+            const EmptyState(
+              icon: Icons.error_outline,
+              title: 'Không đọc được Nhật ký',
+              message: 'Dữ liệu trên máy chưa đọc được.',
             ),
-          ),
-        ],
-      ),
-      data: (window) {
-        final days = groupNoteEntries(window.entries);
-        final day = days.where((candidate) => candidate.date == selected).firstOrNull;
-        final entryCount = day?.entriesBySlot.values.fold<int>(0, (sum, list) => sum + list.length) ?? 0;
-
-        return ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            WeekStrip(
-              selected: selected,
-              today: today,
-              daysWithEntries: {for (final candidate in days) candidate.date},
-              onSelected: (value) => setState(() => _selected = value),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            if (window.unreadableCount > 0) ...[
-              Text(
-                'Có ${window.unreadableCount} món trong tuần này không đọc được nên không tính vào tổng.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),
+            Center(
+              child: FilledButton(
+                onPressed: () => ref.invalidate(weekNoteEntriesProvider(mondayOf(selected))),
+                child: const Text('Thử lại'),
               ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            DaySummaryCard(
-              totals: day?.dayTotal ?? NutrientTotals.of(const []),
-              entryCount: entryCount,
-              limits: limits,
-            ),
-            for (final slot in mealSlotDisplayOrder) ...[
-              const SizedBox(height: AppSpacing.md),
-              MealSlotSection(
-                slot: slot,
-                entries: day?.entriesBySlot[slot] ?? const [],
-                totals: day?.totalFor(slot) ?? NutrientTotals.of(const []),
-                onDelete: _delete,
-                onAddFood: () {
-                  ref.read(diaryTargetProvider.notifier).choose(DiaryTarget(day: selected, slot: slot));
-                  widget.onAddFood();
-                },
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Số liệu là ước tính từ nguồn dữ liệu, không thay thế tư vấn y tế.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
-        );
-      },
+          data: (window) => _dayContent(window.unreadableCount, days, selected, limits),
+        ),
+      ],
     );
+  }
+
+  List<Widget> _dayContent(int unreadableCount, List<NoteDay> days, CalendarDate selected, PersonalLimits limits) {
+    final theme = Theme.of(context);
+    final day = days.where((candidate) => candidate.date == selected).firstOrNull;
+    final entryCount = day?.entriesBySlot.values.fold<int>(0, (sum, list) => sum + list.length) ?? 0;
+
+    return [
+      if (unreadableCount > 0) ...[
+        Text(
+          'Có $unreadableCount món trong tuần này không đọc được nên không tính vào tổng.',
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+        ),
+        const SizedBox(height: AppSpacing.md),
+      ],
+      DaySummaryCard(totals: day?.dayTotal ?? NutrientTotals.of(const []), entryCount: entryCount, limits: limits),
+      for (final slot in mealSlotDisplayOrder) ...[
+        const SizedBox(height: AppSpacing.md),
+        MealSlotSection(
+          slot: slot,
+          entries: day?.entriesBySlot[slot] ?? const [],
+          totals: day?.totalFor(slot) ?? NutrientTotals.of(const []),
+          onEdit: _edit,
+          onDelete: _delete,
+          onAddFood: () {
+            ref.read(diaryTargetProvider.notifier).choose(DiaryTarget(day: selected, slot: slot));
+            widget.onAddFood();
+          },
+        ),
+      ],
+      const SizedBox(height: AppSpacing.md),
+      Text(
+        'Số liệu là ước tính từ nguồn dữ liệu, không thay thế tư vấn y tế.',
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodySmall,
+      ),
+    ];
   }
 }

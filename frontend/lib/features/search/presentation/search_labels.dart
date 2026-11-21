@@ -1,23 +1,20 @@
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
-import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
 
 String quickFilterLabel(QuickFilter filter) => switch (filter) {
-  QuickFilter.lowSugar => 'Ít đường (<5 g)',
-  QuickFilter.highProtein => 'Giàu protein (>20 g)',
-  QuickFilter.under200Kcal => 'Dưới 200 kcal',
+  QuickFilter.lowSugar => 'Đường ≤ ${formatDecimal(lowSugarMaxPer100g)} g',
+  QuickFilter.highProtein => 'Protein ≥ ${formatDecimal(highProteinMinPer100)} g',
+  QuickFilter.under200Kcal => 'Dưới ${formatWhole(lowEnergyBelowKcalPer100)} kcal',
 };
+
+/// Shown while the sugar filter is on, so a drink hidden at 4 g per 100 ml is not a surprise.
+final String lowSugarDrinkNote = 'Đồ uống: đường ≤ ${formatDecimal(lowSugarMaxPer100ml)} g trong 100 ml.';
 
 String foodSourceLabel(FoodSource source) => switch (source) {
   FoodSource.openFoodFacts => 'Open Food Facts',
   FoodSource.usda => 'USDA',
-};
-
-String quantityUnitLabel(QuantityUnit unit) => switch (unit) {
-  QuantityUnit.gram => 'g',
-  QuantityUnit.milliliter => 'ml',
 };
 
 String nutrientLabel(Nutrient nutrient) => switch (nutrient) {

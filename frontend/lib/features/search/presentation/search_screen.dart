@@ -5,8 +5,11 @@ import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
+import 'package:fluw/features/search/domain/result_ranking.dart';
 import 'package:fluw/features/search/domain/search_response.dart';
 import 'package:fluw/features/search/presentation/food_result_card.dart';
+import 'package:fluw/features/search/presentation/recent_food_sheet.dart';
+import 'package:fluw/features/search/presentation/recent_foods_section.dart';
 import 'package:fluw/features/search/presentation/recent_searches_controller.dart';
 import 'package:fluw/features/search/presentation/search_controller.dart';
 import 'package:fluw/features/search/presentation/search_labels.dart';
@@ -60,6 +63,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     await ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery);
   }
 
+  void _clear() {
+    _query.clear();
+    ref.read(searchControllerProvider.notifier).clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -78,10 +86,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             hintText: 'Tìm thực phẩm, đồ đóng gói...',
             counterText: '',
             prefixIcon: const Icon(Icons.search),
-            suffixIcon: IconButton(
-              tooltip: 'Tìm',
-              icon: const Icon(Icons.arrow_forward),
-              onPressed: () => _search(_query.text),
+            suffixIcon: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _query,
+              builder: (context, value, _) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (value.text.isNotEmpty)
+                    IconButton(tooltip: 'Xóa từ khóa', icon: const Icon(Icons.close), onPressed: _clear),
+                  IconButton(
+                    tooltip: 'Tìm',
+                    icon: const Icon(Icons.arrow_forward),
+                    onPressed: () => _search(_query.text),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -101,6 +119,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
           ],
         ),
+        if (_filters.contains(QuickFilter.lowSugar))
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(
+              lowSugarDrinkNote,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
         if (recent.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -135,6 +161,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   List<Widget> _results(SearchState state, ThemeData theme) {
     return switch (state) {
       SearchIdle() => [
+        RecentFoodsSection(onSelected: (food) => showRecentFoodSheet(context, food)),
         Text(
           'Nhập tên thực phẩm rồi bấm tìm. Dữ liệu lấy từ Open Food Facts và USDA FoodData Central.',
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -152,15 +179,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
         ),
       ],
-      SearchLoaded(:final response) => _loaded(response, theme),
+      SearchLoaded(:final response, :final englishQuery) => _loaded(response, englishQuery, theme),
     };
   }
 
-  List<Widget> _loaded(SearchResponse response, ThemeData theme) {
-    final items = applyQuickFilters(response.items, _filters);
+  List<Widget> _loaded(SearchResponse response, String? englishQuery, ThemeData theme) {
+    final items = applyQuickFilters(withNutritionFirst(response.items), _filters);
     final hiddenByFilters = response.items.length - items.length;
     return [
       Text('${items.length} kết quả cho "${response.query}"', style: theme.textTheme.titleMedium),
+      if (englishQuery != null)
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.xs),
+          child: Text(
+            'Đã tìm thêm bằng tiếng Anh: $englishQuery',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ),
       if (response.isPartial)
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),

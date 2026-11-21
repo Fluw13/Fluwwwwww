@@ -100,7 +100,45 @@ void main() {
     await controller.search(failed.query, englishQuery: failed.englishQuery);
     expect(asked.last, {'q': 'cà chua', 'en': 'tomato'});
 
-    await controller.search('cà chua', englishQuery: 't');
-    expect(asked.last, {'q': 'cà chua'});
+    await controller.search('bánh xèo', englishQuery: 't');
+    expect(asked.last, {'q': 'bánh xèo'});
   });
+
+  test(
+    'gõ tên đồ tươi có trong bảng thì gửi kèm tiếng Anh cho USDA và giữ để hiện; từ ảnh thì ưu tiên từ ảnh',
+    () async {
+      final asked = <Map<String, String>>[];
+      final container = ProviderContainer(
+        overrides: [
+          apiClientProvider.overrideWithValue(
+            ApiClient(
+              httpClient: MockClient((request) async {
+                asked.add(request.url.queryParameters);
+                final body = searchBody(request.url.queryParameters['q']!, [chickenItem]);
+                return http.Response.bytes(utf8.encode(jsonEncode(body)), 200);
+              }),
+              baseUri: Uri.parse('https://api.test'),
+              timeout: const Duration(seconds: 5),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final controller = container.read(searchControllerProvider.notifier);
+
+      await controller.search('Ức gà luộc');
+      expect(asked.last, {'q': 'Ức gà luộc', 'en': 'chicken breast'});
+      expect((container.read(searchControllerProvider) as SearchLoaded).englishQuery, 'chicken breast');
+
+      await controller.search('cà chua', englishQuery: 't');
+      expect(asked.last, {'q': 'cà chua', 'en': 'tomato'}, reason: 'từ ảnh không hợp lệ thì dùng bảng');
+
+      await controller.search('cà chua', englishQuery: 'cherry tomato');
+      expect(asked.last, {'q': 'cà chua', 'en': 'cherry tomato'});
+
+      await controller.search('sữa chua vinamilk');
+      expect(asked.last, {'q': 'sữa chua vinamilk'});
+      expect((container.read(searchControllerProvider) as SearchLoaded).englishQuery, isNull);
+    },
+  );
 }

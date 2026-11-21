@@ -67,14 +67,38 @@ void main() {
     );
   });
 
-  test('trang lỗi HTML, JSON không phải object, lỗi thiếu body chuẩn thì là phản hồi không đọc được', () async {
+  test('JSON không phải object hoặc lỗi 4xx thiếu body chuẩn thì là phản hồi không đọc được', () async {
     for (final response in [
-      http.Response('<html>502</html>', 502),
       _json([1, 2], 200),
-      _json({'message': 'x'}, 500),
+      http.Response('<html>ok</html>', 200),
+      _json({'message': 'x'}, 404),
     ]) {
       await expectLater(_client((request) async => response).getJson('/x'), throwsA(isA<InvalidResponseFailure>()));
     }
+  });
+
+  test('5xx không có body lỗi của Fluw (trang HTML của Render khi khởi động, deploy) thì máy chủ đang bận', () async {
+    for (final response in [
+      http.Response('<html>502 Bad Gateway</html>', 502),
+      http.Response('', 503),
+      _json([1], 500),
+      _json({'message': 'x'}, 500),
+    ]) {
+      await expectLater(
+        _client((request) async => response).getJson('/x'),
+        throwsA(isA<ServerUnavailableFailure>()),
+        reason: '${response.statusCode} ${response.body}',
+      );
+    }
+    await expectLater(
+      _client(
+        (request) async => _json({
+          'error': {'code': 'SOURCES_UNAVAILABLE', 'message': 'Nguồn lỗi.'},
+        }, 503),
+      ).getJson('/x'),
+      throwsA(isA<ServerFailure>()),
+      reason: 'lỗi có body chuẩn của Fluw vẫn giữ lời nhắn của máy chủ',
+    );
   });
 
   test('mất mạng thì NetworkFailure, quá giờ thì TimeoutFailure', () async {

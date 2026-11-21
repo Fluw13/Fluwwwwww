@@ -16,9 +16,12 @@ final class SearchLoading extends SearchState {
 }
 
 final class SearchLoaded extends SearchState {
-  const SearchLoaded(this.response);
+  const SearchLoaded(this.response, {this.englishQuery});
 
   final SearchResponse response;
+
+  /// The English words USDA was searched with, shown so the user knows where its results come from.
+  final String? englishQuery;
 }
 
 final class SearchFailed extends SearchState {

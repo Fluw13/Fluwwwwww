@@ -21,7 +21,13 @@ final class ServerFailure extends ApiFailure {
   final String message;
 }
 
-/// The answer was not the JSON the app expects, e.g. a proxy error page.
+/// The answer was not the JSON the app expects.
 final class InvalidResponseFailure extends ApiFailure {
   const InvalidResponseFailure();
+}
+
+/// A 5xx answer without the backend's error body: the host's own page while the server starts, redeploys or is
+/// overloaded (Render answers 502/503 with HTML then).
+final class ServerUnavailableFailure extends ApiFailure {
+  const ServerUnavailableFailure();
 }

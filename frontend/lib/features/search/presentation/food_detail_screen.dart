@@ -5,16 +5,18 @@ import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/nutrition/personal_limits_provider.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
+import 'package:fluw/core/widgets/portion_input.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/food_assessment.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
+import 'package:fluw/features/search/domain/serving_size.dart';
 import 'package:fluw/features/search/presentation/add_to_note_bar.dart';
 import 'package:fluw/features/search/presentation/attribution_footer.dart';
 import 'package:fluw/features/search/presentation/nutrient_table.dart';
 import 'package:fluw/features/search/presentation/personal_check_card.dart';
-import 'package:fluw/features/search/presentation/portion_input.dart';
+import 'package:fluw/features/search/presentation/portion_chips.dart';
 import 'package:fluw/features/search/presentation/search_labels.dart';
 
 class FoodDetailScreen extends ConsumerStatefulWidget {
@@ -31,7 +33,13 @@ class FoodDetailScreen extends ConsumerStatefulWidget {
 
 class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   late FoodItem _item = widget.item;
-  final TextEditingController _portion = TextEditingController(text: '100');
+
+  /// The pack's serving when it has one in the unit of the numbers, otherwise 100.
+  late String _defaultPortion = _defaultPortionFor(widget.item);
+  late final TextEditingController _portion = TextEditingController(text: _defaultPortion);
+
+  static String _defaultPortionFor(FoodItem item) =>
+      formatDecimal(servingAmount(item.servingSize, item.facts.unit) ?? 100);
 
   /// Search results from Open Food Facts lack allergens and the Vietnamese name; the full product has them.
   late bool _isLoadingFull = _needsFullProduct;
@@ -67,6 +75,12 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           _item = full ?? _item;
           _isLoadingFull = false;
         });
+        // The full product may bring the pack's serving; a portion the user already typed is kept.
+        final fullDefault = _defaultPortionFor(_item);
+        if (_portion.text == _defaultPortion && fullDefault != _defaultPortion) {
+          _defaultPortion = fullDefault;
+          _portion.text = fullDefault;
+        }
       }
     } on ApiFailure {
       if (mounted) {
@@ -82,14 +96,19 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final limits = ref.watch(personalLimitsProvider);
-    final unitLabel = quantityUnitLabel(_item.facts.unit);
+    final unitLabel = _item.facts.unit.symbol;
     final (portionAmount, portionError) = parsePortion(_portion.text, _item.facts.unit);
     final portion = portionAmount == null ? null : _item.facts.forQuantity(portionAmount);
     final imageUrl = _item.imageUrl;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Chi tiết dinh dưỡng')),
-      bottomNavigationBar: AddToNoteBar(item: _item, portion: portionAmount),
+      bottomNavigationBar: AddToNoteBar(
+        name: _item.name,
+        sourceFoodId: _item.id,
+        facts: _item.facts,
+        portion: portionAmount,
+      ),
       body: ListView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -138,12 +157,20 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             allergens: checkAllergens(_item, limits),
             shares: portion == null ? const [] : portionShares(portion, limits),
             limits: limits,
+            hasPortion: portionAmount != null,
             isLoadingAllergens: _isLoadingFull,
           ),
           const SizedBox(height: AppSpacing.md),
           SectionCard(
             title: 'Chỉ số dinh dưỡng',
             children: [
+              PortionChips(
+                unit: _item.facts.unit,
+                serving: servingAmount(_item.servingSize, _item.facts.unit),
+                selected: portionAmount,
+                onSelected: (amount) => _portion.text = formatDecimal(amount),
+              ),
+              const SizedBox(height: AppSpacing.md),
               PortionInput(controller: _portion, unit: _item.facts.unit, errorText: portionError),
               const SizedBox(height: AppSpacing.md),
               NutrientTable(

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/portion_limits.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
-import 'package:fluw/features/search/presentation/search_labels.dart';
 
-const double minPortion = 1;
-const double maxPortion = 2000;
-
-/// The amount eaten, typed by the user: Fluw never guesses portions (CLAUDE.md).
-/// Returns null to [onChanged] while the text is not a valid amount.
+/// The amount eaten, typed by the user: Fluw never guesses portions (CLAUDE.md). Read it with [parsePortion].
 class PortionInput extends StatelessWidget {
   const PortionInput({required this.controller, required this.unit, required this.errorText, super.key});
 
@@ -26,19 +22,23 @@ class PortionInput extends StatelessWidget {
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
       decoration: InputDecoration(
         labelText: 'Khẩu phần bạn ăn',
-        suffixText: quantityUnitLabel(unit),
+        suffixText: unit.symbol,
         errorText: errorText,
-        helperText: 'Nhập số ${quantityUnitLabel(unit)} thực tế, ví dụ 150.',
+        helperText: 'Nhập số ${unit.symbol} thực tế, ví dụ 150.',
       ),
     );
   }
 }
 
-/// The portion in [unit], or null with the reason shown under the field.
+/// The portion in [unit], or null with the reason shown under the field. The range is written "1–2000", not
+/// "2,000", which Vietnamese readers take for 2.
 (double?, String?) parsePortion(String text, QuantityUnit unit) {
   final value = parseDecimal(text);
-  if (value == null || value < minPortion || value > maxPortion) {
-    return (null, 'Nhập từ ${formatDecimal(minPortion)} đến ${formatWhole(maxPortion)} ${quantityUnitLabel(unit)}.');
+  if (value == null || !isValidPortion(value)) {
+    return (
+      null,
+      'Khẩu phần phải trong khoảng ${formatDecimal(minPortion)}–${formatDecimal(maxPortion)} ${unit.symbol}.',
+    );
   }
   return (value, null);
 }

@@ -3,59 +3,78 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/diary/diary_target.dart';
 import 'package:fluw/core/diary/food_logger.dart';
 import 'package:fluw/core/diary/logged_food.dart';
-import 'package:fluw/core/diary/meal_slot.dart';
 import 'package:fluw/core/diary/meal_slot_labels.dart';
 import 'package:fluw/core/diary/meal_time.dart';
-import 'package:fluw/core/theme/app_radius.dart';
+import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
-import 'package:fluw/features/search/domain/food_item.dart';
+import 'package:fluw/core/time/clock_provider.dart';
+import 'package:fluw/core/widgets/meal_slot_picker.dart';
 
 /// Pinned under the detail screen, as in the design, so adding never needs a scroll past the nutrient table. Starts on
 /// the day and slot the diary asked for, otherwise on the slot happening now; off while the portion is not valid.
 class AddToNoteBar extends ConsumerStatefulWidget {
-  const AddToNoteBar({required this.item, required this.portion, super.key});
+  const AddToNoteBar({
+    required this.name,
+    required this.sourceFoodId,
+    required this.facts,
+    required this.portion,
+    this.onAdded,
+    super.key,
+  });
 
-  final FoodItem item;
+  /// Null when the source has no name.
+  final String? name;
+  final String? sourceFoodId;
+  final NutritionFacts facts;
   final double? portion;
+
+  /// Called once the food is in the diary, e.g. to close the sheet the bar sits in.
+  final VoidCallback? onAdded;
 
   @override
   ConsumerState<AddToNoteBar> createState() => _AddToNoteBarState();
 }
 
 class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
-  late DiaryTarget _target = ref.read(diaryTargetProvider) ?? DiaryTarget.current(DateTime.now());
+  late DiaryTarget _target = ref.read(diaryTargetProvider) ?? DiaryTarget.current(ref.read(clockProvider)());
   bool _isSaving = false;
 
-  String _dayWords(CalendarDate day) =>
-      day == DiaryTarget.current(DateTime.now()).day ? 'hôm nay' : 'ngày ${day.day}/${day.month}';
+  String _dayWords(CalendarDate day, CalendarDate currentDay) =>
+      day == currentDay ? 'hôm nay' : 'ngày ${day.day}/${day.month}';
 
   Future<void> _add(double portion) async {
     final messenger = ScaffoldMessenger.of(context);
-    final name = widget.item.name ?? 'Món chưa có tên';
+    // Read before the await: the user may leave the screen while the write runs, and `ref` is gone after that.
+    final logger = ref.read(foodLoggerProvider);
+    final diaryTarget = ref.read(diaryTargetProvider.notifier);
+    final now = ref.read(clockProvider)();
+    final name = widget.name ?? 'Món chưa có tên';
     final target = _target;
-    final where = 'buổi ${mealSlotLabel(target.slot)} ${_dayWords(target.day)}';
+    final where = 'buổi ${mealSlotLabel(target.slot)} ${_dayWords(target.day, DiaryTarget.current(now).day)}';
     setState(() => _isSaving = true);
     try {
-      await ref
-          .read(foodLoggerProvider)
-          .log(
-            LoggedFood(
-              name: name,
-              sourceFoodId: widget.item.id,
-              facts: widget.item.facts,
-              quantity: portion,
-              eatenAt: eatenAtFor(day: target.day, slot: target.slot, now: DateTime.now()),
-            ),
-          );
-      ref.read(diaryTargetProvider.notifier).choose(null);
-      messenger.showSnackBar(SnackBar(content: Text('Đã thêm $name vào $where')));
+      await logger.log(
+        LoggedFood(
+          name: name,
+          sourceFoodId: widget.sourceFoodId,
+          facts: widget.facts,
+          quantity: portion,
+          eatenAt: eatenAtFor(day: target.day, slot: target.slot, now: now),
+        ),
+      );
     } on Object {
       messenger.showSnackBar(const SnackBar(content: Text('Không thêm được vào Nhật ký. Vui lòng thử lại.')));
+      return;
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
+    }
+    diaryTarget.choose(null);
+    messenger.showSnackBar(SnackBar(content: Text('Đã thêm $name vào $where')));
+    if (mounted) {
+      widget.onAdded?.call();
     }
   }
 
@@ -63,7 +82,7 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final portion = widget.portion;
-    final currentDay = DiaryTarget.current(DateTime.now()).day;
+    final currentDay = DiaryTarget.current(ref.watch(clockProvider)()).day;
 
     // Capped like Material's NavigationBar: a pinned bar that grew with the largest font sizes would cover the page.
     return MediaQuery.withClampedTextScaling(
@@ -82,7 +101,10 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text('Thêm vào Nhật ký ${_dayWords(_target.day)}', style: theme.textTheme.labelLarge),
+                      child: Text(
+                        'Thêm vào Nhật ký ${_dayWords(_target.day, currentDay)}',
+                        style: theme.textTheme.labelLarge,
+                      ),
                     ),
                     Text(
                       mealSlotLabel(_target.slot),
@@ -99,19 +121,9 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
                     ),
                   ),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    for (final (index, slot) in mealSlotDisplayOrder.indexed) ...[
-                      if (index > 0) const SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: _SlotSegment(
-                          slot: slot,
-                          isSelected: slot == _target.slot,
-                          onTap: () => setState(() => _target = DiaryTarget(day: _target.day, slot: slot)),
-                        ),
-                      ),
-                    ],
-                  ],
+                MealSlotPicker(
+                  selected: _target.slot,
+                  onSelected: (slot) => setState(() => _target = DiaryTarget(day: _target.day, slot: slot)),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 FilledButton.icon(
@@ -129,57 +141,6 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
                     ),
                   ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SlotSegment extends StatelessWidget {
-  const _SlotSegment({required this.slot, required this.isSelected, required this.onTap});
-
-  final MealSlot slot;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // Same as the selected day in the diary's week row: a strong fill, not a pale tint, so the choice never depends
-    // on telling two light colours apart.
-    final foreground = isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant;
-
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: '${mealSlotLabel(slot)}, ${mealSlotHours(slot)}',
-      excludeSemantics: true,
-      onTap: onTap,
-      child: Material(
-        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          onTap: onTap,
-          child: ConstrainedBox(
-            // 48 dp: the minimum touch target.
-            constraints: const BoxConstraints(minHeight: 48),
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: Text(
-                    mealSlotShortHours(slot),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: foreground,
-                      fontWeight: isSelected ? FontWeight.w700 : null,
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
         ),

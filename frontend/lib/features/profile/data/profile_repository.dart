@@ -2,7 +2,9 @@ import 'package:fluw/core/database/app_database.dart';
 import 'package:fluw/features/profile/data/dietary_mapper.dart';
 import 'package:fluw/features/profile/data/profile_mapper.dart';
 import 'package:fluw/features/profile/data/stored_profile.dart';
+import 'package:fluw/features/profile/data/weight_log_repository.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
+import 'package:fluw/features/profile/domain/weight_entry.dart';
 
 final class ProfileRepository {
   ProfileRepository(this._database);
@@ -43,8 +45,9 @@ final class ProfileRepository {
       .asyncMap((_) => load());
 
   /// SQLite turns NaN into NULL, so a non-finite number would either break a NOT NULL column or silently come back
-  /// as "not set"; it is rejected here instead.
-  Future<void> save(HealthProfile profile) async {
+  /// as "not set"; it is rejected here instead. [weighIn] (a changed weight is also today's weigh-in) is saved in the
+  /// same transaction, so a failure never leaves the profile and the weight history disagreeing.
+  Future<void> save(HealthProfile profile, {WeightEntry? weighIn}) async {
     final numbers = [profile.heightCm, profile.weightKg, profile.targetWeightKg, ?profile.weeklyChangeKg];
     if (numbers.any((number) => !number.isFinite)) {
       throw ArgumentError.value(profile, 'profile', 'Hồ sơ có số không hữu hạn');
@@ -61,6 +64,9 @@ final class ProfileRepository {
           ..insertAll(_database.profileAllergies, allergiesToRows(profile.dietary))
           ..insertAll(_database.profilePreferences, preferencesToRows(profile.dietary));
       });
+      if (weighIn != null) {
+        await WeightLogRepository(_database).record(weighIn);
+      }
     });
   }
 
