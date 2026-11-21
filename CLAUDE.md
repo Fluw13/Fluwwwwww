@@ -45,9 +45,11 @@
 
 ---
 
-## 2. Dự án (cập nhật 11/11/2026)
+## 2. Dự án (cập nhật 21/11/2026)
 
 **Fluw**: ứng dụng tra cứu dinh dưỡng (calo, protein, đường, chất béo...), ghi nhật ký ăn uống và đánh giá nhu cầu theo hồ sơ sức khỏe của người dùng. Trợ lý AI tên **Zero**.
+
+**Chỉ dành cho người lớn (từ 18 tuổi) ở Việt Nam** (FLuw chốt 18/11/2026). Chính sách quyền riêng tư: `PRIVACY.md` ở gốc repo.
 
 Đổi hướng ngày 11/11/2026. Bản cũ (tra cứu thực phẩm và chấm điểm FNS) đã gỡ khỏi cây code; vẫn xem được ở commit `df79e6b`.
 
@@ -57,7 +59,7 @@
 | Frontend | Flutter 3.47.9 / Dart 3.13.7, thư mục `frontend/`, chỉ Android và iOS, id `com.fluw.app` |
 | Backend | Node.js ≥ 22.9 (22.x) + Express 5, thư mục `backend/`, entry `server.js` |
 | Hosting backend | Render, workspace "My Workspace", service `Fluw` (`srv-dbed4jlg1s2s73f7jrdg`), `https://fluw.onrender.com` |
-| APK | CI build, tải ở GitHub Actions → artifact `fluw-apk` |
+| APK | CI build, tải ở GitHub Actions → artifact `fluw-apk`; chỉ lượt chạy trên `main` ký bằng keystore thật |
 
 **Render (VERIFIED 11/11/2026):**
 - Cấu hình build và chạy: root dir `backend`, build `npm install`, start `node server.js`, gói free, region virginia.
@@ -74,6 +76,7 @@
   - Báo cáo tuần/tháng.
   - Nước uống.
   - Cài đặt nhắc uống nước.
+- **Màn ngoài thiết kế:** Cài đặt nhắc ghi bữa ăn (`/reminders`), Quyền riêng tư và điều khoản (`/privacy`).
 
 ---
 
@@ -81,17 +84,17 @@
 
 ### Frontend `frontend/lib/`
 ```
-app/                      ghép app: FluwApp, router (go_router), AppTab; shell/ (header, thanh 5 tab)
-core/                     dùng chung: theme, settings, licenses, widget chung, time (CalendarDate), nutrition, (sau này) network, database, format
+app/                      ghép app: FluwApp, router (go_router), AppTab, nối giữa các feature, xóa toàn bộ dữ liệu; shell/ (header, thanh 5 tab)
+core/                     dùng chung: theme, settings, licenses, widget chung, time, nutrition, diary, search, network, database, format, privacy
 features/<tên>/
   data/                   gọi API, đọc/ghi SQLite, chuyển đổi JSON
   domain/                 Dart thuần (không import Flutter): model, công thức, quy tắc. Bắt buộc có unit test
   presentation/           màn hình và widget riêng của tính năng
 ```
-- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`, `reminders`.
+- Feature hiện có: `home`, `search`, `scan`, `note`, `profile`, `reminders`, `privacy`.
 - Widget test cần thay provider đã override mặc định thì truyền `pumpFluwApp(overrides:)`; chúng nằm ở `ProviderScope` con vì Riverpod không cho override một provider hai lần trong cùng container. Màn tab chỉ là phần thân; header và thanh dưới nằm ở `app/shell/`.
 - **Shell (UI0):**
-  - `AppShell` = `FluwTopBar` + thân màn + `FluwBottomBar`.
+  - `AppShell` (`ConsumerWidget`) = `FluwTopBar` + thân màn + `FluwBottomBar`. Chuyển sang tab khác Tra Cứu/Quét Món (thanh dưới hoặc avatar) thì xóa `diaryTargetProvider`, để khung đã chọn ở Nhật Ký không dính vào lần thêm món sau; đi từ một khung sang Tra Cứu/Quét thì giữ.
   - Header: tiêu đề theo `AppTab.title`, nút Sáng/Tối, chuông (mở `/reminders`, M6b), avatar mở Hồ Sơ.
     - `AppBar` của Flutter tự giới hạn cỡ chữ tiêu đề (`_kMaxTitleTextScaleFactor`); giữ nguyên theo chuẩn Material.
   - Thanh dưới: 5 tab, nút Quét tròn 56 dp nổi 24 dp.
@@ -99,11 +102,12 @@ features/<tên>/
     - Nhãn tab to theo cỡ chữ hệ thống đến **130% rồi dừng**, giống `NavigationBar` của Material (thanh cao cố định). Trên màn hẹp, nhãn dài co theo chiều ngang bằng `Flexible` + `FittedBox`.
     - Semantics mỗi tab: nút, có hành động chạm (`onTap`), có trạng thái đang chọn. Nút tròn bị loại khỏi semantics vì tab "Quét Món" bên dưới đã đọc tên.
 - **State:** Riverpod 3 (`flutter_riverpod`).
-  - `core/settings/`: `themeModeProvider` (Notifier) và `ThemeModeStorage` (shared_preferences, key `theme_mode`).
+  - `core/settings/`: `themeModeProvider` (Notifier) và `ThemeModeStorage` (shared_preferences, khóa công khai `ThemeModeStorage.key` = `theme_mode`, để "Xóa toàn bộ dữ liệu" giữ lại).
+  - `sharedPreferencesProvider` (`SharedPreferences?`, null khi kho không mở được) dùng chung cho các kho cài đặt.
   - `loadPreferences()` chờ tối đa 2 s; mọi lỗi (kể cả `Error`) hoặc quá giờ thì chạy với cài đặt mặc định.
   - Test giả lập kho cài đặt chậm/lỗi bằng `test/helpers/fake_preferences_store.dart` (dev dependency `shared_preferences_platform_interface`).
-  - Storage được override trong `main()`; test dùng `test/helpers/pump_fluw_app.dart`.
-  - Chưa có chỗ chọn lại "Theo máy" sau khi đã bấm đổi; thêm vào cài đặt ở M2.
+  - Storage được override trong `main()`; test dùng `test/helpers/pump_fluw_app.dart`. Test cần cuộn tới widget dùng `test/helpers/scroll_to.dart`.
+  - Chọn lại "Theo máy": `AppearanceCard` trên Hồ Sơ (M2d).
 - **Theme** `core/theme/`:
   - `app_palette`: màu lấy từ thiết kế, cộng các màu thiết kế không có (`on*Container`, `tertiaryContainer`, lớp nền giữa) lấy theo tông Material 3 tương ứng, để mỗi nhóm màu đồng tông.
   - Bảng sáng sinh từ `fromSeed(primary, fidelity)` rồi ghi đè trọn từng nhóm màu; bảng tối sinh từ seed `#10B981`.
@@ -117,21 +121,32 @@ features/<tên>/
 - Thứ tự tab chỉ khai báo ở `enum AppTab`; router và thanh điều hướng đều đọc từ đó.
 - `features/profile/domain/` (M2):
   - `sex`, `activity_level` (hệ số AF), `training_type`, `weight_goal` (suy ra từ cân nặng mong muốn: làm tròn từng cân nặng đến 0,1 kg rồi so).
-  - `age` (mốc 14, 18, tối đa 100).
-  - `energy` (BMR, TDEE), `calorie_target` (`isValidWeeklyChangeKg` so theo 0,01 kg), `protein_target` (`ProteinGroup` và `ProteinTarget`).
+  - `age`: `minimumAgeYears` = 18 (không còn mốc 14), `maximumAgeYears` = 100. `latestAdultBirthDate(today)`: ngày sinh muộn nhất đủ 18 tuổi (hôm nay 29/2 thì là 28/2), dùng làm `lastDate` của bộ chọn ngày sinh.
+  - `energy` (BMR, TDEE), `calorie_target`, `protein_target` (`ProteinGroup` và `ProteinTarget`), `reference_weight`.
+  - `calorie_target` (A1):
+    - `isValidWeeklyChangeKg` so theo 0,01 kg; `weeklyChangeKgFromDailyGap` đổi mức chênh với TDEE ra kg/tuần (7.700 kcal/kg).
+    - Giảm cân không thấp hơn `max(BMR, minimumIntakeKcal(formula))` (nữ 1.200, nam 1.500, NIH/NHLBI; giới tính Khác theo `BmrFormula`). Giữ cân, tăng cân không áp sàn (giữ cân vẫn bằng TDEE dù TDEE < 1.200).
+    - `CalorieTarget.raisedTo`: `CalorieFloor.bmr` / `womenMinimum` / `menMinimum` / `maintenance`, `null` khi không nâng; `isRaisedToMinimum`.
+    - `maintenance`: mức sàn ≥ TDEE (người nhỏ, lớn tuổi, ít vận động) thì mục tiêu **bằng TDEE**, không đặt thâm hụt. Hồ Sơ ghi "Mức tiêu hao ước tính (TDEE) đã thấp hơn mức tối thiểu khi giảm cân (1,200 kcal nữ, 1,500 kcal nam), nên Fluw để mục tiêu bằng mức giữ cân. Muốn giảm cân, hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng."
+  - `reference_weight`: `ReferenceWeight` = `min(cân nặng, 24,9 × chiều cao(m)²)`, cờ `isCapped`. Protein và nước tính theo cân này; BMR, BMI theo cân thật.
+  - `protein_target`: không còn nhóm `teen`; `cutting` 1,6–2,4 g/kg (Hector & Phillips 2018); `select` không nhận tuổi. `needsKidneyCaution` khi cận trên > 1,2 g/kg.
   - `health_profile` (`weeklyChangeKg` để trống được), `profile_validation` (giới hạn và `ProfileIssue`), `daily_targets`.
   - M2a:
     - `health_condition`: chỉ tiểu đường, huyết áp cao, mỡ máu đổi chỉ tiêu hoặc gây cảnh báo; các bệnh khác chỉ là ghi chú.
     - `bmi`: thang châu Á. `displayValue` là BMI **cắt xuống** 0,1 (cộng `1e-9` để 25,0 tính ra 24,999… không rơi xuống 24,9). Xếp loại theo số này nên giữ đúng ngưỡng spec và luôn khớp số hiện; giao diện phải hiện đúng `displayValue`.
     - `nutrient_targets`: béo, béo bão hòa, đường, tinh bột theo % năng lượng; `dailySodiumMaxMg` = 2000.
-    - `water_target`: 35 ml/kg.
+    - `water_target`: 35 ml × cân nặng tham chiếu, là tổng lượng nước kể cả nước trong thức ăn (mức Fluw chọn, đối chiếu EFSA 2010: nữ 2,0 lít, nam 2,5 lít).
     - `HealthProfile` thêm `conditions` và `limitsSugar` (giảm ngọt), đều bắt buộc (không mặc định), để lúc đọc SQLite quên cột thì không compile.
-  - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `TeenTargets` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
-    - `TeenTargets`: protein, nước.
-    - `AdultTargets`: BMR, TDEE, calo, protein, `nutrients`, `bmi`, nước.
-  - Giới hạn hồ sơ (FLuw duyệt 12/11):
-    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 100;
-    - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân.
+  - `HealthProfile.isPregnantOrBreastfeeding` (`bool?`, bắt buộc truyền): chỉ giữ khi công thức BMR là Nữ (constructor tự bỏ khi Nam hoặc Khác–Nam), `null` = chưa trả lời. Có trong `==`, `hashCode`, `copyWith`.
+  - `calculateDailyTargets` trả một trong `InvalidProfile` / `BelowMinimumAge` / `PregnancyOrBreastfeeding` / `AdultTargets` (sealed class, UI phải xử lý đủ 4 trường hợp; `TeenTargets` đã bỏ). Hồ sơ lỗi không ném exception, để hồ sơ cũ trong SQLite không làm crash màn hình khi giới hạn đổi.
+    - `BelowMinimumAge`: hồ sơ cũ của người dưới 18 tuổi vẫn đọc được; không có chỉ tiêu, màn ghi "Fluw dành cho người từ 18 tuổi."; dị ứng vẫn cảnh báo.
+    - `PregnancyOrBreastfeeding` (xét sau tuổi): không có số nào (calo, macro, BMI, nước), chỉ lời "Nhu cầu năng lượng và đạm khi mang thai hoặc cho con bú khác người thường. Hãy hỏi bác sĩ hoặc chuyên gia dinh dưỡng."; dị ứng vẫn cảnh báo.
+    - `AdultTargets`: BMR, TDEE, calo, protein, `nutrients`, `bmi`, nước, `referenceWeight`.
+  - Giới hạn hồ sơ (FLuw duyệt 12/11, A1 thêm 19/11):
+    - chiều cao 100–250 cm, cân nặng 20–300 kg, tuổi tối đa 100 (dưới 18 là `BelowMinimumAge`, không phải `ProfileIssue`);
+    - tốc độ đổi cân lớn hơn 0 và không quá 0,5 kg/tuần, chỉ bắt buộc với người lớn muốn tăng/giảm cân và không mang thai/cho con bú;
+    - `pregnancyAnswerMissing`: người lớn theo công thức BMR Nữ chưa trả lời câu hỏi mang thai. Hồ sơ nữ lưu trước schema v5 rơi vào đây cho tới khi trả lời (chủ ý: an toàn hơn coi là "Không");
+    - `targetBmiTooLow` (giảm cân tới BMI < 18,5, cắt xuống 0,1 như `Bmi`), `loseWhenUnderweight` (đang BMI < 18,5 mà giảm cân; khi đó không báo kèm `targetBmiTooLow`). Chỉ xét khi người lớn, chiều cao và hai cân nặng hợp lệ và `goal == lose`. Tăng cân, giữ cân khi đang thiếu cân vẫn được.
 - **Ngày tháng:**
   - Ngày sinh và ngày trong Nhật ký dùng `CalendarDate` (năm, tháng, ngày), không dùng `DateTime`, để không lệch ngày khi đổi múi giờ.
   - "Hôm nay" lấy bằng `CalendarDate.fromDateTime(DateTime.now())`.
@@ -152,7 +167,7 @@ features/<tên>/
   - `conditionNote`: ghi chú "bệnh tự nhập", chỉ để ghi chú.
   - `copyWith` nhận hàm cho trường để trống được, để đặt `null` có chủ ý: `copyWith(weeklyChangeKg: () => null)`.
 - **SQLite (drift) `core/database/` (M2b):**
-  - `AppDatabase` schema v4 (v2 ở M2c: `display_name`, `bmr_formula`; v3 ở M2d: `diet_style`, `allergy_note`, `planned_goal`, bảng `profile_allergies`, `profile_preferences`, `weight_entries`; v4 ở M4: bảng `note_entries`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
+  - `AppDatabase` schema v5 (v2 ở M2c: `display_name`, `bmr_formula`; v3 ở M2d: `diet_style`, `allergy_note`, `planned_goal`, bảng `profile_allergies`, `profile_preferences`, `weight_entries`; v4 ở M4: bảng `note_entries`; v5 ở A1: cột `profiles.pregnant_or_breastfeeding` bool null được, `from4To5`), bảng `profiles` (chỉ 1 dòng, `CHECK (id = 1)`) và `profile_conditions`. `appDatabaseProvider` mở file `fluw` bằng `drift_flutter`.
   - Bảng nằm ở `core/` vì `AppDatabase` phải liệt kê mọi bảng; `core/` vẫn không import `features/`.
   - Code sinh `app_database.g.dart` được commit (CI không chạy build_runner). Sinh lại xem mục 4.
   - Schema mỗi phiên bản lưu ở `frontend/drift_schemas/` (`build.yaml`). Tăng `schemaVersion` thì chạy `dart run drift_dev make-migrations` để có bước migration và test đối chiếu.
@@ -160,25 +175,48 @@ features/<tên>/
 - **`features/profile/data/` (M2b):**
   - `profile_storage_keys`: khóa lưu cố định cho `Sex`, `ActivityLevel`, `TrainingType`, `HealthCondition`, không dùng `name`/`index`. Có test khóa không bao giờ đổi; chỉ được thêm khóa mới.
   - `profile_mapper`: khóa bệnh lạ thì bỏ qua; trường bắt buộc không đọc được thì trả `null`.
-  - `ProfileRepository`: `load` (đọc các bảng trong một transaction), `watch` (`customSelect('SELECT 1', readsFrom: ...)` + `asyncMap(load)`, phát lại khi bảng nào đổi), `save`/`clear` trong transaction. `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
+  - `ProfileRepository`: `load` (đọc các bảng trong một transaction), `watch` (`customSelect('SELECT 1', readsFrom: ...)` + `asyncMap(load)`, phát lại khi bảng nào đổi), `save`/`clear` trong transaction. `save(profile, weighIn:)` ghi cả lần cân trong cùng transaction (drift lồng bằng savepoint). `save` từ chối số không hữu hạn (SQLite lưu NaN thành NULL).
   - Kết quả đọc là `StoredProfile` (sealed): `NoProfile` / `UnreadableProfile` / `LoadedProfile`. UI phải báo người dùng khi hồ sơ hỏng, không âm thầm mở form trống.
   - Provider: `profileRepositoryProvider`, `storedProfileProvider` (StreamProvider).
   - Test: `test/helpers/in_memory_database.dart` (SQLite trong bộ nhớ, `closeStreamsSynchronously`). `pumpFluwApp` tự tạo database theo app (đóng cùng app kể cả khi test fail), lấy qua `appContainer(tester)`; đọc/ghi database trong widget test phải bọc `tester.runAsync`.
 - **`features/profile/presentation/` (M2c):**
   - `ProfileScreen` (tab Hồ Sơ) xử lý đủ `NoProfile` / `UnreadableProfile` / `LoadedProfile` / lỗi đọc (chỉ cho "Thử lại", không mở form trống để khỏi ghi đè).
-  - `ProfileSetupScreen` ở route `/profile/setup` trên root navigator (che thanh tab); `app_router` truyền `onEditProfile` để feature không import `app/`.
+  - `ProfileSetupScreen` ở route `/profile/setup` trên root navigator (che thanh tab); `app_router` truyền `onEditProfile`, `onOpenPrivacy` để feature không import `app/`.
   - `ProfileDraft`: chữ người dùng gõ → `HealthProfile`, lỗi theo từng ô (`ProfileField`). Tốc độ chỉ giữ khi người lớn muốn đổi cân. Có `==` để biết form có thay đổi thật không (hỏi trước khi bỏ).
+  - Câu hỏi mang thai (A1): `ProfileField.pregnancy`, `ProfileDraft.asksPregnancy` (công thức Nữ). "Bạn đang mang thai hoặc cho con bú?" (Có/Không) ngay sau giới tính/công thức; Có thì ghi "Fluw sẽ không tính calo, đạm, BMI và nước; dị ứng vẫn được cảnh báo." và ẩn ô tốc độ. `targetBmiTooLow`, `loseWhenUnderweight` báo dưới ô "Cân nặng mong muốn".
+  - Ô mức vận động có helper "Tính cả công việc, đi lại và tập luyện. Fluw dùng hệ số vận động thông dụng (ước tính)."; mô tả từng mức nói về cả ngày. Sức bền: "Chạy bộ, đạp xe, bơi" (bỏ yoga).
+  - `DailyTargetsView`, `ProfileOverview` (A1):
+    - Ghi chú calo theo `CalorieFloor`: nâng lên mức tối thiểu ("Đã nâng lên mức tối thiểu 1,200 kcal/ngày (nữ) để không ăn quá ít. Ăn thấp hơn cần bác sĩ theo dõi.", nam 1,500), nâng lên BMR, `maintenance` (chữ ở `calorie_target` trên).
+    - Số tuần: khi bị nâng dùng tốc độ thực tế `(TDEE − kcal) × 7 / 7700`, "≈ 0.19 kg/tuần · ít nhất khoảng 11 tuần (ước tính; cân thường giảm chậm dần)"; tốc độ làm tròn còn 0 (kể cả `maintenance`) thì "chưa ước tính được thời gian". Chỉ hiện khi có `AdultTargets`.
+    - Nước: "Tổng lượng nước (gồm cả nước trong thức ăn)", ghi chú 35 ml/kg (EFSA 2010), "Khoảng 70–80% lượng nước đến từ đồ uống. Người bệnh tim, thận cần hỏi bác sĩ về lượng nước."
+    - Cân tham chiếu: "Đạm và nước tính theo cân nặng tham chiếu 76.3 kg (BMI 24.9), không theo cân nặng thật." `needsKidneyCaution`: "Nếu bạn có bệnh thận, hãy hỏi bác sĩ trước khi ăn nhiều đạm."
+  - Lưu hồ sơ lần đầu phải qua `ensureHealthDataConsent` (xem Quyền riêng tư bên dưới). Cuối Hồ Sơ (dưới "Cập nhật hồ sơ") có nút "Xóa toàn bộ dữ liệu trên máy".
+  - Về Fluw (`AboutCard`) có `PrivacyPolicyButton` và dòng "Fluw không phải thiết bị y tế; không chẩn đoán, điều trị hay phòng bệnh. Số liệu chỉ là ước tính." Màn chưa có hồ sơ / hồ sơ hỏng / lỗi đọc (`ProfileSetupPrompt`) cũng mở được `/privacy`.
+  - Mô tả bệnh (`healthConditionDescription`) và "Tôi muốn giảm ngọt" (`diet_section.dart`) nói rõ là mức tham khảo (WHO), không phải chế độ ăn điều trị, không thay thế hướng dẫn của bác sĩ; bỏ "tính từ 18 tuổi" và "(đang xây dựng)". A3 (D6, D11) có thể đổi lại chữ, giữ ý này. `allergies_section` nói rõ chưa xét "có thể chứa" (vết).
   - Số nhập nhận `58,5` và `58.5`, tối đa 2 chữ số thập phân (`core/format/decimal_text.dart`); hiển thị theo thiết kế: `58.5`, `1,850`.
   - BMI trên màn Hồ Sơ lấy từ `AdultTargets`, nên hồ sơ không hợp lệ không hiện BMI và không crash.
   - `todayProvider` (`core/time/`) làm mới khi app quay lại trước màn hình và tự làm mới sau nửa đêm (Timer); test cố định ngày `appTestToday`.
   - App chạy locale `vi` (`flutter_localizations`); iOS khai báo `CFBundleLocalizations`. `tester.pageBack()` tìm tooltip tiếng Anh nên test bấm `find.byType(BackButton)`.
   - Ô nhập dùng `inputDecorationTheme` (nền `surfaceContainerLow`, bo 16, không viền) như thiết kế.
-- **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng. `postBytes` (M5b) gửi ảnh; `apiFailureMessage` (`api_failure_message.dart`) là lời nhắn chung cho mọi `ApiFailure`.
-- **`PersonalLimits` (M3a) `core/nutrition/`:** dị ứng (tag OFF + tên người dùng đặt), chỉ tiêu cả ngày (kcal, đường, béo bão hòa, natri; chỉ người lớn có hồ sơ hợp lệ), cờ theo dõi theo bệnh, `profileStatus` (none / loading / unreadable / loaded). `personalLimitsProvider` trong core, override ở `app/app_overrides.dart` (`crossFeatureOverrides()`, dùng chung cho `main()` và `pumpFluwApp`) bằng `app/personal_limits_from_profile.dart`, để feature search không import feature profile. Hồ sơ hỏng → `unreadable`, UI phải báo, không im lặng như không dị ứng.
+  - Còn thiếu: `WeightLogCard` vẫn hiện tiến độ cân cho người mang thai.
+- **Mạng (M3a) `core/network/`:** `ApiClient` (package `http`) GET JSON, mọi lỗi thành `ApiFailure` sealed: `NetworkFailure` (kể cả lỗi TLS/`IOException`), `TimeoutFailure`, `ServerFailure` (giữ status, code, message của backend), `ServerUnavailableFailure` (5xx không có body lỗi chuẩn, vd 502 HTML của Render: "Máy chủ đang khởi động hoặc bận, hãy thử lại sau ít phút."), `InvalidResponseFailure`. `apiBaseUrl` mặc định `https://fluw.onrender.com` (đổi bằng `--dart-define=FLUW_API_BASE_URL`, phải https), `apiTimeout` 70 s vì Render free ngủ. Widget test truyền `MockClient` qua `pumpFluwApp(httpClient:)`; không truyền thì mọi lượt gọi là lỗi mạng. `postBytes` (M5b) gửi ảnh; `apiFailureMessage` (`api_failure_message.dart`) là lời nhắn chung cho mọi `ApiFailure`.
+- **`PersonalLimits` (M3a) `core/nutrition/`:** dị ứng (tag OFF + tên người dùng đặt), chỉ tiêu cả ngày (kcal, đường, béo bão hòa, natri; chỉ người lớn có hồ sơ hợp lệ), cờ theo dõi theo bệnh, `profileStatus` (none / loading / unreadable / loaded), `isAdult` (tính từ ngày sinh kể cả khi hồ sơ thiếu số liệu). Cờ `watchesSugar` (tiểu đường, giảm ngọt), `watchesSodium` (huyết áp cao; A3 đổi thành mọi người lớn, D11), `watchesSaturatedFat` (mỡ máu cao) quyết định dòng nào hiện ở Trang Chủ, Nhật Ký, Chi tiết, đánh giá ngày. `personalLimitsProvider` trong core, override ở `app/app_overrides.dart` (`crossFeatureOverrides()`, dùng chung cho `main()` và `pumpFluwApp`) bằng `app/personal_limits_from_profile.dart`, để feature search không import feature profile. Hồ sơ hỏng → `unreadable`, UI phải báo, không im lặng như không dị ứng.
 - **`features/search/` (M3a):**
   - `data/`: `food_item_json` (đọc hợp đồng M1a; món sai hợp đồng thì bỏ riêng; chỉ nhận link https), `food_api` (`PRODUCT_NOT_FOUND` và `INVALID_BARCODE` → null), `recent_searches_storage` (shared_preferences key `recent_searches`, tối đa 8, lỗi đọc/ghi nào cũng bỏ qua — không phải dữ liệu sức khỏe).
-  - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `QuickFilter` (ít đường <5 g, giàu protein >20 g, dưới 200 kcal theo 100 g/ml; thiếu số liệu thì không đạt), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
-  - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt; người dùng tự nhập khẩu phần 1–2.000), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn.
+  - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
+    - `QuickFilter` (C, D13): đường ≤ 5 g/100 g hoặc ≤ 2,5 g/100 ml (đồ uống), protein ≥ 20 g, dưới 200 kcal (`lowSugarMaxPer100g`, `lowSugarMaxPer100ml`, `highProteinMinPer100`, `lowEnergyBelowKcalPer100`); thiếu số liệu thì không đạt. Nhãn "Đường ≤ 5 g", "Protein ≥ 20 g", "Dưới 200 kcal" dưới "Lọc nhanh (trong 100 g/ml)"; bật lọc đường thì hiện `lowSugarDrinkNote`.
+    - `result_ranking`: `hasCardNutrition` (có ít nhất kcal, protein hoặc đường), `withNutritionFirst` đưa món không có số liệu xuống cuối, giữ thứ tự nguồn; thẻ kết quả ghi "Chưa có số liệu".
+    - `serving_size` (`servingAmount`): số cuối có đơn vị g/gr/gram/gam/ml trong `servingSize` ("1 bottle (355 ml)" → 355), làm tròn 0,1, phải cùng đơn vị với số liệu (không đổi g ↔ ml) và trong 1–2000.
+  - **Tìm đồ tươi tiếng Việt qua USDA (C, D23):**
+    - `vietnamese_text`: `canonicalVietnamese` (chữ thường, dấu dựng sẵn và dấu rời cho cùng một dạng, dấu câu thành dấu cách), `foldVietnamese` (bỏ dấu, đ → d). Dart không có chuẩn hóa Unicode nên tự làm bằng bảng 12 nguyên âm × 6 thanh.
+    - `vietnamese_food_glossary`: `vietnameseFoodGlossary` (283 tên viết tay, gồm tên gọi khác), tiếng Anh theo tên USDA, ưu tiên một từ đặc trưng ("pummelo") vì USDA xếp hạng theo từng từ.
+    - `englishSearchTermFor(query)`: chỉ khớp khi từ khóa là **một** tên trong bảng, đứng một mình hoặc kèm từ mô tả (`_descriptorWords`: luộc, hấp, nướng, sống, tươi, quả, trái, củ, xanh, đỏ...). Cụm dài nhất thắng ("sữa chua" → yogurt). Có từ lạ (món, hãng) thì không gửi: "phở bò" không thành "beef".
+    - **Chiên, rán, xào, kho, khô không phải từ mô tả** (giám đốc sửa khi review): nấu thêm dầu/đường/sốt là món khác, đồ khô đổi số liệu trên 100 g nhiều lần, nên "cá kho" không thành "fish".
+    - Gõ không dấu vẫn khớp ("ca chua") nhưng chỉ khi cả từ không dấu ("của" không thành "cua"); dạng bỏ dấu trùng hai món thì bỏ ("dua", "ngo"); "bơ" một mình không dịch.
+    - `SearchController.search`: không có `englishQuery` từ ảnh thì lấy từ bảng (Gemini vẫn ưu tiên); `SearchLoaded.englishQuery` để màn hiện "Đã tìm thêm bằng tiếng Anh: ...".
+  - `presentation/`: `SearchController` (chỉ kết quả của lần tìm mới nhất được ghi; từ khóa 2–100 ký tự, dọn dấu cách; `clear` cho nút "Xóa từ khóa"), `SearchScreen`, `FoodDetailScreen` (route `/search/food` trên root navigator, món qua `extra`; món OFF gọi `/barcode` để lấy dị ứng và tên tiếng Việt), `PersonalCheckCard`. Calo là mục tiêu ("Vượt mục tiêu calo"), đường/béo bão hòa/natri là giới hạn ("Vượt giới hạn cả ngày"); xét vượt theo % đã làm tròn. Khẩu phần trống/sai: "Nhập khẩu phần hợp lệ để so với chỉ tiêu." (`hasPortion`). A3 (D6, D14) đang đổi chữ đường thành "mức gợi ý" và gom hàm "vượt" vào `core/nutrition/`.
+  - Khẩu phần (C, D24): `PortionChips` ("1 khẩu phần (355 ml)" từ bao bì + 50/100/150/200). Mặc định = khẩu phần bao bì, không có thì 100; `/barcode` về sau mang khẩu phần thì đổi theo, trừ khi người dùng đã gõ số khác. Lời báo "Khẩu phần phải trong khoảng 1–2000 g." (D22: không viết "2,000").
+  - Món đã ăn gần đây (C, D24): khi chưa tìm, `RecentFoodsSection` hiện `recentFoodsProvider`; chạm mở `RecentFoodSheet` (khẩu phần mặc định = lần trước, ghi bằng số liệu đã lưu, không cần mạng), thêm xong đóng bảng. Chưa hiện ở màn Chi tiết; chưa có "Lặp lại bữa".
   - Chưa làm: "Đã lưu" và nhập món thủ công (M3b).
 - **`features/scan/` (M5):** tab Quét Món có 2 chế độ (`SegmentedButton`): Mã vạch và Ảnh món ăn, giữ cả hai trong `IndexedStack` để mã đang gõ hay kết quả nhận diện còn nguyên khi đổi qua lại.
   - Mã vạch (M5a):
@@ -194,8 +232,9 @@ features/<tên>/
     - "Tìm theo tên" phải `pop()` rồi mới `go()`: tab Quét chờ `push` của trang này hoàn tất mới quét tiếp, mà `go` của go_router 18 bỏ trang đi không hoàn tất nó (camera tắt mãi).
     - Android: quyền `CAMERA` + `uses-feature` camera và `camera.autofocus` `required="false"`. iOS: `NSCameraUsageDescription`. Vùng camera có semantics.
   - Ảnh món ăn (M5b):
-    - **Chỉ người từ 18 tuổi** (`PersonalLimits.isAdult`, tính từ ngày sinh kể cả khi hồ sơ thiếu số liệu): điều khoản Gemini API cấm dịch vụ dễ được người dưới 18 tuổi dùng, mà Fluw hỗ trợ 14–17 tuổi. Chưa có hồ sơ, hồ sơ hỏng, dưới 18 thì chỉ hiện lời giải thích, không có nút gửi ảnh.
-    - `PhotoRecognitionPanel`: lần đầu hỏi đồng ý gửi ảnh (`PhotoConsentStorage`, shared_preferences `photo_recognition_consent`; không có kho hoặc lỗi thì hỏi lại). Hộp thoại nói rõ: ảnh đi qua máy chủ Fluw tới Google Gemini, Fluw xóa vị trí và thời gian chụp, không lưu ảnh; gói miễn phí Google có thể dùng ảnh và cho người xem lại; đừng chụp người hay giấy tờ; rút lại được. Nút "Rút lại đồng ý gửi ảnh" (`withdrawConsent`, Nghị định 13 yêu cầu rút được).
+    - **Chỉ người từ 18 tuổi** (`PersonalLimits.isAdult`): điều khoản Gemini API yêu cầu người dùng từ 18 tuổi. App đã chỉ cho người lớn, nhưng hồ sơ cũ của người dưới 18 vẫn đọc được nên vẫn giữ chặn này. Chưa có hồ sơ, hồ sơ hỏng, dưới 18 thì chỉ hiện lời giải thích, không có nút gửi ảnh.
+    - `PhotoRecognitionPanel`: lần đầu hỏi đồng ý gửi ảnh. `PhotoConsentStorage` lưu `photo_recognition_consent_version` (int, `currentVersion` = 2); khóa cũ `photo_recognition_consent` (bool) không còn tính và bị xóa khi đồng ý/rút lại, nên người đã đồng ý chữ cũ được hỏi lại. Không có kho hoặc lỗi thì hỏi lại. Đổi chữ hộp thoại về nội dung thì tăng `currentVersion`.
+    - Hộp thoại (A2, D18) nói rõ: ảnh đi qua máy chủ Fluw (Hoa Kỳ) tới Google Gemini, Fluw xóa vị trí và thời gian chụp, không lưu ảnh; gói miễn phí Google có thể dùng ảnh và cho người xem lại; đừng chụp người hay giấy tờ; rút lại đồng ý không xóa được ảnh đã gửi cho Google; "Tính năng này chỉ dành cho người dùng ở Việt Nam."; nút "Đọc chính sách quyền riêng tư" (`onOpenPrivacy` qua `ScanScreen`). Nút "Rút lại đồng ý gửi ảnh" (`withdrawConsent`; Luật 91/2025 cho chủ thể dữ liệu rút lại đồng ý).
     - `FoodPhotoPicker` (interface, trả `Uint8List?`) + `ImageFoodPhotoPicker` (`image_picker`, tối đa 1280 px, chất lượng 80). `image_picker` đổi sang JPEG (PNG giữ PNG) nhưng chép lại EXIF gồm cả GPS và giữ tên file gốc (`scaled_x.heic`). Android chọn ảnh bằng trình chọn của hệ thống, không cần quyền đọc bộ nhớ; chụp ảnh thì `image_picker` tự xin quyền camera.
     - `domain/photo_metadata` (`removePhotoMetadata`): đọc định dạng từ byte đầu; JPEG bỏ APP1 (EXIF, XMP), APP13 (IPTC), COM và mọi thứ sau dấu kết thúc ảnh; PNG bỏ `eXIf`, `tEXt`, `zTXt`, `iTXt`, `tIME`. Định dạng khác hoặc file hỏng thì không gửi (`UnsupportedPhotoFormat`). Test dùng ảnh mẫu thật có GPS ở `test/fixtures/photos/` (sinh bằng Pillow).
     - `RecognitionApi` xóa metadata rồi gọi `POST /api/foods/recognize`, bỏ món sai dạng; mỗi món có `englishQuery` (từ tiếng Anh cho USDA).
@@ -209,6 +248,8 @@ features/<tên>/
   - `Nutrients`: thiếu key nghĩa là không có dữ liệu, không phải 0; 0 là dữ liệu thật. Từ chối số âm, NaN, vô cực. Có `==`.
   - `NutritionFacts`: số liệu cho mỗi 100 g hoặc 100 ml kèm `QuantityUnit`, nên lượng ăn luôn cùng đơn vị với số liệu.
   - `NutrientTotals`: tổng các giá trị đã biết kèm số món thiếu dữ liệu. Món nào cũng thiếu thì `knownSum` là `null`; không có món nào thì là 0.
+  - `portion_limits` (C): `minPortion` 1, `maxPortion` 2000, `isValidPortion` (Dart thuần để domain dùng được). `QuantityUnit.symbol` ("g"/"ml") để hiển thị; khóa lưu SQLite vẫn là `quantityUnitKeys` riêng.
+- `core/widgets/` (C): `portion_input` (ô khẩu phần cho Chi tiết, bảng ghi lại món gần đây, bảng sửa món), `meal_slot_picker` (`MealSlotPicker`, 4 ô giờ, tách từ `AddToNoteBar`).
 - `core/diary/` (M4, dùng chung cho Nhật ký, Tra cứu, sau này Quét):
   - `MealSlot` (`night`, `morning`, `afternoon`, `evening`, xếp theo giờ trong ngày). `meal_slot_labels`: thứ tự hiển thị theo thiết kế (Sáng, Trưa / Chiều, Tối, Khuya / Đêm), tên và giờ mỗi khung; tên khung luôn đi kèm giờ để không hiểu nhầm Khuya là sau Tối.
   - `placeMeal` (`MealPlacement`): đổi giờ về giờ địa phương, bỏ giây; 00:00 thuộc Tối hôm trước.
@@ -216,14 +257,16 @@ features/<tên>/
   - `eatenAtFor(day, slot, now)`: đúng khung đang diễn ra thì giữ giờ thật; khung khác thì giờ cố định trong khung (03:00, 09:00, 15:00, 21:00).
   - `FoodLogger` (interface) + `foodLoggerProvider`: tính năng khác ghi món vào Nhật ký mà không import `features/note`; `app_overrides` nối bằng `NoteFoodLogger`. `LoggedFood` chép số liệu, nên nguồn đổi sau này không sửa món đã ăn.
   - M6a chuyển sang `core/diary/`: `NoteEntry` (`id`, `name`, `sourceFoodId`, `facts`, `quantity`, `eatenAt`, có `==`), `NoteDay` + `groupNoteEntries` (ngày mới nhất trước; cùng giờ xếp theo `id`; không sửa được), `NoteWindow`. `DiaryReader` (interface, `NoteRepository` cài, `app_overrides` nối) + `diaryDayProvider(date)` (cửa sổ 00:00 → 00:01 hôm sau, trả `DiaryDay` gồm `NoteDay?` và số dòng hỏng) cho Trang Chủ, nhắc nhở, báo cáo đọc Nhật ký mà không import `features/note`.
+  - Món gần đây (C): `distinctRecentFoods` (mỗi món một lần theo `sourceFoodId`, không có thì theo tên + đơn vị), `RecentFoodsReader` (interface, `NoteRepository.watchRecentFoods` cài, đọc 200 dòng mới nhất theo giờ ăn, `app_overrides` nối) + `recentFoodsProvider` (tối đa `recentFoodsLimit` = 8). Không đổi schema.
 - `core/widgets/nutrient_progress.dart` (M6a): dòng "đã nạp / chỉ tiêu" + thanh, dùng chung cho Nhật Ký và Trang Chủ. `NutrientTargetKind`: `calorieGoal` (báo vượt mục tiêu), `minimum` (protein), `limit` (báo vượt giới hạn), `target` (béo, tinh bột: không cảnh báo). Thiếu số liệu thì "Chưa có dữ liệu", không vẽ thanh.
-- `PersonalLimits` (M6a) thêm, đều có mặc định: `fatTargetG`, `carbohydratesTargetG`, `displayName`, `goalLabel`, cờ chế độ ăn `avoidsAnimalProducts` (thuần chay), `limitsCarbohydrates` (keto), `prefersSteamedOrBoiled`, `likesNuts` (chỉ để gợi ý món), `targetsKind` (`TargetsKind`: adult / teen / belowMinimumAge / invalid; mỗi loại một lời nhắn, chỉ `invalid` mới bảo kiểm tra hồ sơ).
-- `currentHourProvider` (`core/time/`): giờ hiện tại, tự làm mới đầu giờ sau; test cố định `appTestHour` = 9.
+- `PersonalLimits` (M6a) thêm, đều có mặc định: `fatTargetG`, `carbohydratesTargetG`, `displayName`, `goalLabel`, cờ chế độ ăn `avoidsAnimalProducts` (thuần chay), `limitsCarbohydrates` (keto), `prefersSteamedOrBoiled`, `likesNuts` (chỉ để gợi ý món), `targetsKind` (`TargetsKind`: adult / belowMinimumAge / pregnancyOrBreastfeeding / invalid, không còn `teen`; mỗi loại một lời nhắn, chỉ `invalid` mới bảo kiểm tra hồ sơ). `proteinMinG` chỉ có với `AdultTargets`.
+- `currentHourProvider` (`core/time/`): giờ hiện tại, tự làm mới đầu giờ sau và khi quay lại app (`FluwApp` invalidate, vì Timer dừng khi máy ngủ); test cố định `appTestHour` = 9.
 - `features/home/` (M6a):
   - `domain/day_evaluation`: đánh giá một ngày theo chỉ tiêu: calo đạt khi trong ±10% (agent chọn, `calorieToleranceShare`; FLuw đổi được), protein đủ khi đạt cận dưới (so theo 0,1 g), đường/béo bão hòa/natri vượt theo % làm tròn; béo bão hòa và natri chỉ xét khi theo dõi bệnh tương ứng. Ngày chưa ghi món không đánh giá. Món nào cũng thiếu một chỉ số → `noData`. Có món thiếu: "vượt" và "đủ" vẫn giữ (tổng đã biết là mức tối thiểu), còn lại thành `incomplete` (không tính là tốt).
-  - `domain/nutrition_advice`: `adviceFor(today: null)` khi Nhật ký đang tải/lỗi thì chỉ còn lời nhắc theo hồ sơ. Không coi số thiếu là 0: buổi tối chỉ nói "còn khoảng" khi mọi món có calo; protein thiếu ở vài món thì nói "tối đa". Dị ứng lạc cũng bỏ các loại hạt. Gợi ý theo luật, không gọi AI: dị ứng (tên người dùng đặt + đọc nhãn), hạn chế đồ ngọt (theo dõi đường hoặc đã ≥ 80% giới hạn), muối, béo bão hòa (theo bệnh), bổ sung protein (nhóm thực phẩm, bỏ món dị ứng cả nặng lẫn nhẹ, thuần chay bỏ đồ động vật, keto bỏ đậu lăng; thích hấp/luộc, thích hạt), calo vượt > 10% hoặc buổi tối còn ≥ 300 kcal (chỉ khi đã ghi món). Dưới 18 tuổi không nói về calo. Không khẳng định sức khỏe cho món cụ thể.
-  - `presentation/`: `HomeScreen` (callback từ `app_router`: Tra Cứu, Quét, Nhật Ký, Hồ Sơ, Thiết lập hồ sơ; hồ sơ không đọc được thì nút mở tab Hồ Sơ, không mở form trống; Nhật ký đang tải thì hiện vòng chờ, không hiện 0), `GreetingCard`, `TodayNutritionCard` (vòng calo + thanh protein, đường, tinh bột, béo, thêm béo bão hòa/natri khi theo dõi; vòng và "Còn lại" cạnh nhau, chồng lên nhau khi màn hẹp/chữ > 150%; thiếu kcal ở vài món thì "Còn lại tối đa", món nào cũng thiếu thì "Chưa có dữ liệu calo"; so vượt theo số đã làm tròn), `TodayMealsCard` (4 khung; khung trống có "Ghi món" đặt `diaryTargetProvider` rồi mở Tra Cứu, semantics nói tên khung; chữ > 130% thì nút xuống dưới tên khung; thiếu kcal ở vài món thì hiện "≥ X kcal"), `DayEvaluationCard` (hôm qua, mỗi dòng có icon + chữ), `AdviceCard`, `QuickActions` (Quét mã vạch, Tra cứu; "Nhập thực phẩm" của thiết kế chờ M3b).
+  - `domain/nutrition_advice`: `adviceFor(today: null)` khi Nhật ký đang tải/lỗi thì chỉ còn lời nhắc theo hồ sơ. Không coi số thiếu là 0: buổi tối chỉ nói "còn khoảng" khi mọi món có calo; protein thiếu ở vài món thì nói "tối đa". Dị ứng lạc cũng bỏ các loại hạt. Gợi ý theo luật, không gọi AI: dị ứng (tên người dùng đặt + đọc nhãn), hạn chế đồ ngọt (theo dõi đường hoặc đã ≥ 80% giới hạn), muối, béo bão hòa (theo bệnh), bổ sung protein (nhóm thực phẩm, bỏ món dị ứng cả nặng lẫn nhẹ, thuần chay bỏ đồ động vật, keto bỏ đậu lăng; thích hấp/luộc, thích hạt), calo vượt > 10% hoặc buổi tối còn ≥ 300 kcal (chỉ khi đã ghi món). `belowMinimumAge` ("Fluw dành cho người từ 18 tuổi") và `pregnancyOrBreastfeeding` có lời riêng, không nói về calo. Không khẳng định sức khỏe cho món cụ thể.
+  - `presentation/`: `HomeScreen` (callback từ `app_router`: Tra Cứu, Quét, Nhật Ký, Hồ Sơ, Thiết lập hồ sơ; hồ sơ không đọc được thì nút mở tab Hồ Sơ, không mở form trống; Nhật ký đang tải thì hiện vòng chờ, không hiện 0), `GreetingCard`, `TodayNutritionCard` (dưới 18 tuổi: "Fluw dành cho người từ 18 tuổi."; mang thai: "Mang thai hoặc cho con bú: Fluw không tính calo."; vòng calo + thanh protein, đường, tinh bột, béo, thêm béo bão hòa/natri khi theo dõi; vòng và "Còn lại" cạnh nhau, chồng lên nhau khi màn hẹp/chữ > 150%; thiếu kcal ở vài món thì "Còn lại tối đa", món nào cũng thiếu thì "Chưa có dữ liệu calo"; so vượt theo số đã làm tròn), `TodayMealsCard` (4 khung; khung trống có "Ghi món" đặt `diaryTargetProvider` rồi mở Tra Cứu, semantics nói tên khung; chữ > 130% thì nút xuống dưới tên khung; thiếu kcal ở vài món thì hiện "≥ X kcal"), `DayEvaluationCard` (hôm qua, mỗi dòng có icon + chữ), `AdviceCard`, `QuickActions` (Quét mã vạch, Tra cứu; "Nhập thực phẩm" của thiết kế chờ M3b).
   - Bỏ khỏi thiết kế: "Chuẩn Mục Tiêu", "An toàn", GI, "Êm dạ dày", khẳng định về dạ dày; thẻ nước chờ M8.
+  - Còn lỗi nhỏ (B9, chưa sửa): `HomeScreen.onAddFood` đặt ngày bằng `todayProvider`, nên 00:00–00:00:59 lệch ngày. Sửa: `DiaryTarget(day: DiaryTarget.current(ref.read(clockProvider)()).day, slot: slot)`.
 - `features/reminders/` (M6b):
   - `domain/`:
     - `ReminderTime` ("HH:mm"); `ReminderSettings` (mặc định **tắt**, giờ 10:00/17:00/22:00; sắp xếp, không trùng, tối đa `maxTimes` = 10 để id không trùng khi kho hỏng).
@@ -245,14 +288,31 @@ features/<tên>/
   - Test: `pumpFluwApp` thay bộ hẹn giờ bằng `FakeNotificationScheduler` (`appNotifications(tester)`), `clockProvider` cố định 09:00 ngày `appTestToday`. `LocalNotificationScheduler` test bằng plugin giả (`noSuchMethod`); `ReminderSync` test riêng với đồng hồ đổi được. Bộ chọn giờ trong test: bấm `Icons.keyboard_outlined` rồi gõ giờ, phút, bấm "OK".
 - `clockProvider` (`core/time/`): giờ hiện tại dạng hàm để test cố định được.
 - `features/note/` (M4):
-  - `domain/`: `week` (tuần bắt đầu thứ Hai).
-  - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
-  - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`.
-  - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo. Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang. Ô khung đang chọn nền `primary` chữ `onPrimary` đậm (như ngày đang chọn ở dải tuần), không dùng màu nhạt khó phân biệt.
+  - `domain/`: `week` (tuần bắt đầu thứ Hai), `entry_edit` (C: `editNoteEntry` giữ giờ ăn khi ngày và khung không đổi; chuyển thì lấy giờ của `eatenAtFor`).
+  - `data/`: bảng `note_entries` (schema v4; giờ lưu ms UTC; số liệu cho 100 g/ml, cột null = không có dữ liệu), `note_entry_mapper` (khóa đơn vị `g`/`ml` cố định; dòng hỏng trả `null`), `NoteRepository` (`watchBetween` trả `NoteWindow` gồm món và **số dòng không đọc được**, `add`, `delete`, `update` thay theo id (món đã bị xóa thì `StateError`), `watchRecentFoods`), `newNoteEntryId`, `weekNoteEntriesProvider` (autoDispose, cửa sổ từ 00:00 thứ Hai đến 00:01 thứ Hai sau vì 00:00–00:00:59 thuộc Tối Chủ nhật).
+  - `presentation/`: `NoteScreen` (dải tuần có chấm ngày có món, "Về hôm nay"; báo số món hỏng; tổng ngày; 4 khung; xóa có "Hoàn tác", snackbar xếp hàng chứ không thay nhau để xóa liền hai món vẫn hoàn tác được cả hai; hoàn tác lỗi thì báo), `DaySummaryCard` (kcal là mục tiêu, protein là mức tối thiểu, đường là giới hạn; béo bão hòa/natri chỉ hiện khi có bệnh theo dõi; vượt theo % làm tròn; thiếu số liệu thì ghi rõ, không vẽ thanh), `MealSlotSection`, `NoteEntryTile`, `WeekStrip`. Dải tuần luôn hiện khi đang tải tuần mới (vòng chờ chỉ ở phần dưới).
+  - Sửa món đã ghi (C, D24): nút bút chì "Sửa <tên>" trên thẻ món → `EditNoteEntrySheet` (khẩu phần, "Đổi ngày" bằng lịch đến hôm nay, khung giờ). Lưu xong snackbar "Đã sửa X" + "Hoàn tác" (ghi lại bản cũ); lỗi thì "Không sửa được X".
+  - Màn Chi tiết (search) có `AddToNoteBar` ghim ở đáy (`bottomNavigationBar`) như thiết kế: 4 ô giờ ngắn (`MealSlotPicker`, `mealSlotShortHours`, "06–12h"...) + tên khung đang chọn, mặc định theo `diaryTargetProvider` hoặc khung hiện tại; ngày khác hôm nay thì ghi rõ ngày và có "Chọn hôm nay"; khẩu phần sai thì tắt nút; lỗi ghi thì báo.
+    - Nhận `name`/`sourceFoodId`/`facts` (không nhận `FoodItem`) và `onAdded`, để `RecentFoodSheet` dùng chung.
+    - Đọc `foodLoggerProvider`, `diaryTargetProvider.notifier` và giờ (`clockProvider`, không `DateTime.now()`) **trước** `await`: rời trang khi đang ghi thì món vẫn vào Nhật ký và báo "Đã thêm". Cỡ chữ trong thanh dừng ở 130% như `NavigationBar`, để thanh không che hết trang. Ô khung đang chọn nền `primary` chữ `onPrimary` đậm (như ngày đang chọn ở dải tuần), không dùng màu nhạt khó phân biệt.
   - Thanh nằm sau bàn phím (Scaffold không đẩy `bottomNavigationBar` lên), mà bàn phím số của iPhone không có nút Xong → ô khẩu phần có `onTapOutside` bỏ focus, danh sách có `keyboardDismissBehavior.onDrag`.
   - `WeekStrip` tự cuộn ngang tới ngày đang chọn (thứ Bảy, Chủ nhật bị khuất trên màn hẹp). Chỉ cuộn hàng ngày bằng `getOffsetToReveal`, không dùng `Scrollable.ensureVisible` vì nó cuộn cả trang.
   - Giờ cố định khi thêm vào khung khác (vd 21:00) hiện như giờ thật trên thẻ món; chưa đánh dấu là ước tính.
-- **Khởi động:** `main.dart` khóa màn dọc (thiết kế chỉ có màn dọc; màn ngang thì thanh ghim đáy chiếm gần hết chỗ), đăng ký giấy phép phông và dữ liệu (`core/licenses/`). `FluwApp` gọi `backendWarmUpProvider` (GET `/health`, lỗi thì bỏ qua) lúc mở app và mỗi lần quay lại app, để Render free thức dậy trước khi người dùng tìm. `pumpFluwApp` thay bằng hàm rỗng để `MockClient` của test chỉ thấy lượt gọi test mong đợi.
+- **Quyền riêng tư (A2):**
+  - `PRIVACY.md` ở gốc repo (phiên bản 1, 18/11/2026), URL công khai `https://github.com/Fluw13/Fluwwwwww/blob/main/PRIVACY.md`. Bên chịu trách nhiệm: nhà phát triển cá nhân (GitHub: Fluw13); liên hệ qua GitHub Issues; không ghi tên thật, email.
+  - `features/privacy/presentation/privacy_policy_text.dart`: nội dung chính sách dạng dữ liệu (`PolicySection`, `PolicyParagraph`, `PolicyBullets`, `PolicyDataFlows`), đúng từng chữ như `PRIVACY.md`, kể cả `**đậm**`. Test dựng lại `PRIVACY.md` từ dữ liệu này và so bằng nhau: **sửa chính sách thì sửa cả hai nơi**, đổi phiên bản và ngày.
+  - `PrivacyScreen` ("Quyền riêng tư và điều khoản"), route `/privacy` ngoài nhánh tab (như `/reminders`). URL công khai và Issues là `SelectableText` + nút sao chép (app không mở trình duyệt, không thêm gói). Cuối màn có nút xóa toàn bộ dữ liệu; xóa từ đây thì `pop()` rồi `go('/profile')`.
+  - Mở từ: Về Fluw, màn chưa có hồ sơ / hồ sơ hỏng / lỗi đọc, hộp đồng ý lưu thông tin sức khỏe, hộp đồng ý gửi ảnh. Feature nhận callback `onOpenPrivacy` từ `app_router`.
+  - **Đồng ý lưu thông tin sức khỏe (D16):** `core/privacy/health_data_consent.dart` (`HealthDataConsentStorage`: `health_data_consent_version` int, `currentVersion` = 1, và `health_data_consent_agreed_at` ISO 8601 UTC, ghi trước phiên bản; chỉ tính khi phiên bản khớp, đổi chữ thì tăng `currentVersion`) + `core/widgets/health_data_consent_dialog.dart`.
+    - `ensureHealthDataConsent(context, ref, onReadPolicy:)` gọi trong `ProfileSetupScreen._save` khi bản nháp hợp lệ. "Để sau" hoặc đóng hộp: không lưu gì, giữ bản nháp, snackbar "Chưa lưu hồ sơ...". "Đọc chính sách" mở `/privacy`, quay lại form còn nguyên, lần lưu sau hỏi lại.
+    - Người có hồ sơ từ trước được hỏi ở lần lưu kế tiếp. Ghi cân từ thẻ Hồ Sơ không hỏi. Ghi đồng ý lỗi (kho hỏng) vẫn lưu hồ sơ; lần sau hỏi lại.
+    - Test: `pumpFluwApp(healthDataConsent: true)` mặc định (hằng `grantedHealthDataConsent`); test của luồng đồng ý truyền `false`.
+  - **Xóa toàn bộ dữ liệu trên máy (D17)** ở `app/` vì đi qua nhiều feature:
+    - `app/erase_all_data.dart` (`eraseAllDataProvider`): tắt nhắc (`reminderSettingsProvider.update(defaults)`), `replaceAll([])` hủy nhắc đang chờ (cả khi app tưởng không có), xóa **mọi bảng** của `AppDatabase.allTables` trong một transaction rồi `VACUUM`, xóa lịch sử tìm kiếm, xóa **mọi khóa** shared_preferences trừ `ThemeModeStorage.key`, reset `diaryTargetProvider`, `searchRequestProvider`. Bảng và khóa thêm sau này cũng bị xóa. Mỗi bước chạy kể cả khi bước trước lỗi, rồi ném lỗi đầu tiên. Kho cài đặt null → lỗi.
+    - `app/erase_all_data_flow.dart` (`confirmAndEraseAllData`): hộp xác nhận (nói rõ các lựa chọn đồng ý cũng bị xóa, chế độ Sáng/Tối được giữ), snackbar thành công / "Chưa xóa được hết dữ liệu...", lỗi báo qua `FlutterError.reportError`.
+    - Nút `core/widgets/erase_all_data_button.dart` (`EraseAllDataButton`) ở cuối Hồ Sơ và cuối màn quyền riêng tư.
+  - Chưa làm: xuất dữ liệu (JSON/CSV); cơ chế báo người dùng khi chính sách đổi (mục 9 của chính sách hứa "app sẽ báo"; hiện chỉ đồng ý sức khỏe/ảnh có phiên bản để hỏi lại); tóm tắt quyền riêng tư ở lần mở app đầu tiên.
+- **Khởi động:** `main.dart` khóa màn dọc (thiết kế chỉ có màn dọc; màn ngang thì thanh ghim đáy chiếm gần hết chỗ). iOS `Info.plist` cũng chỉ còn màn dọc (iPhone: Portrait; iPad: Portrait + PortraitUpsideDown) + `UIRequiresFullScreen` (iPad đa nhiệm bỏ qua khóa xoay, và App Store đòi đủ 4 hướng nếu thiếu khóa này). `main.dart` đăng ký giấy phép phông và dữ liệu (`core/licenses/`). `FluwApp` gọi `backendWarmUpProvider` (GET `/health`, lỗi thì bỏ qua) lúc mở app và mỗi lần quay lại app, để Render free thức dậy trước khi người dùng tìm. `pumpFluwApp` thay bằng hàm rỗng để `MockClient` của test chỉ thấy lượt gọi test mong đợi.
 - **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
@@ -314,42 +374,64 @@ features/<tên>/
 
 ### Android signing
 - `android/app/build.gradle.kts` đọc `android/key.properties` nếu có. Không có thì bản release ký bằng debug key.
-- CI tạo `key.properties` và `android/app/upload-keystore.jks` từ 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Thiếu secret thì CI cảnh báo và dùng debug key.
+- CI tạo `key.properties` và `android/app/upload-keystore.jks` từ 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, **chỉ khi `push` lên `main`** (PR #36, D21). Trên `main` mà thiếu secret thì cảnh báo và dùng debug key.
+- PR và `workflow_dispatch` build bằng debug key, kèm `::notice::` (APK đó không cài đè được bản đã cài từ `main`). Bản để cài lên điện thoại phải lấy từ lượt chạy trên `main`.
+- Bước có `if` chỉ chặn code build (Gradle, plugin, action) đọc secret; một PR từ branch trong repo sửa chính `ci.yml` vẫn đọc được repo secret. Chặn hẳn bằng Environment `release` (việc FLuw, mục 7).
 - `key.properties`, `*.jks`, `*.keystore` đã nằm trong `android/.gitignore`. Không bao giờ commit.
 - `build.gradle.kts` phải `import java.util.Properties`: trong script Gradle, `java` là extension của plugin Java nên `java.util.Properties()` không compile.
-- PR từ branch trong repo (kể cả branch của agent) nhận được keystore thật; PR từ fork thì không. Muốn chặt hơn thì chỉ ký ở `push main` hoặc dùng GitHub Environment có bảo vệ.
+
+### CI `.github/workflows/ci.yml` (PR #36, D21)
+- 3 job giữ tên `backend`, `frontend`, `android-apk` (Render `checksPass` và quy tắc merge ở mục 1 dựa vào đó); `timeout-minutes` 10 / 30 / 45.
+- Action ghim theo SHA của đúng commit tag đang trỏ tới, kèm chú thích `# vX` (checkout v5.1.0, setup-node v5.0.0, subosito/flutter-action v2.23.0, setup-java v4.9.1, upload-artifact v4.6.2). Nâng bản thì đổi cả SHA lẫn chú thích (tra SHA bằng `git ls-remote`).
+- `cancel-in-progress` chỉ cho `pull_request`. Lượt chạy trên `main` luôn chạy xong, để Render không bỏ sót commit backend.
+- Job `frontend` chạy `flutter test` hai lượt: UTC và `TZ=Asia/Ho_Chi_Minh`.
 
 ### Backend `backend/`
 ```
 server.js                 khởi động, tắt an toàn khi nhận SIGTERM
 src/app.js                ghép middleware và route
 src/routes → controllers → services → providers (OFF, USDA, Gemini)
-src/middlewares/          notFound, errorHandler
+src/lib/                  fetchJson, ttlCache, gtin, budget
+src/errors/               HttpError, UpstreamError, BudgetExceededError
+src/middlewares/          noSniff, rateLimiter, notFound, errorHandler
 tests/                    node:test, helper startServer
 ```
+- Mọi câu trả lời có `X-Content-Type-Options: nosniff` (`middlewares/noSniff.js`). Nén gzip bằng gói `compression` 1.8.2 (MIT), chỉ body từ 1 KB (`/health` không nén); app Flutter (`dart:io HttpClient`) tự giải nén. Đo thật: tìm "sữa chua" từ 6.020 xuống 928 byte.
 - Lỗi luôn trả `{ "error": { "code": "...", "message": "..." } }`, không lộ stack trace. `HttpError` (status, code) cho lỗi phía client; `errorHandler` giữ status 4xx của body parser (code `BAD_REQUEST`), mọi lỗi khác (kể cả có `status` 5xx) thành 500 và ghi log.
 - **API tra cứu (M1a):**
   - `GET /api/foods/search?q=` (2–100 ký tự, `q` lặp thì 400): gộp Open Food Facts (`search.openfoodfacts.org`, `langs=vi,en`) và USDA (Foundation + SR Legacy), mỗi nguồn 10 món, OFF trước. Trả `{ query, items, sources: { openFoodFacts, usda } }`, trạng thái `ok` / `unavailable` / `not_configured`. Một nguồn lỗi vẫn trả nguồn còn lại; mọi nguồn lỗi thì 503 `SOURCES_UNAVAILABLE`.
   - `GET /api/foods/barcode/:code`: OFF API v2. Kiểm chữ số kiểm tra GTIN (8/12/13/14 số) trước khi gọi; sai thì 400 `INVALID_BARCODE`, không có thì 404 `PRODUCT_NOT_FOUND`.
-  - Món (`FoodItem`): `{ id ("off:<mã>" | "usda:<fdcId>"), source, name, brand, barcode, imageUrl, servingSize, basis: { amount: 100, unit: "g" | "ml" }, nutrients: { energyKcal, proteinG, carbohydratesG, sugarsG, fatG, saturatedFatG, sodiumMg }, allergenTags, attribution: { source, license, imageLicense, url } }`.
-    - `null` = không có dữ liệu, 0 là thật. Số vô lý (trên 100 g/100 g, trên 900 kcal) thành `null`.
+  - Món (`FoodItem`): `{ id ("off:<mã>" | "usda:<fdcId>"), source, name, brand, barcode, imageUrl, servingSize, basis: { amount: 100, unit: "g" | "ml" }, nutrients: { energyKcal, proteinG, carbohydratesG, sugarsG, fatG, saturatedFatG, sodiumMg }, allergenTags, traceTags, attribution: { source, license, imageLicense, url } }`.
+    - `null` = không có dữ liệu, 0 là thật. Số vô lý (trên 100 g/100 g, trên 900 kcal, natri trên 40.000 mg/100 g `MAX_SODIUM_MG_PER_100`; muối ăn khoảng 39.300 mg) thành `null`.
     - `allergenTags`: `null` = chưa biết (USDA, hoặc kết quả tìm kiếm OFF vì search API không trả trường này); `[]` chỉ là chưa ai ghi, **không** có nghĩa an toàn. App phải gọi `/barcode` để lấy dị ứng trước khi cảnh báo.
+    - `traceTags` (PR #36): `traces_tags` của OFF ("có thể chứa"), cùng quy tắc với `allergenTags`; USDA luôn `null`. App chưa dùng (bỏ qua trường lạ). Kiểm thật: Nutella `3017624010701` trả `["en:milk","en:nuts","en:soybeans"]`.
     - Search API của OFF cũng không trả `product_name_vi`, nên tên trong kết quả tìm kiếm có thể không phải tiếng Việt.
     - OFF: đơn vị theo `nutrition_data_per` (`100ml` → ml), rồi mới theo số lượng; natri g × 1000; thiếu kcal thì đổi từ kJ ÷ 4,184. USDA: năng lượng 1008 → 2048 → 2047, đường 2000 → 1063.
     - App (M3) phải đổi `"g"`/`"ml"` sang `QuantityUnit` và từ chối giá trị lạ.
-  - Mỗi nguồn hẹn giờ 8 s (`lib/fetchJson`, lỗi nào cũng thành `UpstreamError`); cache trong bộ nhớ (`lib/ttlCache`): tìm kiếm 1 giờ (chỉ khi không nguồn nào lỗi), mã vạch 24 giờ, không có sản phẩm 1 giờ; tìm kiếm trùng đang chạy dùng chung một lượt gọi.
+  - Mỗi nguồn hẹn giờ 8 s (`lib/fetchJson`, lỗi nào cũng thành `UpstreamError`, có `upstreamStatus` khi nguồn trả lỗi); cache trong bộ nhớ (`lib/ttlCache`): tìm kiếm 1 giờ (chỉ khi không nguồn nào lỗi), mã vạch 24 giờ, không có sản phẩm 1 giờ; tìm kiếm trùng đang chạy dùng chung một lượt gọi.
+  - Từ khóa chuẩn hóa NFC trước khi dọn khoảng trắng và kiểm độ dài, nên cache và từ khóa gửi đi giống nhau dù gõ dạng tổ hợp.
   - Rate limit `/api/foods/*` 30 lượt/phút mỗi IP (`express-rate-limit`), `trust proxy` 1 vì Render đứng sau một proxy.
-  - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.1` (không ghi thông tin cá nhân của FLuw).
+  - **Hạn mức chung cho cả máy chủ (PR #36, D19)** `src/lib/budget.js` (`createBudget`): đếm theo cửa sổ trượt, giới hạn số lượt chạy cùng lúc; nguồn trả 429 thì nghỉ 60 s. Lượt bị từ chối không gọi nguồn, ném `BudgetExceededError`; lượt đã tới nguồn vẫn tính kể cả khi lỗi. Gắn ở service ngay sau cache (cache trúng không tốn lượt), lắp trong `createServices(config, { now })` (đồng hồ để test).
+
+    | Nguồn | Hạn mức | Khi vượt hoặc nguồn trả 429 |
+    |---|---|---|
+    | OFF tìm kiếm | 10/phút | nguồn `unavailable` (nguồn kia vẫn trả); mọi nguồn hỏng thì 503 `SOURCES_UNAVAILABLE` |
+    | OFF sản phẩm (mã vạch) | 90/phút | 503 `SOURCES_UNAVAILABLE`; mã đã có trong cache vẫn trả |
+    | USDA | 900/giờ | `unavailable` |
+    | Gemini | 8/phút, 200/ngày (cửa sổ trượt 24 giờ), 4 ảnh cùng lúc; đổi bằng `GEMINI_MAX_PER_MINUTE`, `GEMINI_MAX_PER_DAY`, `GEMINI_MAX_CONCURRENT` (sai/thiếu thì mặc định) | 503 `RECOGNITION_BUSY`, log `[Recognition] gemini: 8 calls per 60 s` |
+
+    - Mức công bố của nguồn: OFF 10 lượt tìm/phút và 100 lượt đọc sản phẩm/phút mỗi IP; USDA 1.000 lượt/giờ mỗi key. Mọi người dùng đi qua máy chủ Render, nên dùng chung hạn mức đó.
+  - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.2 (+https://github.com/Fluw13/Fluwwwwww/issues)` (liên hệ qua Issues, không có thông tin cá nhân của FLuw).
   - `createApp(services)` nhận service để test; `src/createServices.js` lắp nguồn thật, `server.js` gọi một lần.
   - Chạy thử ở môi trường agent: Node cần `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` mới đi qua proxy (Render không cần).
 - **Nhận diện ảnh (M1c):** `POST /api/foods/recognize`, thân là ảnh thô (`Content-Type` image/jpeg, png, webp, heic, heif), tối đa 4 MB (`express.raw`), rate limit riêng 6 lượt/phút mỗi IP ("Bạn gửi ảnh quá nhanh"), cộng với giới hạn chung 30/phút.
   - Gemini REST `v1beta/models/{GEMINI_MODEL}:generateContent` (mặc định `gemini-flash-latest`), key ở header `x-goog-api-key`, hẹn giờ 25 s. `responseSchema` chỉ có tên món (`nameVi`), từ khóa tiếng Việt (`searchQuery`) và tiếng Anh cho USDA (`searchQueryEn`); prompt cấm ước lượng khối lượng, calo, chất dinh dưỡng.
   - `generationConfig` **chỉ** có `responseMimeType` + `responseSchema`: không `maxOutputTokens` (model có suy nghĩ tính cả token suy nghĩ vào giới hạn, 512 thì hết chỗ trả lời → `MAX_TOKENS` rỗng), không `temperature` (Google khuyên giữ mặc định cho Gemini 3, thấp hơn có thể lặp). Hẹn giờ 25 s chặn thời gian.
   - Trả `{ isFood, foods: [{ name, searchQuery, searchQueryEn }] }` (`searchQueryEn` có thể `null`), tối đa 3 món, bỏ trùng; `isFood` true mà không còn món hợp lệ thì thành false. Bị chặn an toàn (`blockReason` hoặc `finishReason` SAFETY/IMAGE_SAFETY/...) thì coi là không có đồ ăn; phần `thought` bị bỏ; không có chữ trả lời thì `UpstreamError` ghi `finishReason`.
-  - Lỗi: chưa có `GEMINI_API_KEY` → 503 `RECOGNITION_NOT_CONFIGURED`; sai kiểu ảnh 415 `UNSUPPORTED_IMAGE`; ảnh rỗng 400 `IMAGE_REQUIRED`; quá 4 MB 413 `BAD_REQUEST`; Gemini 429 → 503 `RECOGNITION_BUSY`; Gemini 400 `INVALID_ARGUMENT` nói về ảnh (không phải `API_KEY_INVALID`) → 422 `IMAGE_UNREADABLE`; key sai, vùng không có gói miễn phí (`FAILED_PRECONDITION`), 403 và lỗi khác → 503 `RECOGNITION_UNAVAILABLE`. **Mọi lỗi đều ghi log** `[Recognition]` kèm status, lý do, lời nhắn của Gemini (`HttpError.detail`, không gửi cho app, không có ảnh hay key).
+  - Lỗi: chưa có `GEMINI_API_KEY` → 503 `RECOGNITION_NOT_CONFIGURED`; sai kiểu ảnh 415 `UNSUPPORTED_IMAGE`; ảnh rỗng 400 `IMAGE_REQUIRED`; quá 4 MB 413 `BAD_REQUEST`; Gemini 429 (`UpstreamError` mang `upstreamStatus` 429) hoặc vượt hạn mức chung → 503 `RECOGNITION_BUSY`; ảnh sai dạng bị từ chối trước, không tốn lượt; Gemini 400 `INVALID_ARGUMENT` nói về ảnh (không phải `API_KEY_INVALID`) → 422 `IMAGE_UNREADABLE`; key sai, vùng không có gói miễn phí (`FAILED_PRECONDITION`), 403 và lỗi khác → 503 `RECOGNITION_UNAVAILABLE`. **Mọi lỗi đều ghi log** `[Recognition]` kèm status, lý do, lời nhắn của Gemini (`HttpError.detail`, không gửi cho app, không có ảnh hay key).
 - `GET /api/foods/search?q=&en=`: `en` (2–100 ký tự, tùy chọn) là từ tiếng Anh chỉ gửi cho USDA (tên USDA toàn tiếng Anh); cache tách theo cả hai từ khóa.
   - Không lưu, không ghi log ảnh. `fetchJson` nhận thêm `method`, `body`, `headers`, `acceptStatuses`, `timeoutMs`.
-  - `server.js` ghi log `[Config]` lúc khởi động: USDA, Gemini bật hay tắt và model (không ghi key), để biết biến môi trường trên Render đã có chưa.
+  - `server.js` ghi log `[Config]` lúc khởi động: USDA, Gemini bật hay tắt, model và hạn mức (không ghi key), vd `[Config] USDA bật, Gemini bật (gemini-flash-latest, 8/phút, 200/ngày, 4 cùng lúc)`, để biết biến môi trường trên Render đã có hiệu lực chưa.
 - Hợp đồng với Render, không được đổi: chạy `node server.js` trong `backend/`, đọc `PORT`, có `GET /health`.
 - Biến môi trường khai báo trong `backend/.env.example`; local dùng `.env` (Node đọc bằng `--env-file-if-exists`).
 
@@ -374,7 +456,7 @@ dart run build_runner build && dart format lib test
 - Bẫy khi test giao diện:
   - Phông mặc định của `flutter test` có ký tự vuông, nên không bắt được tràn chiều cao ở cỡ chữ lớn. Test cỡ chữ lớn phải gọi `loadAppFonts()` (`test/helpers/load_app_fonts.dart`).
   - `flutter test` tắt bóng đổ (`debugDisableShadows`), nên ảnh chụp trong test có dải đen ở mép thanh dưới. Đây không phải lỗi; muốn xem bóng thật thì đặt `debugDisableShadows = false`.
-- Code dính tới giờ (`placeMeal`, `DiaryTarget`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test`. CI chạy UTC nên không bắt được lỗi quên `toLocal()`. Đã đề xuất FLuw thêm `TZ` vào workflow (sửa workflow cần FLuw duyệt).
+- Code dính tới giờ (`placeMeal`, `DiaryTarget`) phải chạy thêm `TZ=Asia/Ho_Chi_Minh flutter test` tại chỗ. CI chạy cả hai lượt từ PR #36.
 - Môi trường cloud của agent không có Flutter sẵn: tải SDK `flutter_linux_3.47.9-stable.tar.xz` từ `storage.googleapis.com` vào scratchpad, `chown` thư mục SDK. **Không chạy `git config --global --add safe.directory`.**
 - Không có Android SDK trong môi trường agent → không build APK tại chỗ, không kiểm được `build.gradle.kts`. CI build APK ở job `android-apk`.
 - Proxy của môi trường agent chỉ cho push vào branch của phiên. Tạo tag, xóa branch khác phải để FLuw làm trên GitHub.
@@ -399,7 +481,7 @@ dart run build_runner build && dart format lib test
   - Hỏi ngày sinh đầy đủ (thiết kế chỉ hỏi năm).
   - Giới tính "Khác" thì hỏi thêm tính BMR theo công thức Nam hay Nữ.
   - BMI theo thang châu Á; natri dưới 2.000 mg/ngày (WHO).
-- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Nhật ký, lịch sử tra cứu, đã lưu, món nhập thủ công, sở thích và chế độ ăn, nước uống, cân nặng. Không gửi chiều cao, cân nặng, bệnh lên server.
+- **Dữ liệu sức khỏe lưu trên máy** (SQLite): hồ sơ, Nhật ký, lịch sử tra cứu, đã lưu, món nhập thủ công, sở thích và chế độ ăn, nước uống, cân nặng. Không gửi chiều cao, cân nặng, bệnh lên server. Chỉ lưu sau khi người dùng đồng ý (D16).
 - **Đánh giá sao do người dùng chấm** → cần tài khoản, server và database. Tài khoản chỉ dùng cho đánh giá; dữ liệu sức khỏe vẫn chỉ ở trên máy. Làm ở M7 với Firebase Authentication (Google/email) + PostgreSQL trên Neon + backend Node kiểm ID token. Không dùng Postgres free của Render (hết hạn sau 30 ngày).
 - **Nguồn dữ liệu dinh dưỡng:**
   - Đồ đóng gói và mã vạch: Open Food Facts.
@@ -409,18 +491,50 @@ dart run build_runner build && dart format lib test
 - **Render:** dùng workspace "My Workspace", service `Fluw` hiện tại chạy backend mới.
 - **APK:** FLuw tự tạo keystore và đưa vào GitHub Secrets.
 - **Công thức BMR, TDEE, protein, mục tiêu** tính trên máy bằng Dart thuần ở `features/profile/domain/`, có unit test.
-- **Dưới 18 tuổi:** không dùng Mifflin–St Jeor, không tính calo. `14 ≤ tuổi < 18` chỉ hiện protein 0,85 g/kg kèm lời khuyên gặp chuyên gia. `tuổi < 14` chặn tính toán. Người lớn là `tuổi ≥ 18`.
-- **Tốc độ giảm/tăng cân:** tối đa 0,5 kg/tuần (khoảng ±550 kcal/ngày so với TDEE). Mục tiêu calo không bao giờ thấp hơn BMR.
+- **Chỉ người từ 18 tuổi** (FLuw chốt 18/11/2026, D1; bỏ chế độ 14–17 tuổi của quyết định 11/11). Dưới 18 tuổi không có chỉ tiêu nào; hồ sơ cũ vẫn đọc được. Người lớn là `tuổi ≥ 18`.
+- **Tốc độ giảm/tăng cân:** tối đa 0,5 kg/tuần (khoảng ±550 kcal/ngày so với TDEE). Khi giảm cân, mục tiêu calo không thấp hơn `max(BMR, 1.200 kcal nữ / 1.500 kcal nam)` (D3, NIH/NHLBI; trước là chỉ BMR); mức này ≥ TDEE thì mục tiêu bằng TDEE.
 - **Bệnh hỗ trợ bản đầu:**
   - Có cảnh báo tự động:
-    - Tiểu đường: theo dõi đường.
-    - Huyết áp cao: theo dõi natri.
+    - Tiểu đường: theo dõi đường (5% năng lượng, gọi là **mức gợi ý** cho đường tổng, D6).
+    - Natri: theo dõi và đánh giá cho **mọi người lớn** (D11, A3 làm; trước A3 chỉ khi có huyết áp cao).
     - Mỡ máu cao: theo dõi béo bão hòa.
     - Dị ứng: theo tag dị ứng của OFF, có mức độ.
   - Chỉ lưu làm ghi chú, không cảnh báo vì không có dữ liệu purin, độ cay, GI: dạ dày, huyết áp thấp, gout, bệnh tự nhập.
 - **Nhắc nhở:** nhắc theo lịch, mặc định 10:00, 17:00, 22:00, người dùng chỉnh được. Nội dung nhắc dựa trên lượng đã nạp so với mục tiêu; ăn chưa đủ thì kèm gợi ý.
 - Dữ liệu từ nguồn và nội dung AI phải phân biệt rõ trên giao diện. Thiếu dữ liệu thì ghi "Chưa có dữ liệu", không hiện số 0 hay số bịa.
 - Mọi đánh giá sức khỏe ghi rõ là ước tính, không thay thế tư vấn y tế.
+
+### Kiểm tra toàn diện lần 2 (18/11/2026, FLuw giao quyền quyết định cho giám đốc)
+FLuw trả lời 2 câu: app chỉ cho người từ 18 tuổi; liên hệ qua GitHub Issues. Các quyết định còn lại (D1–D24) do giám đốc (agent chính) chốt. Luồng làm: A1 (PR #38), A2 (PR #37), C (PR #39), D (PR #36), A3 (đang làm).
+- **Hồ sơ an toàn (A1):**
+  - D1: chỉ người từ 18 tuổi (xem trên). Bộ chọn ngày sinh tối đa là ngày tròn 18 tuổi.
+  - D3: mức sàn calo khi giảm cân như trên; số tuần ước tính theo mức giảm thực tế khi bị nâng. Giám đốc thêm khi review PR #38: sàn ≥ TDEE thì mục tiêu bằng TDEE (`CalorieFloor.maintenance`), không đặt 1.200/1.500 kcal cao hơn mức tiêu hao.
+  - D4: cân nặng mong muốn khi giảm cân phải cho BMI ≥ 18,5; đang thiếu cân thì không cho chọn giảm cân.
+  - D5: công thức BMR Nữ thì hỏi "Bạn đang mang thai hoặc cho con bú?"; Có thì không tính calo, macro, BMI, nước; dị ứng vẫn cảnh báo.
+  - D7: protein theo cân nặng tham chiếu `min(cân nặng, 24,9 × chiều cao(m)²)`; giảm mỡ giữ cơ 1,6–2,4 g/kg (Hector & Phillips 2018, trước là 1,8–2,4 không có nguồn); sức bền bỏ yoga; khoảng protein > 1,2 g/kg thì nhắc người bệnh thận hỏi bác sĩ.
+  - D8: giữ số AF, ghi là "hệ số vận động thông dụng (ước tính)"; mô tả mức vận động nói về cả ngày.
+  - D9: nước theo cân nặng tham chiếu, là tổng lượng nước kể cả thức ăn; 35 ml/kg là mức Fluw chọn, đối chiếu EFSA 2010.
+- **Trình bày chỉ tiêu (A3, đang làm):**
+  - D6: đường giữ 10% / 5% nhưng gọi là **mức gợi ý** cho đường tổng; vượt thì "Cao hơn mức gợi ý" (màu cảnh báo, không phải màu lỗi, không "vượt giới hạn").
+  - D10: nhãn "Tinh bột" → "Carb (bột đường)" ở mọi chỗ hiển thị (code giữ tên); món USDA ghi "USDA: carb gồm cả chất xơ".
+  - D11: natri cho mọi người lớn (WHO < 2.000 mg); béo bão hòa vẫn chỉ khi có mỡ máu cao.
+  - D12: màn "Cách Fluw tính" (mở từ ⓘ ở "Chỉ tiêu mỗi ngày" và từ Về Fluw) liệt kê công thức, nguồn và các ngưỡng Fluw tự chọn (±10% calo, 80% đường, 300 kcal buổi tối, 50% một món).
+  - D14: đánh giá ngày tốt là "Đạt các chỉ tiêu Fluw đang theo dõi"; calo dưới 50% mục tiêu thì "Có thể chưa ghi đủ món". Một hàm duy nhất trong `core/nutrition/` quyết định "vượt" (so theo số đã làm tròn như số hiện).
+- **Pháp lý (A2):**
+  - D2: bên chịu trách nhiệm "Nhà phát triển Fluw (cá nhân, GitHub: Fluw13)", liên hệ GitHub Issues; không ghi tên thật, email.
+  - D15: màn "Quyền riêng tư và điều khoản" + `PRIVACY.md` cùng nội dung, theo Luật 91/2025/QH15 và Nghị định 356/2025/NĐ-CP.
+  - D16: đồng ý lưu thông tin sức khỏe trước lần lưu hồ sơ đầu tiên; không đồng ý thì không lưu.
+  - D17: "Xóa toàn bộ dữ liệu trên máy" (hồ sơ, Nhật ký, cân nặng, cài đặt, đồng ý, lịch nhắc; giữ Sáng/Tối), có hỏi xác nhận.
+  - D18: hộp đồng ý gửi ảnh nói thêm máy chủ ở Hoa Kỳ, rút đồng ý không xóa được ảnh đã gửi Google, chỉ cho người dùng ở Việt Nam, liên kết chính sách.
+- **Backend và CI (D):**
+  - D19: hạn mức chung trước khi gọi nguồn ngoài (bảng ở mục 3), natri tối đa 40.000 mg/100 g, `traceTags`, nosniff, NFC, gzip.
+  - D20: User-Agent `FluwApp/0.2 (+https://github.com/Fluw13/Fluwwwwww/issues)`.
+  - D21: chỉ giải mã keystore khi push lên `main`; ghim action bằng SHA; `cancel-in-progress` chỉ cho PR; lượt test `TZ=Asia/Ho_Chi_Minh`; `timeout-minutes`.
+- **Sản phẩm (C):**
+  - D13: lọc nhanh đường ≤ 5 g/100 g (≤ 2,5 g/100 ml), protein ≥ 20 g, dưới 200 kcal.
+  - D22: số giữ kiểu thiết kế "1,850 / 58.5"; giới hạn khẩu phần viết "1–2000 g".
+  - D23: bảng tiếng Việt → tiếng Anh viết tay ở frontend, gửi kèm `en` cho USDA khi từ khóa khớp. Chỉ gửi khi từ khóa là đúng một thực phẩm tươi (thêm từ chỉ cách chế biến không đổi số liệu); món nấu (chiên, rán, xào, kho) và đồ khô không gửi (giám đốc chốt khi review PR #39). Bảng 30 món Việt (M1b) để đợt sau.
+  - D24: món đã ăn gần đây (từ Nhật ký, không đổi schema), sửa khẩu phần/ngày/khung của món đã ghi, chip khẩu phần + mặc định theo bao bì, món không có số liệu xếp cuối. Nhập món thủ công để M3b.
 
 ---
 
@@ -440,32 +554,38 @@ dart run build_runner build && dart format lib test
 | Hoạt động nhiều | 1,725 |
 | Hoạt động rất cao | 1,9 |
 
-TDEE là ước tính, không phải số calo bắt buộc phải nạp.
+TDEE là ước tính, không phải số calo bắt buộc phải nạp. AF là **hệ số vận động thông dụng (ước tính)**, không phải hệ số FAO/WHO; mức vận động tính cả công việc, đi lại và tập luyện.
 
-**Mục tiêu calo:** TDEE ± tối đa khoảng 550 kcal/ngày (≤ 0,5 kg/tuần), không thấp hơn BMR.
+**Mục tiêu calo:** TDEE ± tối đa khoảng 550 kcal/ngày (≤ 0,5 kg/tuần, 7.700 kcal/kg).
+- Giảm cân: không thấp hơn `max(BMR, 1.200 kcal nữ / 1.500 kcal nam)` (NIH/NHLBI; giới tính Khác theo công thức BMR đã chọn). Bị nâng thì ghi "Đã nâng lên mức tối thiểu ... Ăn thấp hơn cần bác sĩ theo dõi."
+- Mức sàn đó ≥ TDEE thì mục tiêu **bằng TDEE** (giữ cân), ghi rõ lý do và khuyên hỏi bác sĩ hoặc chuyên gia dinh dưỡng.
+- Số tuần ước tính khi bị nâng: theo tốc độ thực tế `(TDEE − kcal) × 7 / 7700`, ghi "ít nhất khoảng N tuần (ước tính; cân thường giảm chậm dần)".
+- Giữ cân, tăng cân không áp mức sàn.
+- Không cho giảm cân tới BMI < 18,5, cũng không cho giảm cân khi đang BMI < 18,5.
+- Mang thai hoặc cho con bú: không tính calo, macro, BMI, nước.
 
-**Protein (g/ngày) = W × P**
+**Protein (g/ngày) = W × P**, W là **cân nặng tham chiếu** `min(cân nặng, 24,9 × chiều cao(m)²)` (BMR, BMI vẫn dùng cân thật).
 
 | Nhóm | P (g/kg/ngày) |
 |---|---|
-| `14 ≤ tuổi < 18` (mọi mức tập luyện) | 0,85 |
-| `tuổi ≥ 18`, không tập thường xuyên | 0,8 |
-| Vận động nhẹ / sức bền (chạy bộ, đạp xe, yoga) | 1,2–1,4 |
+| Không tập thường xuyên | 0,8 |
+| Vận động nhẹ / sức bền (chạy bộ, đạp xe, bơi) | 1,2–1,4 |
 | Gym / tăng cơ | 1,6–2,2 |
-| Giảm mỡ giữ cơ (đang thâm hụt calo) | 1,8–2,4 |
+| Giảm mỡ giữ cơ (gym + giảm cân) | 1,6–2,4 |
 
-Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo "hình thức tập" người dùng khai (không tập / nhẹ, sức bền / gym); gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ. App hiện cả khoảng; coi là **đủ** khi đạt cận dưới. Đây là mức tham khảo, không phải giới hạn tối đa. Nguồn cho khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
+Nhóm chọn theo "hình thức tập" người dùng khai (không tập / nhẹ, sức bền / gym); gym kèm mục tiêu giảm cân thì vào nhóm giảm mỡ giữ cơ. App hiện cả khoảng; coi là **đủ** khi đạt cận dưới. Đây là mức tham khảo, không phải giới hạn tối đa. Cận trên > 1,2 g/kg thì nhắc "Nếu bạn có bệnh thận, hãy hỏi bác sĩ trước khi ăn nhiều đạm." Nguồn: khoảng 1,6–2,2 là phân tích gộp Morton et al. 2018 (British Journal of Sports Medicine); 1,6–2,4 khi thâm hụt calo là Hector & Phillips 2018 (International Journal of Sport Nutrition and Exercise Metabolism); khuyến nghị chung của ISSN (Jäger et al. 2017) là 1,4–2,0. Khi hiện nguồn trên app phải ghi đúng tên nghiên cứu.
 
 **Tinh bột, chất béo, đường (theo % năng lượng mục tiêu, FLuw chọn 11/11):**
 - Chất béo = 25% kcal ÷ 9.
 - Béo bão hòa < 10% kcal ÷ 9; có mỡ máu cao thì < 7%.
 - Đường < 10% kcal ÷ 4; bật "giảm ngọt" hoặc có tiểu đường thì < 5%.
-  - Theo WHO là đường tự do; dữ liệu OFF/USDA chỉ có đường tổng, nên ghi rõ là đường tổng.
-- Tinh bột = (kcal mục tiêu − protein cận dưới × 4 − chất béo × 9) ÷ 4.
+  - Theo WHO là đường tự do; dữ liệu OFF/USDA chỉ có đường tổng, nên ghi rõ là đường tổng. Từ A3 (D6) gọi là **mức gợi ý**, vượt thì "Cao hơn mức gợi ý".
+- Tinh bột = (kcal mục tiêu − protein cận dưới × 4 − chất béo × 9) ÷ 4. Từ A3 (D10) hiển thị là "Carb (bột đường)".
   - Ra số âm (hồ sơ cực đoan, vd nặng 300 kg, tập gym, giảm cân) thì không đặt mục tiêu tinh bột, ghi "Chưa tính được"; không kẹp về 0.
-- Dưới 18 tuổi không có kcal mục tiêu nên không tính các mục này.
+- Natri (số cố định, không theo % năng lượng) < 2.000 mg/ngày (WHO), cho mọi người lớn (D11, A3).
+- Chỉ có khi có kcal mục tiêu (`AdultTargets`); dưới 18 tuổi, mang thai/cho con bú thì không tính.
 
-**Nước:** 35 ml × cân nặng (kg) mỗi ngày, người dùng chỉnh được. Không dùng thời tiết.
+**Nước:** 35 ml × cân nặng tham chiếu (kg) mỗi ngày, là **tổng lượng nước kể cả nước trong thức ăn** (khoảng 70–80% đến từ đồ uống). 35 ml/kg là mức Fluw chọn, đối chiếu EFSA 2010 (nữ 2,0 lít, nam 2,5 lít). Người bệnh tim, thận cần hỏi bác sĩ. Người dùng chỉnh được (M8). Không dùng thời tiết.
 
 **BMI** = cân nặng ÷ chiều cao(m)², hiển thị cắt xuống 0,1 (vd 22,96 hiện 22,9), thang châu Á:
 - `BMI < 18,5`: thiếu cân;
@@ -473,7 +593,7 @@ Các mức tập luyện chỉ áp dụng khi `tuổi ≥ 18`. Nhóm chọn theo
 - `23 ≤ BMI < 25`: thừa cân;
 - `BMI ≥ 25`: béo phì.
 
-Chỉ áp dụng khi `tuổi ≥ 18`.
+Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 
 **Khung giờ trang Nhật ký** (tính theo phút, bỏ giây):
 - Sáng 06:00–12:00, Chiều 12:01–18:00, Tối 18:01–24:00, Đêm 00:01–05:59.
@@ -494,8 +614,24 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
 - Key USDA cho môi trường agent: lần đầu (13/11) agent lưu nhầm kiểu `Authorization: Bearer` nên USDA báo `API_KEY_INVALID` (không phải lỗi của key). 14/11 lưu lại với header `X-Api-Key`, nhưng proxy chưa áp dụng (thử `X-Api-Key: DEMO_KEY` vẫn không bị thay). Key trên Render chưa có request nào để kiểm; FLuw kiểm bằng cách tìm `chicken breast` trong app (có kết quả USDA là key đúng). Đề xuất M1b dùng bộ dữ liệu tải về của USDA (CC0, không cần key) qua host `fdc.nal.usda.gov`, chờ FLuw đồng ý.
-- `GEMINI_API_KEY` trên Render: thiếu thì nhận diện ảnh báo "Máy chủ chưa bật nhận diện ảnh". Kiểm bằng log `[Config]` sau mỗi lần deploy.
+- `GEMINI_API_KEY` trên Render: đã có (log `[Config] ... Gemini bật` ngày 21/11). Kiểm lại bằng log `[Config]` sau mỗi lần deploy.
+- **GitHub, ruleset cho `main`:** Settings → Rules → Rulesets → New branch ruleset, target `main`: bật "Require a pull request before merging", "Require status checks to pass" (chọn `backend`, `frontend`, `android-apk`), "Block force pushes" và chặn xóa branch.
+- **Tùy chọn, GitHub Environment `release` cho keystore:** PR sửa `ci.yml` vẫn đọc được repo secret. Cách chặn hẳn:
+  - Tạo Environment `release` (Settings → Environments), "Deployment branches and tags" chỉ `main`; chuyển 4 secret `ANDROID_*` sang đó.
+  - Agent mở một PR workflow nhỏ thêm vào job `android-apk`: `environment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'release' || '' }}` (trường hợp tên rỗng cho PR chưa kiểm trên GitHub).
+  - Không đặt "Required reviewers": job sẽ chờ duyệt, Render chờ CI xanh nên deploy backend cũng bị chặn.
+  - Cách tạm: chỉ người tin cậy mới có quyền push branch.
+- **Key Gemini (Google AI Studio / Cloud Console):** xác nhận project của key không gắn tài khoản thanh toán (gói Free); giới hạn key chỉ dùng "Generative Language API". Nếu sau này gắn thanh toán: đặt hạn mức chi tiêu vài đô và cảnh báo ngân sách. Nếu hạn mức miễn phí của model thấp hơn 8/phút hoặc 200/ngày: đặt `GEMINI_MAX_PER_MINUTE` / `GEMINI_MAX_PER_DAY` trên Render thấp hơn, rồi xem dòng `[Config]`.
+- **Render:** xem Billing, băng thông đã dùng (nguồn bên thứ ba nói gói Hobby còn 5 GB/tháng từ 1/8/2026, chưa xác minh) và có thẻ thanh toán gắn vào không (quyết định vượt mức thì bị tính tiền hay bị tạm dừng). Tùy chọn: đổi build command sang `npm ci --omit=dev`.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
+
+### Pháp lý còn mở (trước khi lên cửa hàng)
+- Xuất dữ liệu (JSON/CSV) cho người dùng.
+- Cơ chế báo người dùng khi chính sách đổi (`PRIVACY.md` mục 9 hứa "app sẽ báo cho bạn"; hiện chỉ đồng ý sức khỏe/ảnh có phiên bản để hỏi lại).
+- Google Play / App Store: URL chính sách quyền riêng tư dùng `https://github.com/Fluw13/Fluwwwwww/blob/main/PRIVACY.md`.
+- Tóm tắt quyền riêng tư ở lần mở app đầu tiên (chưa làm).
+- **Chuyển dữ liệu ra nước ngoài (FLuw, nên hỏi luật sư):** từ khóa, mã vạch, IP tới Render (Hoa Kỳ), ảnh tới Google Gemini. Luật 91/2025 (Điều 20–22) và Nghị định 356/2025 có thể yêu cầu hồ sơ đánh giá tác động nộp Bộ Công an (Cục A05). Miễn trừ / hoãn 5 năm ở Điều 38 dành cho doanh nghiệp nhỏ, khởi nghiệp, không áp dụng khi xử lý dữ liệu nhạy cảm; chưa rõ cá nhân phát triển app miễn phí có thuộc diện nào. Chi tiết ở báo cáo pháp lý (legal.md mục H3, chỉ có trong scratchpad của phiên kiểm tra 18/11).
+- **Google Play:** app sức khỏe phải điền Health apps declaration trung thực (dinh dưỡng, ghi bữa ăn, cân nặng; không dùng Health Connect); Play Console Help ghi app sức khỏe có thể phải dùng tài khoản Organization (cần D-U-N-S) → FLuw chọn loại tài khoản trước khi trả 25 USD. Mô tả trên cửa hàng phải có câu "không phải thiết bị y tế, không chẩn đoán, điều trị, chữa hay phòng bệnh" và nhắc hỏi chuyên gia y tế.
 
 ---
 
@@ -505,12 +641,13 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 |---|---|---|
 | M0 | Dọn repo, khung frontend/backend, CI build APK + ký keystore, CLAUDE.md, README | Xong, PR #19 merge 11/11 (`70a58e9`), Render đã deploy |
 | UI0 | Hệ thống giao diện theo thiết kế: màu, phông, header, thanh 5 tab có nút Quét nổi, đổi nhãn `AppTab` | Xong, PR #23 (`250c531`) |
-| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1c Gemini xong (cùng PR với M5); M1b 30 món Việt chờ key USDA chạy được |
-| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d) |
-| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
-| M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết |
-| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Xong: M5a mã vạch, M5b nhận diện ảnh bằng Gemini miễn phí (FLuw chọn 14/11); khẩu phần chọn ở màn Chi tiết |
-| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Xong: M6a (PR #33, `e714d28`), M6b nhắc ghi bữa ăn (PR #34, `5226475`) |
+| M1 | Backend: `GET /api/foods/search?q=`, `GET /api/foods/barcode/:code`, `POST /api/foods/recognize`; OFF + USDA + bảng món Việt | M1a xong (PR #29, `0a29380`, Render live 14/11); M1c Gemini xong (PR #35, `334147d`); hạn mức chung, `traceTags`, gzip (PR #36, `2ee5f97`, Render live 21/11); M1b 30 món Việt để đợt sau (D23) |
+| M2 | Hồ sơ: Thiết lập + Hồ sơ, SQLite, BMI, macro theo %, nước, ghi cân nặng, sở thích và chế độ ăn, dị ứng có mức độ | Xong: công thức (M2a), SQLite (M2b), màn Hồ Sơ + Thiết lập (M2c), dị ứng, chế độ ăn, sở thích, ghi cân nặng, "Theo máy" (M2d); hồ sơ an toàn: chỉ người lớn, mức calo tối thiểu, chặn thiếu cân, mang thai, cân tham chiếu, schema v5 (PR #38, `5f43f33`) |
+| M3 | Tra cứu, Chi tiết, Lịch sử & Đã lưu, nhập món thủ công | M3a (Tra cứu + Chi tiết) xong, PR #30 (`ce7c57f`); tìm đồ tươi tiếng Việt qua USDA, lọc nhanh mới, chip khẩu phần, món đã ăn gần đây (PR #39, `d32b827`); M3b (Đã lưu, Lịch sử món đã xem, nhập thủ công) sau |
+| M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết; sửa món đã ghi (PR #39) |
+| M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Xong: M5a mã vạch, M5b nhận diện ảnh bằng Gemini miễn phí (FLuw chọn 14/11, PR #35); khẩu phần chọn ở màn Chi tiết; hộp đồng ý gửi ảnh bản 2 (PR #37) |
+| M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Xong: M6a (PR #33, `e714d28`), M6b nhắc ghi bữa ăn (PR #34, `5226475`); chữ đánh giá ngày và hàm "vượt" chung đang làm ở A3 (D14) |
+| Kiểm tra lần 2 | Pháp lý, công thức, sản phẩm, backend (D1–D24, mục 5) | PR #36 (D, backend + CI), #37 (A2, pháp lý), #38 (A1, hồ sơ an toàn), #39 (C, sản phẩm) đã merge 21/11; **A3 đang làm** (D6 đường là mức gợi ý, D10 "Carb (bột đường)", D11 natri cho mọi người lớn, D12 màn "Cách Fluw tính", D14) |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 | M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
 | M9 | Báo cáo tuần/tháng: calo, macro, đường/natri, cân nặng, nước | Chờ M2, M4, M8 |
@@ -519,25 +656,27 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 
 ## 9. Ghi nhận kỹ thuật
 
-- **Dữ liệu sức khỏe** là dữ liệu cá nhân nhạy cảm theo Nghị định 13/2023/NĐ-CP → giữ trên máy.
+- **Dữ liệu sức khỏe** là dữ liệu cá nhân nhạy cảm theo Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP (cùng hiệu lực 1/1/2026; Nghị định 356 thay Nghị định 13/2023/NĐ-CP) → giữ trên máy, chỉ xử lý khi người dùng đồng ý.
+  - Chủ thể dữ liệu phải được biết dữ liệu nào bị xử lý, để làm gì, ai nhận; đồng ý chỉ có giá trị khi tự nguyện và biết rõ (im lặng không phải là đồng ý). Vì vậy có `PRIVACY.md`, màn `/privacy` và hộp đồng ý trước lần lưu hồ sơ đầu tiên.
+  - Số điều khoản lấy từ nguồn thứ cấp, chưa xác nhận nguyên văn.
   - Tài khoản ở M7 cần màn đồng ý, chính sách quyền riêng tư, cho xóa tài khoản ngay trong app (yêu cầu của Google Play và App Store), cơ chế báo cáo đánh giá xấu.
 - **Open Food Facts:** dữ liệu ODbL, ảnh CC BY-SA; phải ghi nguồn trên giao diện. Nhiều sản phẩm Việt Nam thiếu `categories_tags` và dinh dưỡng.
-- **USDA FoodData Central:** tên thực phẩm bằng tiếng Anh. Từ khóa tiếng Việt cần bảng ánh xạ hoặc dịch trước khi tìm.
+- **USDA FoodData Central:** tên thực phẩm bằng tiếng Anh. Từ khóa tiếng Việt đi qua bảng `vietnameseFoodGlossary` (PR #39) hoặc từ tiếng Anh của Gemini; chưa kiểm từng từ trong bảng với USDA thật.
 - **Gradle wrapper:** `gradle-wrapper.jar` và `gradlew` bị `.gitignore` của template bỏ qua; Flutter tự tạo khi build.
-- **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần.
+- **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần. Từ PR #36 chỉ build trên `main` có keystore; APK của PR ký bằng debug key, không cài đè được.
 - **M1, khi thêm `express.json()`:** `errorHandler` phải giữ `error.status` 4xx (JSON hỏng → 400, body quá lớn → 413) thay vì trả 500.
 - **Express 5** gọi callback của `app.listen` cả khi lỗi; `server.js` đã bỏ qua nhánh lỗi để handler `'error'` xử lý.
 - **Chi phí (kiểm 14/11):**
   - Render: 1 web service gói free, không có Postgres/Key Value, tắt preview. Gói free không tự tính tiền; FLuw xem mục Billing trên dashboard để chắc workspace không gắn gói trả phí.
   - GitHub: repo **public** nên Actions và artifact miễn phí; artifact APK tự xóa sau 14 ngày.
-  - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Chưa tạo Firebase/Neon/Gemini (M7/M1c): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
+  - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Gemini dùng gói miễn phí, có hạn mức chung ở backend (8/phút, 200/ngày); FLuw kiểm project của key không gắn thanh toán (mục 7). Chưa tạo Firebase/Neon (M7): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
   - Không có lịch tự chạy (scheduled task) nào còn bật.
 - **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
 - **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
 - **Gemini:**
-  - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên (kể cả cho người xem lại) để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, rút lại được, chỉ gửi ảnh đã xóa vị trí/thời gian chụp, không kèm dữ liệu sức khỏe.
-  - Điều khoản bổ sung của Gemini API: người dùng API phải từ 18 tuổi, và (theo bản 2024–2025, chưa xác nhận được bản hiện hành vì mạng agent chặn ai.google.dev) không dùng trong dịch vụ dễ được người dưới 18 tuổi dùng → nhận diện ảnh chỉ mở cho hồ sơ từ 18 tuổi.
-  - **Chưa gọi Gemini thật lần nào** (môi trường agent không gửi được key). Sau khi deploy, FLuw thử một ảnh trong app; lỗi thì xem log `[Recognition]` trên Render.
+  - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt hoặc vượt hạn mức chung của backend → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên (kể cả cho người xem lại) để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, rút lại được, chỉ gửi ảnh đã xóa vị trí/thời gian chụp, không kèm dữ liệu sức khỏe.
+  - Điều khoản bổ sung của Gemini API: người dùng API phải từ 18 tuổi, và (theo bản 2024–2025, chưa xác nhận được bản hiện hành vì mạng agent chặn ai.google.dev) không dùng trong dịch vụ dễ được người dưới 18 tuổi dùng → app chỉ cho người lớn, nhận diện ảnh vẫn chặn hồ sơ cũ dưới 18 tuổi.
+  - **Chưa gọi Gemini thật lần nào** (môi trường agent không gửi được key). Render đã có key (log `[Config]` 21/11). FLuw thử một ảnh trong app; lỗi thì xem log `[Recognition]` trên Render.
   - `gemini-flash-latest` là tên Google trỏ tới model Flash hiện hành; đổi bằng biến `GEMINI_MODEL` nếu cần cố định.
   - Điều khoản bổ sung của Gemini API yêu cầu gói trả phí khi phục vụ người dùng ở EEA, Thụy Sĩ, Anh. Kiểm lại điều khoản trước khi lên cửa hàng; nếu vẫn dùng gói miễn phí thì chỉ phát hành ở Việt Nam.
 
@@ -546,6 +685,32 @@ Chỉ áp dụng khi `tuổi ≥ 18`.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 21/11/2026 — Kiểm tra toàn diện lần 2 (giám đốc): pháp lý, công thức, sản phẩm, backend
+- **Merge PR #35** (M5, `334147d`).
+- **Cách làm:** 18/11 kiểm tra 4 mảng (pháp lý, dinh dưỡng, sản phẩm/frontend, backend/hạ tầng). FLuw giao quyền quyết định cho giám đốc (agent chính) và trả lời 2 câu: chỉ người từ 18 tuổi, liên hệ qua GitHub Issues. Giám đốc chốt D1–D24 (mục 5), chia 5 luồng, mỗi luồng một PR; 4 PR đã merge ngày 21/11, A3 đang làm.
+- **PR #36 (D: backend + CI, D19–D21, `2ee5f97`):**
+  - Backend mới: `src/lib/budget.js`, `src/errors/budgetExceededError.js`, `src/middlewares/noSniff.js`. Sửa: `app.js`, `config.js`, `createServices.js`, `errors/upstreamError.js`, `lib/fetchJson.js`, `models/nutrients.js`, `providers/gemini/client.js`, `providers/openFoodFacts/{client,mapper}.js`, `providers/usda/mapper.js`, 3 service; `server.js`, `.env.example`, gói `compression`. Bỏ code thừa `NUTRIENT_KEYS`, export `parseRecognition`.
+  - Vì sao: Gemini là proxy mở (ai cũng tiêu hết hạn mức của key); OFF/USDA giới hạn theo IP của máy chủ; ảnh dồn cùng lúc có thể hết RAM; nguồn lỗi bị gọi lại mỗi lần; từ khóa chưa chuẩn hóa; thiếu nosniff; tốn băng thông.
+  - CI: keystore chỉ ở push `main` (trước đây PR từ branch trong repo cũng nhận keystore); action ghim SHA; `cancel-in-progress` chỉ cho PR (trước có thể hủy lượt chạy trên `main`, Render bỏ sót commit); lượt `TZ=Asia/Ho_Chi_Minh`; `timeout-minutes`.
+  - Test: `npm test` 98/98 (từ 69), chạy 3 lần đều xanh; `npm audit --omit=dev` 0 lỗ hổng. 34 đột biến, 33 bị bắt, 1 tương đương (`while` thành `if` khi bỏ lượt hết hạn). Chạy thật `node server.js` gọi OFF: `/health` có nosniff, mã vạch Nutella có `traceTags`, tìm kiếm trả `Content-Encoding: gzip`. YAML đọc bằng `yaml.safe_load`, đúng 3 job.
+  - **Deploy (VERIFIED qua log Render):** `dep-dc0jtutg1s2s73e507n0` live 21/11 06:49 UTC, log `[Config] USDA bật, Gemini bật (gemini-flash-latest, 8/phút, 200/ngày, 4 cùng lúc)`.
+- **PR #37 (A2: pháp lý, D2, D15–D18, `eef8797`):** `PRIVACY.md`, `features/privacy/` (màn `/privacy`), `core/privacy/health_data_consent.dart` + hộp đồng ý trước lần lưu hồ sơ đầu tiên, `core/settings/shared_preferences_provider.dart`, `app/erase_all_data*.dart` + `EraseAllDataButton`, hộp đồng ý gửi ảnh bản 2, dòng "không phải thiết bị y tế" ở Về Fluw, mô tả bệnh và giảm ngọt. Vì sao: app không có chính sách quyền riêng tư, không hỏi đồng ý trước khi lưu dữ liệu sức khỏe (dữ liệu nhạy cảm theo Luật 91/2025), không có cách xóa hết dữ liệu.
+  - Test: `flutter test` 481/481 (từ 456), cả UTC và `TZ=Asia/Ho_Chi_Minh`; chính sách trong app trùng `PRIVACY.md`. 12/12 đột biến bị bắt.
+- **PR #38 (A1: hồ sơ an toàn, D1, D3, D4, D5, D7, D8, D9, `5f43f33`):** `features/profile/domain/` (age, calorie_target, daily_targets, energy, health_profile, profile_validation, protein_target, water_target, mới `reference_weight`), `data/profile_mapper`, schema v5 (`drift_schema_v5.json`, steps, `.g.dart`), màn Thiết lập và Hồ Sơ, `PersonalLimits`, `personal_limits_from_profile`, Trang Chủ (`nutrition_advice`, `TodayNutritionCard`), một câu ở `PersonalCheckCard`.
+  - Vì sao: sàn bằng BMR cho phép mục tiêu ~880 kcal; người thiếu cân đặt được mục tiêu giảm cân tới BMI ~9; không hỏi mang thai mà vẫn tính thâm hụt; protein theo cân thật cho người béo phì ra 41–54% năng lượng; nước 35 ml/kg không giới hạn; số tuần ước tính sai khi calo bị nâng; "giảm mỡ giữ cơ 1,8–2,4" không có nguồn; yoga không phải sức bền.
+  - **Giám đốc sửa khi review:** mức tối thiểu ≥ TDEE (vd nữ 45 kg, 150 cm, 60 tuổi, ít vận động: TDEE 1.112 kcal) mà vẫn đặt 1.200 kcal là ăn dư khi muốn giảm cân → mục tiêu bằng TDEE (`CalorieFloor.maintenance`) kèm lời khuyên hỏi bác sĩ hoặc chuyên gia dinh dưỡng, có test (`df6b22c`).
+  - Test: `flutter test` 530/530; migration v4→v5 có test đối chiếu dữ liệu; 16/16 đột biến bị bắt (trước phần sửa review).
+- **PR #39 (C: sản phẩm và lỗi, D13, D22, D23, D24, `d32b827`):** bảng tiếng Việt → tiếng Anh (283 tên) và chuẩn hóa dấu, lọc nhanh mới, món không có số liệu xếp cuối, chip khẩu phần + mặc định theo bao bì, món đã ăn gần đây, sửa món trong Nhật ký; dùng chung `PortionInput`, `MealSlotPicker`, `portion_limits`, `QuantityUnit.symbol`.
+  - Lỗi đã sửa: `AddToNoteBar` đọc ref sau `await` (rời trang khi đang ghi báo lỗi nhầm) và dùng `DateTime.now()`; `diaryTargetProvider` cũ khi đổi tab; `currentHourProvider` không làm mới khi quay lại app; hồ sơ và lần cân không cùng transaction; chữ sai khi khẩu phần trống; 502 HTML của Render báo "Máy chủ trả dữ liệu không đọc được" thay vì đang khởi động; `Info.plist` iOS còn khai báo màn ngang; dải tuần biến mất khi tải tuần mới; code chết `AppSpacing.xl`.
+  - **Giám đốc sửa khi review:** chiên, rán, xào, kho, khô không còn là từ mô tả (món thêm dầu/đường/sốt, đồ khô đổi số liệu trên 100 g nhiều lần), nên "cá kho" không gửi "fish" cho USDA, có test (`5524cc4`).
+  - Test: `flutter test` 583/583, cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch. 15 đột biến, 14 bị bắt, 1 lọt vì điều kiện thừa (`_isPlain`) → đã bỏ điều kiện.
+- **Đang làm:** A3 (D6, D10, D11, D12, D14).
+- **Chưa kiểm:** gọi Gemini thật; APK trên điện thoại thật (camera, bảng sửa món với bàn phím iPhone, `UIRequiresFullScreen` trên iPad); USDA thật với từ tiếng Anh trong bảng; log CI trên `main` của bước keystore (chỉ chạy ở đó).
+- **Chưa làm:**
+  - App: B9 ở `HomeScreen`, `WeightLogCard` khi mang thai (mục 3); xuất dữ liệu, báo khi chính sách đổi, tóm tắt quyền riêng tư lần mở đầu (mục 7).
+  - Backend, CI (ngoài phạm vi D19–D21): kiểm số proxy trước app trên Render (`trust proxy`), `keepAliveTimeout`, ghi `cause.code` khi lỗi mạng, chỉ nhận JPEG/PNG theo byte đầu, Dependabot, `flutter pub get --enforce-lockfile`, kế hoạch lên Node 24.
+- **Tài liệu:** CLAUDE.md (mục 2, 3, 5–10) và README.md cập nhật theo ghi chú của 4 luồng; không đổi code.
 
 ### 17/11/2026 — M5: quét mã vạch, nhận diện ảnh (M5a, M5b) và API nhận diện (M1c)
 - **Merge PR #34** (M6b, `5226475`).
