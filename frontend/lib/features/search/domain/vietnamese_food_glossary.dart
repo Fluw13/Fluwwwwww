@@ -299,7 +299,8 @@ const Map<String, String> vietnameseFoodGlossary = {
 
 /// Words that only say how a food is prepared or which kind it is ("ức gà luộc", "quả chuối"), so the food is still
 /// the only thing asked for. Any other word means a dish or a product ("phở bò"), and the English for one of its
-/// parts ("beef") would lead the user to log the wrong food.
+/// parts ("beef") would lead the user to log the wrong food. Cooking that adds oil, sugar or sauce (chiên, rán, xào,
+/// kho) makes a dish too, and drying (khô) changes the numbers per 100 g several times, so neither is listed.
 const Set<String> _descriptorWords = {
   'quả',
   'trái',
@@ -315,12 +316,7 @@ const Set<String> _descriptorWords = {
   'luộc',
   'hấp',
   'nướng',
-  'chiên',
-  'rán',
-  'xào',
-  'kho',
   'rang',
-  'khô',
   'đông',
   'lạnh',
   'đóng',
@@ -355,6 +351,7 @@ final Map<String, String> _englishByFolded = () {
 }();
 
 final Set<String> _canonicalDescriptors = {for (final word in _descriptorWords) canonicalVietnamese(word)};
+
 final Set<String> _foldedDescriptors = {for (final word in _descriptorWords) foldVietnamese(word)};
 
 // The folded maps are looked up with the canonical text, which keeps its marks, so they only ever match words typed

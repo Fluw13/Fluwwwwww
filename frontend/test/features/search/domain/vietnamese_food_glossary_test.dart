@@ -60,7 +60,21 @@ void main() {
   });
 
   test('món ăn hay sản phẩm có từ lạ thì không gửi tiếng Anh của một phần (phở bò không phải thịt bò)', () {
-    for (final query in ['phở bò', 'cơm gà', 'sữa chua vinamilk', 'bánh xèo', 'mì tôm hảo hảo', 'chicken', 'luộc']) {
+    for (final query in [
+      'phở bò',
+      'cơm gà',
+      'sữa chua vinamilk',
+      'bánh xèo',
+      'mì tôm hảo hảo',
+      'chicken',
+      'luộc',
+      'cá kho',
+      'ca kho',
+      'cá khô',
+      'gà chiên',
+      'trứng rán',
+      'rau muống xào',
+    ]) {
       expect(englishSearchTermFor(query), isNull, reason: query);
     }
     expect(englishSearchTermFor(''), isNull);
