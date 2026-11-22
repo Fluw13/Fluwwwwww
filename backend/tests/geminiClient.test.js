@@ -36,6 +36,9 @@ test('gửi ảnh base64 trong body, key trong header (không nằm trong URL), 
         inlineData: { mimeType: 'image/jpeg', data: Buffer.from('ảnh').toString('base64') },
     });
     assert.match(body.contents[0].parts[1].text, /Không ước lượng khối lượng, calo/);
+    // USDA has no cooked dishes: an English dish name would only match a raw ingredient.
+    assert.doesNotMatch(body.contents[0].parts[1].text, /beef pho/);
+    assert.match(body.contents[0].parts[1].text, /searchQueryEn là chuỗi rỗng/);
     assert.deepEqual(Object.keys(body.generationConfig), ['responseMimeType', 'responseSchema'], 'không giới hạn token, không đổi temperature');
     assert.equal(body.generationConfig.responseMimeType, 'application/json');
     assert.deepEqual(body.generationConfig.responseSchema.required, ['isFood', 'foods']);
@@ -47,12 +50,12 @@ test('chỉ trả tên món và từ khóa: tối đa 3 món, bỏ trùng, bỏ 
         answer({
             isFood: true,
             foods: [
-                { nameVi: ' Phở  bò ', searchQuery: 'phở bò', searchQueryEn: ' beef  pho ' },
+                { nameVi: ' Phở  bò ', searchQuery: 'phở bò', searchQueryEn: '' },
                 { nameVi: 'Phở', searchQuery: 'PHỞ BÒ', searchQueryEn: 'pho' },
                 { nameVi: 'x', searchQuery: 'quá ngắn', searchQueryEn: 'too short' },
                 { nameVi: 'Món '.repeat(30), searchQuery: 'tên quá dài', searchQueryEn: 'long' },
                 { nameVi: 'Rau thơm', searchQuery: 'rau thơm', searchQueryEn: 7, calories: 999 },
-                { nameVi: 'Chanh', searchQuery: 'chanh', searchQueryEn: 'lime' },
+                { nameVi: 'Chanh', searchQuery: 'chanh', searchQueryEn: '  raw   lime ' },
                 { nameVi: 'Ớt', searchQuery: 'ớt tươi', searchQueryEn: 'chili' },
             ],
         }),
@@ -61,9 +64,9 @@ test('chỉ trả tên món và từ khóa: tối đa 3 món, bỏ trùng, bỏ 
     assert.deepEqual(await client.recognizeFood({ image: Buffer.from('a'), mimeType: 'image/png' }), {
         isFood: true,
         foods: [
-            { name: 'Phở bò', searchQuery: 'phở bò', searchQueryEn: 'beef pho' },
+            { name: 'Phở bò', searchQuery: 'phở bò', searchQueryEn: null },
             { name: 'Rau thơm', searchQuery: 'rau thơm', searchQueryEn: null },
-            { name: 'Chanh', searchQuery: 'chanh', searchQueryEn: 'lime' },
+            { name: 'Chanh', searchQuery: 'chanh', searchQueryEn: 'raw lime' },
         ],
     });
 });

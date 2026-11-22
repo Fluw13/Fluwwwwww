@@ -27,6 +27,8 @@ test('món SR Legacy: đủ 7 chỉ số theo 100 g, dị ứng là chưa biết
         barcode: null,
         imageUrl: null,
         servingSize: null,
+        packageQuantity: null,
+        servingQuantity: null,
         basis: { amount: 100, unit: 'g' },
         nutrients: {
             energyKcal: 130,
@@ -37,6 +39,7 @@ test('món SR Legacy: đủ 7 chỉ số theo 100 g, dị ứng là chưa biết
             saturatedFatG: 0.077,
             sodiumMg: 1,
         },
+        nutrientsSuspect: false,
         allergenTags: null,
         traceTags: null,
         attribution: {
@@ -76,4 +79,17 @@ test('thiếu chỉ số thì null; dữ liệu hỏng thì bỏ món', () => {
     assert.equal(item.nutrients.proteinG, null);
     assert.equal(toFoodItem({ description: 'X' }), null);
     assert.equal(toFoodItem({ fdcId: 1 }), null);
+});
+
+test('nutrientsSuspect: số mâu thuẫn thì true; rượu (cồn id 1018) không xét năng lượng', () => {
+    const vodka = [
+        { nutrientId: 1008, value: 231 },
+        { nutrientId: 1003, value: 0 },
+        { nutrientId: 1005, value: 0 },
+        { nutrientId: 1004, value: 0 },
+    ];
+
+    assert.equal(toFoodItem(food(vodka)).nutrientsSuspect, true);
+    assert.equal(toFoodItem(food([...vodka, { nutrientId: 1018, value: 33.4 }])).nutrientsSuspect, false);
+    assert.equal(toFoodItem(food([{ nutrientId: 1005, value: 60 }, { nutrientId: 1004, value: 50 }])).nutrientsSuspect, true);
 });

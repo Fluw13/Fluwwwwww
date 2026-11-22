@@ -10,7 +10,10 @@ const PROMPT = [
     `Liệt kê tối đa ${MAX_FOODS} món ăn hoặc thực phẩm khác nhau thấy rõ trong ảnh, món chính trước.`,
     'nameVi: tên tiếng Việt thường gọi (ví dụ "Phở bò", "Cà chua", "Bánh mì thịt").',
     'searchQuery: từ khóa ngắn tiếng Việt để tra cơ sở dữ liệu thực phẩm, không kèm thương hiệu hay khối lượng.',
-    'searchQueryEn: tên tiếng Anh ngắn như trong cơ sở dữ liệu USDA (ví dụ "tomato", "chicken breast", "beef pho").',
+    // USDA only has single foods; an English dish name ("beef pho") would match its raw ingredient instead.
+    'searchQueryEn: chỉ điền khi đó là một thực phẩm tươi hoặc một nguyên liệu đơn,' +
+        ' là tên tiếng Anh ngắn như trong cơ sở dữ liệu USDA (ví dụ "tomato", "chicken breast", "banana").',
+    'Món nấu từ nhiều nguyên liệu (ví dụ phở, bánh mì thịt, cơm tấm) hoặc đồ đóng gói thì searchQueryEn là chuỗi rỗng.',
     'Nếu ảnh không có thực phẩm (người, giấy tờ, đồ vật), đặt isFood là false và foods rỗng.',
     'Không ước lượng khối lượng, calo hay chất dinh dưỡng.',
 ].join('\n');

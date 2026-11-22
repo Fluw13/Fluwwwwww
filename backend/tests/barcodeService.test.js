@@ -92,3 +92,24 @@ test('Open Food Facts trả 429 thì các lần tra sau trả 503 ngay, không g
     await assert.rejects(service.lookUp('8934673607827'), (error) => error.code === 'SOURCES_UNAVAILABLE');
     assert.equal(openFoodFacts.getProduct.mock.callCount(), 1);
 });
+
+test('find (cho tìm kiếm) truyền hẹn giờ riêng, trả null khi không có, ném lỗi gốc khi nguồn lỗi, dùng chung cache với lookUp', async () => {
+    const item = { id: 'off:8934673607827' };
+    const { service, openFoodFacts } = build(async (code) => {
+        if (code === '96385074') {
+            return null;
+        }
+        if (code === '50000006') {
+            throw new UpstreamError('openFoodFacts', 'TimeoutError');
+        }
+        return item;
+    });
+
+    assert.equal(await service.find('8934673607827', { timeoutMs: 1500 }), item);
+    assert.deepEqual(openFoodFacts.getProduct.mock.calls[0].arguments, ['8934673607827', { timeoutMs: 1500 }]);
+    assert.equal(await service.find('96385074'), null);
+    await assert.rejects(service.find('50000006'), (error) => error instanceof UpstreamError);
+    assert.deepEqual(await service.lookUp('8934673607827'), { item });
+    await assert.rejects(service.lookUp('96385074'), (error) => error.status === 404);
+    assert.equal(openFoodFacts.getProduct.mock.callCount(), 3);
+});

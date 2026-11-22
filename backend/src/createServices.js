@@ -27,6 +27,15 @@ const createServices = (config, { now = Date.now } = {}) => {
     const usda = createUsdaClient({ fetchJson, apiKey: config.usdaApiKey });
 
     const { perMinute, perDay, concurrent } = config.geminiBudget;
+    const barcodeService = createBarcodeService({
+        openFoodFacts,
+        budget: createBudget({
+            name: 'openFoodFacts product',
+            limits: [{ max: OFF_PRODUCT_PER_MINUTE, windowMs: MINUTE_MS }],
+            now,
+        }),
+        cache: createTtlCache({ maxEntries: BARCODE_CACHE_ENTRIES }),
+    });
 
     return {
         foodSearchService: createFoodSearchService({
@@ -41,16 +50,11 @@ const createServices = (config, { now = Date.now } = {}) => {
                 usda: createBudget({ name: 'usda', limits: [{ max: USDA_PER_HOUR, windowMs: HOUR_MS }], now }),
             },
             cache: createTtlCache({ maxEntries: SEARCH_CACHE_ENTRIES }),
+            // Search hits missing numbers are read like a barcode lookup: same cache, same product budget.
+            findProduct: barcodeService.find,
+            now,
         }),
-        barcodeService: createBarcodeService({
-            openFoodFacts,
-            budget: createBudget({
-                name: 'openFoodFacts product',
-                limits: [{ max: OFF_PRODUCT_PER_MINUTE, windowMs: MINUTE_MS }],
-                now,
-            }),
-            cache: createTtlCache({ maxEntries: BARCODE_CACHE_ENTRIES }),
-        }),
+        barcodeService,
         recognitionService: createRecognitionService({
             gemini: createGeminiClient({
                 fetchJson,
