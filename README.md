@@ -15,7 +15,7 @@
 | Thông tin sản phẩm | Tên, ảnh, thương hiệu, chỉ số dinh dưỡng theo khẩu phần, đối chiếu dị ứng và chỉ tiêu theo hồ sơ, ghi nguồn dữ liệu | Xong; chọn nhanh khẩu phần (khẩu phần trên bao bì, 50/100/150/200) |
 | Nhật ký | Lịch theo tuần, thêm/sửa/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong: sửa khẩu phần, ngày, khung giờ của món đã ghi (có Hoàn tác) |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, mang thai/cho con bú, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong |
-| Gợi ý | Calo, protein, tinh bột, chất béo, đường nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong: Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua, nhắc ghi bữa ăn (bật ở nút chuông). Đang làm: màn "Cách Fluw tính", natri cho mọi người lớn, chữ "mức gợi ý" cho đường |
+| Gợi ý | Calo, protein, carb (bột đường), chất béo, đường, natri nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong: Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua, nhắc ghi bữa ăn (bật ở nút chuông), màn "Cách Fluw tính" ghi công thức và nguồn |
 | Quyền riêng tư | Chính sách trong app, đồng ý trước khi lưu dữ liệu sức khỏe, xóa toàn bộ dữ liệu trên máy | Xong |
 | Nước uống | Mục tiêu nước mỗi ngày, thêm nhanh 200/350/500 ml, lịch nhắc uống nước | Chưa làm |
 | Báo cáo | Biểu đồ calo theo tuần/tháng, tỉ lệ macro, cảnh báo đường/natri, cân nặng | Chưa làm |
@@ -43,7 +43,7 @@
 | Hoạt động rất cao | 1,9 |
 
 **Mục tiêu calo khi muốn giảm/tăng cân:** lệch khỏi TDEE tối đa khoảng 550 kcal/ngày (không quá 0,5 kg/tuần).
-- Khi giảm cân, không thấp hơn BMR và không thấp hơn **1.200 kcal (nữ) / 1.500 kcal (nam)**. Nếu mức tối thiểu này đã bằng hoặc cao hơn TDEE, app để mục tiêu bằng mức giữ cân và khuyên hỏi bác sĩ.
+- Khi giảm cân, không thấp hơn BMR và không thấp hơn **1.200 kcal (nữ) / 1.500 kcal (nam)**. Đây là mức thấp nhất trong các kế hoạch ăn giảm cân NHLBI (Viện Tim, Phổi và Máu Hoa Kỳ) đưa cho người tự thực hiện; ăn thấp hơn cần bác sĩ theo dõi. Nếu mức tối thiểu này đã bằng hoặc cao hơn TDEE, app để mục tiêu bằng mức giữ cân và khuyên hỏi bác sĩ.
 - Không cho đặt mục tiêu giảm cân xuống mức thiếu cân (BMI dưới 18,5), và không cho giảm cân khi đang thiếu cân.
 
 **Protein:** `cân nặng tham chiếu(kg) × P`. Cân nặng tham chiếu là cân nặng thật, nhưng không quá mức ứng với BMI 24,9.
@@ -59,12 +59,14 @@ Người có bệnh thận nên hỏi bác sĩ trước khi ăn nhiều đạm.
 
 **Mang thai hoặc cho con bú:** app không tính calo, đạm, BMI và nước (nhu cầu khác người thường, hãy hỏi bác sĩ); dị ứng vẫn được cảnh báo.
 
-**Tinh bột, chất béo, đường** tính theo % năng lượng mục tiêu:
+**Carb (bột đường), chất béo, đường** tính theo % năng lượng mục tiêu:
 - Chất béo khoảng 25%.
 - Béo bão hòa dưới 10% (mỡ máu cao: dưới 7%).
-- Đường tổng dưới 10% (giảm ngọt hoặc tiểu đường: dưới 5%), là mức tham khảo.
-- Tinh bột là phần còn lại.
-- Natri dưới 2.000 mg/ngày (WHO).
+- Đường tổng dưới 10% (giảm ngọt hoặc tiểu đường: dưới 5%). Đây là **mức gợi ý**, không phải giới hạn: WHO khuyên về đường tự do, còn dữ liệu sản phẩm chỉ có đường tổng. Cao hơn thì app ghi "Cao hơn mức gợi ý".
+- Carb là phần còn lại (số liệu USDA tính cả chất xơ).
+- Natri dưới 2.000 mg/ngày (WHO), theo dõi cho mọi người lớn.
+
+App so "vượt" theo đúng số đang hiện trên màn (kcal, mg là số nguyên; gram 1 chữ số thập phân). Công thức, nguồn và các ngưỡng Fluw tự chọn xem trong app: Hồ Sơ → nút ⓘ ở "Chỉ tiêu mỗi ngày", hoặc Về Fluw → "Cách Fluw tính".
 
 **Nước** khoảng 35 ml mỗi kg cân nặng tham chiếu, tính cả nước trong thức ăn. **BMI** theo thang cho người châu Á.
 
@@ -185,7 +187,7 @@ Chỉ bản build từ `main` được ký bằng keystore của bạn, nên cà
 | M4 | Nhật ký theo ngày và khung giờ *(xong)* |
 | M5 | Quét mã vạch và nhận diện ảnh *(xong)* |
 | M6 | Trang chủ, gợi ý, nhắc nhở *(xong)* |
-| Kiểm tra lần 2 | Pháp lý, công thức an toàn, tra cứu tiếng Việt, backend *(xong, còn phần trình bày chỉ tiêu đang làm)* |
+| Kiểm tra lần 2 | Pháp lý, công thức an toàn, tra cứu tiếng Việt, backend *(xong)* |
 | M7 | Tài khoản và đánh giá sao |
 | M8 | Nước uống và nhắc uống nước |
 | M9 | Báo cáo tuần/tháng |
