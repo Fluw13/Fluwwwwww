@@ -618,14 +618,14 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 - Xóa 22 branch cũ trên GitHub.
 - Key USDA cho môi trường agent: lần đầu (13/11) agent lưu nhầm kiểu `Authorization: Bearer` nên USDA báo `API_KEY_INVALID` (không phải lỗi của key). 14/11 lưu lại với header `X-Api-Key`, nhưng proxy chưa áp dụng (thử `X-Api-Key: DEMO_KEY` vẫn không bị thay). Key trên Render chưa có request nào để kiểm; FLuw kiểm bằng cách tìm `chicken breast` trong app (có kết quả USDA là key đúng). Đề xuất M1b dùng bộ dữ liệu tải về của USDA (CC0, không cần key) qua host `fdc.nal.usda.gov`, chờ FLuw đồng ý.
 - `GEMINI_API_KEY` trên Render: đã có (log `[Config] ... Gemini bật` ngày 21/11). Kiểm lại bằng log `[Config]` sau mỗi lần deploy.
-- **GitHub, ruleset cho `main`:** Settings → Rules → Rulesets → New branch ruleset, target `main`: bật "Require a pull request before merging", "Require status checks to pass" (chọn `backend`, `frontend`, `android-apk`), "Block force pushes" và chặn xóa branch.
+- **GitHub, ruleset cho `main` (tùy chọn; agent không có công cụ tạo ruleset, FLuw quyết 22/11 không bắt buộc, agent vẫn chỉ merge khi CI xanh cả 3 job):** Settings → Rules → Rulesets → New branch ruleset, target `main`: bật "Require a pull request before merging", "Require status checks to pass" (chọn `backend`, `frontend`, `android-apk`), "Block force pushes" và chặn xóa branch.
 - **Tùy chọn, GitHub Environment `release` cho keystore:** PR sửa `ci.yml` vẫn đọc được repo secret. Cách chặn hẳn:
   - Tạo Environment `release` (Settings → Environments), "Deployment branches and tags" chỉ `main`; chuyển 4 secret `ANDROID_*` sang đó.
   - Agent mở một PR workflow nhỏ thêm vào job `android-apk`: `environment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'release' || '' }}` (trường hợp tên rỗng cho PR chưa kiểm trên GitHub).
   - Không đặt "Required reviewers": job sẽ chờ duyệt, Render chờ CI xanh nên deploy backend cũng bị chặn.
   - Cách tạm: chỉ người tin cậy mới có quyền push branch.
-- **Key Gemini (Google AI Studio / Cloud Console):** xác nhận project của key không gắn tài khoản thanh toán (gói Free); giới hạn key chỉ dùng "Generative Language API". Nếu sau này gắn thanh toán: đặt hạn mức chi tiêu vài đô và cảnh báo ngân sách. Nếu hạn mức miễn phí của model thấp hơn 8/phút hoặc 200/ngày: đặt `GEMINI_MAX_PER_MINUTE` / `GEMINI_MAX_PER_DAY` trên Render thấp hơn, rồi xem dòng `[Config]`.
-- **Render:** xem Billing, băng thông đã dùng (nguồn bên thứ ba nói gói Hobby còn 5 GB/tháng từ 1/8/2026, chưa xác minh) và có thẻ thanh toán gắn vào không (quyết định vượt mức thì bị tính tiền hay bị tạm dừng). Tùy chọn: đổi build command sang `npm ci --omit=dev`.
+- **Key Gemini (VERIFIED 22/11 qua ảnh FLuw gửi):** key `...f1FQ` thuộc "Dự án Gemini mặc định", mức thanh toán "Cấp độ miễn phí" (chưa gắn thanh toán). Giới hạn key chỉ dùng "Generative Language API": bỏ, vì key chỉ nằm trên Render và project không gắn thanh toán. Nếu sau này gắn thanh toán: đặt hạn mức chi tiêu vài đô và cảnh báo ngân sách. Nếu hạn mức miễn phí của model thấp hơn 8/phút hoặc 200/ngày: đặt `GEMINI_MAX_PER_MINUTE` / `GEMINI_MAX_PER_DAY` trên Render thấp hơn, rồi xem dòng `[Config]`.
+- **Render (VERIFIED 22/11 qua ảnh FLuw gửi):** gói Hobby, "No card on file" nên không thể bị trừ tiền. Băng thông gói Hobby chưa xác minh (nguồn bên thứ ba nói 5 GB/tháng từ 1/8/2026). Tùy chọn: đổi build command sang `npm ci --omit=dev`.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ### Pháp lý còn mở (trước khi lên cửa hàng)
@@ -633,7 +633,7 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 - Cơ chế báo người dùng khi chính sách đổi (`PRIVACY.md` mục 9 hứa "app sẽ báo cho bạn"; hiện chỉ đồng ý sức khỏe/ảnh có phiên bản để hỏi lại).
 - Google Play / App Store: URL chính sách quyền riêng tư dùng `https://github.com/Fluw13/Fluwwwwww/blob/main/PRIVACY.md`.
 - Tóm tắt quyền riêng tư ở lần mở app đầu tiên (chưa làm).
-- **Chuyển dữ liệu ra nước ngoài (FLuw, nên hỏi luật sư):** từ khóa, mã vạch, IP tới Render (Hoa Kỳ), ảnh tới Google Gemini. Luật 91/2025 (Điều 20–22) và Nghị định 356/2025 có thể yêu cầu hồ sơ đánh giá tác động nộp Bộ Công an (Cục A05). Miễn trừ / hoãn 5 năm ở Điều 38 dành cho doanh nghiệp nhỏ, khởi nghiệp, không áp dụng khi xử lý dữ liệu nhạy cảm; chưa rõ cá nhân phát triển app miễn phí có thuộc diện nào. Chi tiết ở báo cáo pháp lý (legal.md mục H3, chỉ có trong scratchpad của phiên kiểm tra 18/11).
+- **Chuyển dữ liệu ra nước ngoài (FLuw quyết 22/11: chưa làm; chỉ xem lại, nên hỏi luật sư, khi phát hành công khai trên cửa hàng):** từ khóa, mã vạch, IP tới Render (Hoa Kỳ), ảnh tới Google Gemini. Luật 91/2025 (Điều 20–22) và Nghị định 356/2025 có thể yêu cầu hồ sơ đánh giá tác động nộp Bộ Công an (Cục A05). Miễn trừ / hoãn 5 năm ở Điều 38 dành cho doanh nghiệp nhỏ, khởi nghiệp, không áp dụng khi xử lý dữ liệu nhạy cảm; chưa rõ cá nhân phát triển app miễn phí có thuộc diện nào. Chi tiết ở báo cáo pháp lý (legal.md mục H3, chỉ có trong scratchpad của phiên kiểm tra 18/11).
 - **Google Play:** app sức khỏe phải điền Health apps declaration trung thực (dinh dưỡng, ghi bữa ăn, cân nặng; không dùng Health Connect); Play Console Help ghi app sức khỏe có thể phải dùng tài khoản Organization (cần D-U-N-S) → FLuw chọn loại tài khoản trước khi trả 25 USD. Mô tả trên cửa hàng phải có câu "không phải thiết bị y tế, không chẩn đoán, điều trị, chữa hay phòng bệnh" và nhắc hỏi chuyên gia y tế.
 
 ---
@@ -672,7 +672,7 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 - **Chi phí (kiểm 14/11):**
   - Render: 1 web service gói free, không có Postgres/Key Value, tắt preview. Gói free không tự tính tiền; FLuw xem mục Billing trên dashboard để chắc workspace không gắn gói trả phí.
   - GitHub: repo **public** nên Actions và artifact miễn phí; artifact APK tự xóa sau 14 ngày.
-  - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Gemini dùng gói miễn phí, có hạn mức chung ở backend (8/phút, 200/ngày); FLuw kiểm project của key không gắn thanh toán (mục 7). Chưa tạo Firebase/Neon (M7): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
+  - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Gemini dùng gói miễn phí, có hạn mức chung ở backend (8/phút, 200/ngày); project của key ở cấp miễn phí, không gắn thanh toán (FLuw kiểm 22/11). Chưa tạo Firebase/Neon (M7): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
   - Không có lịch tự chạy (scheduled task) nào còn bật.
 - **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
 - **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
@@ -713,7 +713,7 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - Hệ quả của D14: 25.1 / 25.0 g đường giờ là cao hơn mức gợi ý; 2,209 / 2,000 kcal giờ là vượt ±10%.
   - **Giám đốc sửa khi review:** màn ghi nguồn mức tối thiểu 1.200/1.500 kcal là NHLBI Practical Guide 2000, nhưng tài liệu đó khuyên 1.000–1.200 kcal (nữ), 1.200–1.600 kcal (nam) → đổi nguồn sang tài liệu TLC 2005 của NHLBI (kế hoạch ăn giảm cân 1.200–1.500 / 1.500–1.800 kcal), ghi rõ chương trình có bác sĩ theo dõi có thể thấp hơn; sửa cả chú thích ở `calorie_target.dart`.
   - Test: `flutter test` 619/619 (từ 583), cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch; 30/30 đột biến bị bắt. Chưa làm: chữ "đường" chưa thêm "tổng" ở thẻ món và tổng khung trong Nhật Ký (không phải chỗ so sánh); ngưỡng 50% một khẩu phần ở Chi tiết vẫn so theo tỉ lệ thô.
-- **Chưa kiểm:** gọi Gemini thật; APK trên điện thoại thật (camera, bảng sửa món với bàn phím iPhone, `UIRequiresFullScreen` trên iPad); USDA thật với từ tiếng Anh trong bảng; log CI trên `main` của bước keystore (chỉ chạy ở đó).
+- **Chưa kiểm:** gọi Gemini thật; APK trên điện thoại thật (camera, bảng sửa món với bàn phím iPhone, `UIRequiresFullScreen` trên iPad); USDA thật với từ tiếng Anh trong bảng. Đã kiểm 22/11: CI trên `main` (run #94, `31d2f4a`) chạy bước keystore có đủ secret (không cảnh báo, bước debug key bị bỏ qua), APK 84,7 MB.
 - **Chưa làm:**
   - App: xuất dữ liệu, báo khi chính sách đổi, tóm tắt quyền riêng tư lần mở đầu (mục 7).
   - Backend, CI (ngoài phạm vi D19–D21): kiểm số proxy trước app trên Render (`trust proxy`), `keepAliveTimeout`, ghi `cause.code` khi lỗi mạng, chỉ nhận JPEG/PNG theo byte đầu, Dependabot, `flutter pub get --enforce-lockfile`, kế hoạch lên Node 24.
