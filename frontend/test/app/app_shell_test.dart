@@ -100,7 +100,9 @@ void main() {
       find.descendant(of: bar, matching: find.byWidgetPredicate((w) => w is Material && w.shape is CircleBorder)),
     );
     final barSurfaceTop = tester
-        .getRect(find.descendant(of: bar, matching: find.byWidgetPredicate((w) => w is Material && w.elevation > 0)))
+        .getRect(
+          find.descendant(of: bar, matching: find.byWidgetPredicate((w) => w is Material && w.shape is! CircleBorder)),
+        )
         .top;
 
     expect(scanCircle.top, lessThan(barSurfaceTop - 20));

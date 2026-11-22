@@ -47,7 +47,7 @@ abstract final class AppTheme {
 
   static ThemeData _build(ColorScheme colorScheme, NutrientColors nutrientColors) {
     final base = ThemeData(colorScheme: colorScheme, fontFamily: AppFonts.body);
-    final textTheme = buildTextTheme(base.textTheme);
+    final textTheme = buildTextTheme(base.textTheme, colorScheme);
 
     return base.copyWith(
       textTheme: textTheme,

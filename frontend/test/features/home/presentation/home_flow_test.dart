@@ -123,7 +123,7 @@ void main() {
     await withProfileAndMeals(tester);
 
     await scrollTo(tester, find.text('Trưa / Chiều (12:01 - 18:00)'));
-    await tester.tap(find.widgetWithText(TextButton, 'Ghi món').first);
+    await tester.tap(find.widgetWithText(FilledButton, 'Ghi món').first);
     await tester.pumpAndSettle();
 
     expect(find.byType(SearchScreen), findsOneWidget);
@@ -301,7 +301,7 @@ void main() {
 
     expect(tester.getRect(find.text('Trưa / Chiều (12:01 - 18:00)')).width, greaterThan(200));
     // The second slot in display order is Trưa / Chiều; every slot is empty here.
-    final button = find.widgetWithText(TextButton, 'Ghi món').at(1);
+    final button = find.widgetWithText(FilledButton, 'Ghi món').at(1);
     await scrollTo(tester, button);
     // Measured after the last scroll, so both rects are in the same frame.
     final label = tester.getRect(find.text('Trưa / Chiều (12:01 - 18:00)'));

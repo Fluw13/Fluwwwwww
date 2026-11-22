@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/theme/app_theme.dart';
+import 'package:fluw/core/theme/readable_color.dart';
 import 'package:fluw/core/widgets/nutrient_progress.dart';
+import 'package:fluw/core/widgets/nutrient_target_status.dart';
 
 void main() {
   final theme = AppTheme.light();
@@ -58,5 +60,13 @@ void main() {
 
     await pump(tester, Nutrient.energyKcal, 2090, 2083, NutrientTargetKind.calorieGoal);
     expect(find.text('Vượt mục tiêu calo cả ngày.'), findsOneWidget, reason: '2,090 > 2,083 kcal như số hiện');
+  });
+
+  testWidgets('dòng có % như thiết kế; % tô theo màu chỉ số nhưng vẫn đủ tương phản 4,5:1 trên thẻ', (tester) async {
+    await pump(tester, Nutrient.carbohydratesG, 129.4, 278.6, NutrientTargetKind.target);
+
+    expect(find.text('129.4 g / mục tiêu 278.6 g'), findsOneWidget);
+    final percent = tester.widget<Text>(find.text('(46%)'));
+    expect(contrastRatio(percent.style!.color!, theme.colorScheme.surfaceContainerLowest), greaterThanOrEqualTo(4.5));
   });
 }

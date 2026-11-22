@@ -20,10 +20,11 @@ class DayEvaluationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final muted = theme.textTheme.bodySmall;
 
     return SectionCard(
       title: title,
+      icon: Icons.fact_check_outlined,
       children: [
         // Only what Fluw tracks is judged: fibre, vegetables and fruit are not in the data, so no "balanced" claim.
         if (evaluation.isBalanced)

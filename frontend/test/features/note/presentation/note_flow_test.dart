@@ -113,9 +113,10 @@ void main() {
     await addEntry(tester, _entry('c', 'Bánh mì', DateTime(2026, 11, 10, 8)));
     await openNote(tester);
 
+    expect(find.text('800 / 2,083 kcal'), findsOneWidget, reason: '600 + 200 lúc 00:00 ngày 12, so với mục tiêu');
+    await scrollTo(tester, find.text('Phở bò'));
     expect(find.text('Phở bò'), findsOneWidget);
     expect(find.text('Bánh mì'), findsNothing, reason: 'món ngày 10 không hiện ở ngày 11');
-    expect(find.textContaining('800 kcal / mục tiêu'), findsOneWidget, reason: '600 + 200 lúc 00:00 ngày 12');
     await scrollTo(tester, find.text('Mì gói'));
     expect(find.textContaining('00:00 · 100 g'), findsOneWidget);
 
@@ -151,8 +152,8 @@ void main() {
     await openNote(tester);
 
     expect(find.text('Có món thiếu số liệu nên tổng có thể thấp hơn thực tế.'), findsOneWidget);
-    await scrollTo(tester, find.text('Năng lượng chưa có dữ liệu'));
-    expect(find.text('Năng lượng chưa có dữ liệu'), findsOneWidget);
+    await scrollTo(tester, find.text('Chưa có kcal'));
+    expect(find.text('Chưa có kcal'), findsOneWidget);
     expect(find.textContaining('Năng lượng chưa có · Protein (đạm) 10 g'), findsOneWidget);
   });
 
