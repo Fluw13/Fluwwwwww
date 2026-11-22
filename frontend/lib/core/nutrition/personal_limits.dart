@@ -74,7 +74,8 @@ final class PersonalLimits {
   /// Diabetes or "giảm ngọt": sugar is highlighted.
   final bool watchesSugar;
 
-  /// High blood pressure: sodium is highlighted.
+  /// High blood pressure: sodium is highlighted (salt advice every day, a warning from half the limit in one
+  /// portion). Sodium itself is tracked for every adult, see [tracksSodium].
   final bool watchesSodium;
 
   /// High blood lipids: saturated fat is highlighted.
@@ -103,4 +104,8 @@ final class PersonalLimits {
   /// 18 or older by the stored birth date, even when the rest of the profile is incomplete. False without a profile.
   /// Photo recognition is only offered to adults: the Gemini API terms bar services likely used by people under 18.
   final bool isAdult;
+
+  /// WHO's sodium limit applies to every adult, so it is shown and judged whenever there are daily targets, not only
+  /// with high blood pressure.
+  bool get tracksSodium => sodiumMaxMg != null;
 }

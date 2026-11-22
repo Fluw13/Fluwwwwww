@@ -104,21 +104,25 @@ void main() {
     expect(advice.body, contains('đọc thành phần trên nhãn'));
   });
 
-  test('tiểu đường/giảm ngọt: luôn nhắc hạn chế đồ ngọt kèm số đã nạp; không theo dõi thì nhắc khi gần giới hạn', () {
+  test('tiểu đường/giảm ngọt: luôn nhắc hạn chế đồ ngọt kèm số đã nạp; không theo dõi thì nhắc khi gần mức gợi ý', () {
     final watched = _advice(_limits(watchesSugar: true), {Nutrient.sugarsG: 12});
     expect(
       watched.firstWhere((item) => item.title == 'Hạn chế đồ ngọt').body,
-      'Hôm nay đã nạp 12 g đường tổng / tối đa 50 g. Nên tránh trà sữa, nước ngọt có ga, bánh kẹo, chè.',
+      'Hôm nay đã nạp 12 g đường tổng / mức gợi ý 50 g. Nên tránh trà sữa, nước ngọt có ga, bánh kẹo, chè.',
     );
 
     expect(_advice(_limits(), {Nutrient.sugarsG: 39}).where((item) => item.title == 'Hạn chế đồ ngọt'), isEmpty);
+    final over = _advice(_limits(), {Nutrient.sugarsG: 50.1}).firstWhere((item) => item.title == 'Hạn chế đồ ngọt');
+    expect(over.body, contains('/ mức gợi ý 50 g. Cao hơn mức gợi ý.'), reason: '50.1 / 50 g như số hiện');
+    expect(over.body, isNot(contains('giới hạn')), reason: 'đường tổng chỉ có mức gợi ý, không có giới hạn');
     expect(
-      _advice(_limits(), {Nutrient.sugarsG: 55}).firstWhere((item) => item.title == 'Hạn chế đồ ngọt').body,
-      contains('Đã vượt giới hạn.'),
+      _advice(_limits(), {Nutrient.sugarsG: 50.04}).firstWhere((item) => item.title == 'Hạn chế đồ ngọt').body,
+      isNot(contains('Cao hơn')),
+      reason: '50.04 g hiện là 50 g, bằng mức gợi ý',
     );
   });
 
-  test('huyết áp cao và mỡ máu cao có lời nhắc riêng; thiếu số liệu thì nói rõ', () {
+  test('huyết áp cao và mỡ máu cao luôn có lời nhắc; thiếu số liệu thì nói rõ', () {
     final advice = _advice(_limits(watchesSodium: true, watchesSaturatedFat: true), {Nutrient.sodiumMg: 1250.4});
 
     expect(
@@ -217,13 +221,41 @@ void main() {
     );
 
     expect(advice.map((item) => item.title), ['Tránh món có: Cá', 'Hạn chế đồ ngọt']);
-    expect(advice.last.body, startsWith('Giới hạn hôm nay: tối đa 50 g đường tổng.'));
+    expect(advice.last.body, startsWith('Mức gợi ý hôm nay: dưới 50 g đường tổng.'));
   });
 
   test('dị ứng lạc thì không gợi ý các loại hạt (hay dị ứng chéo)', () {
     final advice = _protein(_advice(_limits(vegan: true, nuts: true, mild: {'en:peanuts'}), {Nutrient.proteinG: 0}));
 
     expect(advice.body, isNot(contains('hạnh nhân')));
+  });
+
+  test('natri cho mọi người lớn: không có huyết áp cao thì nhắc hạn chế muối từ 80% giới hạn, vượt thì nói rõ', () {
+    Iterable<Advice> salt(double sodium) =>
+        _advice(_limits(), {Nutrient.sodiumMg: sodium}).where((item) => item.title == 'Hạn chế muối');
+
+    expect(salt(1599), isEmpty);
+    expect(salt(1600).single.body, startsWith('Hôm nay đã nạp 1,600 mg natri / tối đa 2,000 mg. Nên bớt'));
+    expect(salt(2000.4).single.body, isNot(contains('Đã vượt giới hạn.')), reason: 'hiện là 2,000 mg');
+    expect(salt(2100).single.body, contains('/ tối đa 2,000 mg. Đã vượt giới hạn.'));
+    expect(
+      adviceFor(
+        limits: _limits(kcal: null),
+        today: _today({Nutrient.sodiumMg: 5000}),
+        entryCount: 1,
+        hour: _morning,
+      ).where((item) => item.title == 'Hạn chế muối'),
+      isEmpty,
+      reason: 'không có chỉ tiêu (mang thai, hồ sơ cần sửa) thì không có giới hạn natri',
+    );
+  });
+
+  test('vượt mục tiêu calo hơn 10%: so theo số kcal hiện trên màn', () {
+    List<String> titles(double kcal) =>
+        _advice(_limits(), {Nutrient.energyKcal: kcal, Nutrient.proteinG: 120}).map((item) => item.title).toList();
+
+    expect(titles(2200.4), isNot(contains('Đã vượt mục tiêu calo')), reason: 'hiện là 2,200 kcal, đúng 110%');
+    expect(titles(2201), contains('Đã vượt mục tiêu calo'));
   });
 
   test('không theo dõi đường: nhắc hạn chế đồ ngọt từ đúng 80% giới hạn', () {

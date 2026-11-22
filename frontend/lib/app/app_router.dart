@@ -3,6 +3,7 @@ import 'package:fluw/app/app_tab.dart';
 import 'package:fluw/app/erase_all_data_flow.dart';
 import 'package:fluw/app/shell/app_shell.dart';
 import 'package:fluw/features/home/presentation/home_screen.dart';
+import 'package:fluw/features/methodology/presentation/methodology_screen.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/privacy/presentation/privacy_screen.dart';
 import 'package:fluw/features/profile/presentation/profile_screen.dart';
@@ -20,6 +21,7 @@ abstract final class AppRoutes {
   static const String foodDetail = '/search/food';
   static const String reminders = '/reminders';
   static const String privacy = '/privacy';
+  static const String methodology = '/methodology';
 
   static String foodBarcode(String code) => '/search/barcode/$code';
 }
@@ -47,6 +49,8 @@ GoRouter createAppRouter() {
           },
         ),
       ),
+      // Opened from the profile tab, above the tab bar like the privacy page.
+      GoRoute(path: AppRoutes.methodology, builder: (context, state) => const MethodologyScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
         branches: [
@@ -117,6 +121,7 @@ Widget _screenFor(BuildContext context, AppTab tab) {
     AppTab.profile => ProfileScreen(
       onEditProfile: () => context.push(AppRoutes.profileSetup),
       onOpenPrivacy: () => context.push(AppRoutes.privacy),
+      onOpenMethodology: () => context.push(AppRoutes.methodology),
       onEraseAllData: () => confirmAndEraseAllData(context),
     ),
   };

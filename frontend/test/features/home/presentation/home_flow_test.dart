@@ -12,6 +12,8 @@ import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/core/time/clock_provider.dart';
+import 'package:fluw/core/time/today_provider.dart';
 import 'package:fluw/features/note/data/note_providers.dart';
 import 'package:fluw/features/note/presentation/note_screen.dart';
 import 'package:fluw/features/profile/data/profile_providers.dart';
@@ -96,7 +98,11 @@ void main() {
     );
     expect(find.text('1,483 kcal'), findsOneWidget, reason: 'còn lại 2,083 - 600');
     expect(find.textContaining('30 g / cần ít nhất 112 g'), findsOneWidget);
-    expect(find.textContaining('5 g / tối đa 26 g'), findsOneWidget, reason: 'tiểu đường: đường dưới 5% năng lượng');
+    expect(
+      find.textContaining('5 g / mức gợi ý 26 g'),
+      findsOneWidget,
+      reason: 'tiểu đường: đường tổng gợi ý dưới 5% năng lượng',
+    );
 
     await scrollTo(tester, find.text('Phở bò'));
     expect(find.text('600 kcal'), findsOneWidget);
@@ -105,7 +111,7 @@ void main() {
     await scrollTo(tester, find.text('Đánh giá hôm qua'));
     expect(find.text('Năng lượng: thấp hơn mục tiêu 583 kcal'), findsOneWidget);
     expect(find.text('Protein (đạm): thiếu 92 g'), findsOneWidget);
-    expect(find.text('Đường tổng: vượt giới hạn 4 g'), findsOneWidget);
+    expect(find.text('Đường tổng: cao hơn mức gợi ý 4 g'), findsOneWidget);
 
     await scrollTo(tester, find.text('Bổ sung protein (đạm)'));
     expect(find.text('Hạn chế đồ ngọt'), findsOneWidget);
@@ -125,6 +131,61 @@ void main() {
       appContainer(tester).read(diaryTargetProvider),
       DiaryTarget(day: CalendarDate(2026, 11, 11), slot: MealSlot.afternoon),
     );
+  });
+
+  testWidgets('"Ghi món" lúc 00:00:30: ngày Nhật ký lấy từ cùng đồng hồ với khung, vẫn là hôm trước', (tester) async {
+    await pumpFluwApp(
+      tester,
+      overrides: [
+        todayProvider.overrideWithValue(CalendarDate(2026, 11, 12)),
+        clockProvider.overrideWithValue(() => DateTime(2026, 11, 12, 0, 0, 30)),
+      ],
+    );
+
+    await scrollTo(tester, find.text('Sáng (06:00 - 12:00)'));
+    await tester.tap(find.bySemanticsLabel('Ghi món vào buổi sáng'));
+    await tester.pumpAndSettle();
+
+    expect(
+      appContainer(tester).read(diaryTargetProvider),
+      DiaryTarget(day: CalendarDate(2026, 11, 11), slot: MealSlot.morning),
+    );
+  });
+
+  testWidgets('người lớn không có huyết áp cao vẫn có thanh natri; carb gọi là "Carb (bột đường)"', (tester) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    await addEntry(tester, _entry('a', 'Phở bò', DateTime(2026, 11, 11, 7, 30), kcal: 120));
+
+    expect(find.text('Natri'), findsOneWidget);
+    expect(find.textContaining('/ tối đa 2,000 mg'), findsOneWidget);
+    expect(find.text('Carb (bột đường)'), findsOneWidget);
+    expect(find.text('Tinh bột'), findsNothing);
+  });
+
+  testWidgets('vượt mục tiêu calo theo số hiện: 2,084 / 2,083 kcal là vượt 1 kcal, không bao giờ "vượt 0 kcal"', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    // 2,083.55 kcal eaten against a target of 2,083.06 kcal: shown as 2,084 and 2,083.
+    await addEntry(tester, _entry('a', 'Tiệc', DateTime(2026, 11, 11, 7, 30), kcal: 416.71));
+
+    expect(find.text('Đã vượt'), findsOneWidget);
+    expect(find.text('1 kcal'), findsOneWidget);
+  });
+
+  testWidgets('hôm qua ghi chưa tới 50% mục tiêu calo: "Có thể chưa ghi đủ món", không kết luận ăn thiếu', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester);
+    await tester.runAsync(() => appContainer(tester).read(profileRepositoryProvider).save(buildProfile()));
+    await addEntry(tester, _entry('a', 'Cơm tấm', DateTime(2026, 11, 10, 12, 30), kcal: 100));
+
+    await scrollTo(tester, find.text('Đánh giá hôm qua'));
+    expect(find.text('Năng lượng: có thể chưa ghi đủ món (mới ghi 500 kcal)'), findsOneWidget);
+    expect(find.textContaining('Năng lượng: thấp hơn mục tiêu'), findsNothing);
+    expect(find.text('Natri: chưa có dữ liệu'), findsOneWidget, reason: 'natri xét cho mọi người lớn');
   });
 
   testWidgets('lối tắt và "Xem Nhật ký" mở đúng tab', (tester) async {

@@ -10,12 +10,14 @@ class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({
     required this.onEditProfile,
     required this.onOpenPrivacy,
+    required this.onOpenMethodology,
     required this.onEraseAllData,
     super.key,
   });
 
   final VoidCallback onEditProfile;
   final VoidCallback onOpenPrivacy;
+  final VoidCallback onOpenMethodology;
 
   /// Asks for confirmation, then erases everything Fluw keeps on the phone.
   final VoidCallback onEraseAllData;
@@ -28,6 +30,7 @@ class ProfileScreen extends ConsumerWidget {
         today: ref.watch(todayProvider),
         onEdit: onEditProfile,
         onOpenPrivacy: onOpenPrivacy,
+        onOpenMethodology: onOpenMethodology,
         onEraseAllData: onEraseAllData,
       ),
       AsyncData(value: NoProfile()) => ProfileSetupPrompt.empty(onPressed: onEditProfile, onOpenPrivacy: onOpenPrivacy),

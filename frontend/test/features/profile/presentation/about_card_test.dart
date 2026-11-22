@@ -12,7 +12,9 @@ void main() {
   testWidgets('thẻ Về Fluw ghi nguồn dữ liệu và mở được trang giấy phép', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(body: AboutCard(onOpenPrivacy: () {})),
+        home: Scaffold(
+          body: AboutCard(onOpenPrivacy: () {}, onOpenMethodology: () {}),
+        ),
       ),
     );
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/fluw_thresholds.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/search/domain/food_assessment.dart';
@@ -156,22 +157,21 @@ class _ShareRow extends StatelessWidget {
 
   final PortionShare share;
 
-  // kcal and mg read better as whole numbers (2,083 kcal); grams keep one decimal.
-  String _amount(double value) => switch (share.nutrient) {
-    Nutrient.energyKcal || Nutrient.sodiumMg => formatWhole(value),
-    _ => formatDecimal(value),
-  };
+  String _amount(double value) => formatShownAmount(share.nutrient, value);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final percent = (share.share * 100).round();
-    // Judged on the shown percent, so "100%" never sits next to "over the limit".
-    final isOver = percent > 100;
+    final nutrient = share.nutrient;
+    final percent = percentAsShown(nutrient, amount: share.amount, target: share.dailyLimit);
+    final isOver = isOverAsShown(nutrient, amount: share.amount, target: share.dailyLimit);
     // Calories are a target, not a limit: going over is information, not a warning.
-    final isTarget = share.nutrient == Nutrient.energyKcal;
-    final isWarning = !isTarget && (isOver || share.isWatched && share.share >= 0.5);
-    final color = isWarning ? theme.colorScheme.error : null;
+    final isTarget = nutrient == Nutrient.energyKcal;
+    // Total sugars has a suggestion, not a limit: the warning colour, never the error red.
+    final isSuggestion = nutrient == Nutrient.sugarsG;
+    final isWarning = !isTarget && (isOver || share.isWatched && share.share >= watchedPortionShare);
+    final color = isWarning ? (isSuggestion ? theme.colorScheme.tertiary : theme.colorScheme.error) : null;
+    final notes = [if (isSuggestion) 'mức gợi ý', if (share.isWatched) 'bạn đang theo dõi'];
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -183,11 +183,11 @@ class _ShareRow extends StatelessWidget {
             spacing: AppSpacing.sm,
             children: [
               Text(
-                '${nutrientLabel(share.nutrient)}${share.isWatched ? ' (theo dõi theo bệnh nền)' : ''}',
+                '${nutrientLabel(nutrient)}${notes.isEmpty ? '' : ' (${notes.join(', ')})'}',
                 style: theme.textTheme.bodyMedium,
               ),
               Text(
-                '$percent% · ${_amount(share.amount)}/${_amount(share.dailyLimit)} ${nutrientUnit(share.nutrient)}',
+                '$percent% · ${_amount(share.amount)}/${_amount(share.dailyLimit)} ${nutrientUnit(nutrient)}',
                 style: theme.textTheme.bodyMedium?.copyWith(color: color),
               ),
             ],
@@ -201,10 +201,11 @@ class _ShareRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(3),
           ),
           if (isOver)
-            Text(
-              isTarget ? 'Vượt mục tiêu calo cả ngày.' : 'Vượt giới hạn cả ngày.',
-              style: theme.textTheme.bodySmall?.copyWith(color: color ?? theme.colorScheme.onSurfaceVariant),
-            ),
+            Text(switch (nutrient) {
+              Nutrient.energyKcal => 'Vượt mục tiêu calo cả ngày.',
+              Nutrient.sugarsG => 'Cao hơn mức gợi ý cả ngày.',
+              _ => 'Vượt giới hạn cả ngày.',
+            }, style: theme.textTheme.bodySmall?.copyWith(color: color ?? theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );

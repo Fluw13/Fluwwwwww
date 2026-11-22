@@ -179,6 +179,14 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
                 portionLabel: portionAmount == null ? 'Khẩu phần' : '${formatDecimal(portionAmount)} $unitLabel',
                 unitLabel: unitLabel,
               ),
+              // USDA's carbohydrate is "by difference" and counts fibre; Open Food Facts follows EU labels without it.
+              if (_item.source == FoodSource.usda) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'USDA: carb gồm cả chất xơ.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: AppSpacing.md),
