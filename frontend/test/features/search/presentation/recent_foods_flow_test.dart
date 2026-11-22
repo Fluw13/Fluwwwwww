@@ -79,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(BottomSheet), findsNothing, reason: 'thêm xong thì đóng');
-    expect(find.text('Đã thêm Phở bò vào buổi Sáng hôm nay'), findsOneWidget);
+    expect(find.text('Đã thêm Phở bò (200 g · 220 kcal) vào buổi Sáng hôm nay'), findsOneWidget);
     final today = await storedOn(tester, DateTime(2026, 11, 11), DateTime(2026, 11, 12));
     expect(today.single.name, 'Phở bò');
     expect(today.single.sourceFoodId, 'off:1');

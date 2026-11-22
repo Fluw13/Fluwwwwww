@@ -52,4 +52,15 @@ void main() {
     expect(QuickFilter.lowSugar.matches(_food({'sugarsG': 4}, unit: 'ml')), isFalse);
     expect(QuickFilter.lowSugar.matches(_food({'sugarsG': 4})), isTrue);
   });
+
+  test('số liệu máy chủ đánh dấu đáng ngờ thì không qua bộ lọc nào', () {
+    final suspect = foodItemFromJson({
+      ...colaItem,
+      'nutrients': {'energyKcal': 50, 'proteinG': 81, 'sugarsG': 1},
+      'nutrientsSuspect': true,
+    })!;
+    for (final filter in QuickFilter.values) {
+      expect(filter.matches(suspect), isFalse, reason: filter.name);
+    }
+  });
 }

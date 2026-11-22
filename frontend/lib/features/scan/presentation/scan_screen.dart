@@ -8,6 +8,8 @@ import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/scan/domain/gtin.dart';
 import 'package:fluw/features/scan/presentation/barcode_camera.dart';
 import 'package:fluw/features/scan/presentation/photo_recognition_panel.dart';
+import 'package:fluw/features/scan/presentation/scan_mode_switch.dart';
+import 'package:fluw/features/scan/presentation/viewfinder_corners.dart';
 
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({required this.onBarcode, required this.onOpenSearch, required this.onOpenPrivacy, super.key});
@@ -81,13 +83,9 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     // Opening a product covers the tab, which turns TickerMode off at once; leaving the app is handled by the camera
     // view itself.
     final cameraActive = !_photoMode && TickerMode.valuesOf(context).enabled;
-    final modes = SegmentedButton<bool>(
-      segments: const [
-        ButtonSegment(value: false, icon: Icon(Icons.qr_code_scanner), label: Text('Mã vạch')),
-        ButtonSegment(value: true, icon: Icon(Icons.photo_camera_outlined), label: Text('Ảnh món ăn')),
-      ],
-      selected: {_photoMode},
-      onSelectionChanged: (selection) => setState(() => _photoMode = selection.single),
+    final modes = ScanModeSwitch(
+      photoMode: _photoMode,
+      onChanged: (photoMode) => setState(() => _photoMode = photoMode),
     );
     // Both modes stay built, so a recognition result or a typed code survives switching back and forth.
     return IndexedStack(
@@ -119,9 +117,6 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       children: [
         modes,
         const SizedBox(height: AppSpacing.md),
-        Text('Quét mã vạch', style: theme.textTheme.titleLarge),
-        Text('Hướng camera vào mã vạch trên bao bì. Fluw tìm sản phẩm trên Open Food Facts.', style: muted),
-        const SizedBox(height: AppSpacing.md),
         Semantics(
           container: true,
           label: cameraActive ? 'Camera quét mã vạch đang bật' : 'Camera quét mã vạch đang tắt',
@@ -132,25 +127,38 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
+                  // A viewfinder is dark in both themes, also before the first frame arrives.
+                  const ColoredBox(color: Colors.black),
                   ref.watch(barcodeCameraProvider).build(active: cameraActive, onDetected: _onDetected),
-                  IgnorePointer(
-                    child: Center(
-                      child: FractionallySizedBox(
-                        widthFactor: 0.75,
-                        heightFactor: 0.4,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: theme.colorScheme.primaryContainer, width: 3),
-                            borderRadius: BorderRadius.circular(AppRadius.control),
-                          ),
-                        ),
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: ViewfinderCorners(color: theme.colorScheme.primaryContainer),
+                  ),
+                  Center(
+                    child: FractionallySizedBox(
+                      widthFactor: 0.7,
+                      heightFactor: 0.35,
+                      child: ViewfinderCorners(color: theme.colorScheme.primaryContainer, length: 20, thickness: 3),
                     ),
                   ),
                 ],
               ),
             ),
           ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.info_outline, size: 18, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                'Đưa mã vạch trên bao bì vào giữa khung. Fluw tìm sản phẩm trên Open Food Facts.',
+                style: muted,
+              ),
+            ),
+          ],
         ),
         if (_isOpening) ...[
           const SizedBox(height: AppSpacing.sm),

@@ -59,6 +59,42 @@ void main() {
     expect(englishSearchTermFor('gạo thơm'), 'white rice');
   });
 
+  test('từ đổi sang món khác thì không dịch: sữa hạt, trà ngọt, cá hộp, đồ đóng hộp, sữa tươi có đường', () {
+    for (final query in [
+      'sữa hạt',
+      'trà ngọt',
+      'cá hộp',
+      'cá ngừ đóng hộp',
+      'táo xanh',
+      'sữa tươi có đường',
+      'sữa tươi ít đường',
+    ]) {
+      expect(englishSearchTermFor(query), isNull, reason: query);
+    }
+  });
+
+  test('các tên thường gõ được thêm vào bảng', () {
+    expect(englishSearchTermFor('trà xanh'), 'green tea', reason: 'không còn là "tea"');
+    expect(englishSearchTermFor('trà đen'), 'black tea');
+    expect(englishSearchTermFor('cà phê đen'), 'coffee brewed');
+    expect(englishSearchTermFor('cafe đen'), 'coffee brewed');
+    expect(englishSearchTermFor('cafe'), 'coffee');
+    expect(englishSearchTermFor('nước ép cam'), 'orange juice');
+    expect(englishSearchTermFor('nước chanh'), 'lemonade');
+    expect(englishSearchTermFor('thịt nạc'), 'lean pork');
+    expect(englishSearchTermFor('chuối tiêu'), 'banana');
+    expect(englishSearchTermFor('cam sành'), 'orange');
+    expect(englishSearchTermFor('xoài cát'), 'mango');
+    expect(englishSearchTermFor('bưởi da xanh'), 'pummelo');
+    expect(englishSearchTermFor('thanh long ruột đỏ'), 'pitaya');
+    expect(englishSearchTermFor('sữa tươi không đường'), 'whole milk');
+  });
+
+  test('luộc, hấp, nướng vẫn dịch (tên USDA tự ghi sống hay chín, màn Chi tiết hiện đủ tên)', () {
+    expect(englishSearchTermFor('ức gà hấp'), 'chicken breast');
+    expect(englishSearchTermFor('thịt bò nướng'), 'beef');
+  });
+
   test('món ăn hay sản phẩm có từ lạ thì không gửi tiếng Anh của một phần (phở bò không phải thịt bò)', () {
     for (final query in [
       'phở bò',

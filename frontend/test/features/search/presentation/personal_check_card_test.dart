@@ -33,7 +33,7 @@ void main() {
             allergens: const AllergensUnknown(),
             shares: shares,
             limits: _limits,
-            hasPortion: true,
+            portionLabel: '200 g',
             isLoadingAllergens: false,
           ),
         ),

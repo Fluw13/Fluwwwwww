@@ -6,14 +6,18 @@ import 'package:fluw/features/search/domain/vietnamese_text.dart';
 const Map<String, String> vietnameseFoodGlossary = {
   // Trái cây
   'chuối': 'banana',
+  'chuối tiêu': 'banana',
   'táo': 'apple',
   'cam': 'orange',
+  'cam sành': 'orange',
   'quýt': 'tangerine',
   'bưởi': 'pummelo',
+  'bưởi da xanh': 'pummelo',
   'chanh': 'lime',
   'chanh vàng': 'lemon',
   'chanh dây': 'passion-fruit',
   'xoài': 'mango',
+  'xoài cát': 'mango',
   'dứa': 'pineapple',
   'trái thơm': 'pineapple',
   'đu đủ': 'papaya',
@@ -28,6 +32,7 @@ const Map<String, String> vietnameseFoodGlossary = {
   'mâm xôi': 'raspberries',
   'ổi': 'guava',
   'thanh long': 'pitaya',
+  'thanh long ruột đỏ': 'pitaya',
   'vải': 'litchis',
   'nhãn': 'longans',
   'chôm chôm': 'rambutan',
@@ -147,6 +152,7 @@ const Map<String, String> vietnameseFoodGlossary = {
   'heo': 'pork',
   'lợn': 'pork',
   'thịt heo': 'pork',
+  'thịt nạc': 'lean pork',
   'thịt lợn': 'pork',
   'thịt heo xay': 'ground pork',
   'thịt lợn xay': 'ground pork',
@@ -209,6 +215,8 @@ const Map<String, String> vietnameseFoodGlossary = {
   'lòng đỏ trứng': 'egg yolk',
   'sữa': 'milk',
   'sữa tươi': 'whole milk',
+  // Sweetened fresh milk (có đường, ít đường) has other numbers and is left untranslated.
+  'sữa tươi không đường': 'whole milk',
   'sữa tách béo': 'nonfat milk',
   'sữa chua': 'yogurt',
   'sữa đặc': 'condensed milk',
@@ -291,8 +299,15 @@ const Map<String, String> vietnameseFoodGlossary = {
   'nước tương': 'soy sauce',
   'xì dầu': 'soy sauce',
   'cà phê': 'coffee',
+  'cafe': 'coffee',
+  'cà phê đen': 'coffee brewed',
+  'cafe đen': 'coffee brewed',
   'trà': 'tea',
+  'trà xanh': 'green tea',
+  'trà đen': 'black tea',
   'nước cam': 'orange juice',
+  'nước ép cam': 'orange juice',
+  'nước chanh': 'lemonade',
   'nước táo': 'apple juice',
   'nước dừa': 'coconut water',
 };
@@ -300,7 +315,9 @@ const Map<String, String> vietnameseFoodGlossary = {
 /// Words that only say how a food is prepared or which kind it is ("ức gà luộc", "quả chuối"), so the food is still
 /// the only thing asked for. Any other word means a dish or a product ("phở bò"), and the English for one of its
 /// parts ("beef") would lead the user to log the wrong food. Cooking that adds oil, sugar or sauce (chiên, rán, xào,
-/// kho) makes a dish too, and drying (khô) changes the numbers per 100 g several times, so neither is listed.
+/// kho) makes a dish too, and drying (khô) changes the numbers per 100 g several times, so neither is listed. Nor are
+/// words that make another food: "sữa hạt" is not milk, "cá hộp" / "đóng hộp" is canned, "trà ngọt" is sweetened,
+/// "trà xanh" is green tea.
 const Set<String> _descriptorWords = {
   'quả',
   'trái',
@@ -308,7 +325,6 @@ const Set<String> _descriptorWords = {
   'con',
   'miếng',
   'lát',
-  'hạt',
   'thịt',
   'sống',
   'tươi',
@@ -319,14 +335,10 @@ const Set<String> _descriptorWords = {
   'rang',
   'đông',
   'lạnh',
-  'đóng',
-  'hộp',
   'nguyên',
   'non',
   'ta',
-  'ngọt',
   'thơm',
-  'xanh',
   'đỏ',
   'vàng',
   'trắng',

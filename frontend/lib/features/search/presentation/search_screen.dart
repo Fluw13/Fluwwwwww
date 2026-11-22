@@ -3,23 +3,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
+import 'package:fluw/features/search/domain/card_nutrition.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
-import 'package:fluw/features/search/domain/result_ranking.dart';
 import 'package:fluw/features/search/domain/search_response.dart';
 import 'package:fluw/features/search/presentation/food_result_card.dart';
+import 'package:fluw/features/search/presentation/quick_filter_bar.dart';
 import 'package:fluw/features/search/presentation/recent_food_sheet.dart';
 import 'package:fluw/features/search/presentation/recent_foods_section.dart';
+import 'package:fluw/features/search/presentation/recent_searches_bar.dart';
 import 'package:fluw/features/search/presentation/recent_searches_controller.dart';
 import 'package:fluw/features/search/presentation/search_controller.dart';
-import 'package:fluw/features/search/presentation/search_labels.dart';
+import 'package:fluw/features/search/presentation/search_field.dart';
 import 'package:fluw/features/search/presentation/search_loading_view.dart';
 import 'package:fluw/features/search/presentation/search_state.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({required this.onOpenFood, super.key});
+  const SearchScreen({required this.onOpenFood, required this.onOpenScan, super.key});
 
   final ValueChanged<FoodItem> onOpenFood;
+
+  /// The barcode button in the search box opens the scan tab.
+  final VoidCallback onOpenScan;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
@@ -77,79 +82,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        TextField(
-          controller: _query,
-          textInputAction: TextInputAction.search,
-          maxLength: maxSearchLength,
-          onSubmitted: _search,
-          decoration: InputDecoration(
-            hintText: 'Tìm thực phẩm, đồ đóng gói...',
-            counterText: '',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _query,
-              builder: (context, value, _) => Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (value.text.isNotEmpty)
-                    IconButton(tooltip: 'Xóa từ khóa', icon: const Icon(Icons.close), onPressed: _clear),
-                  IconButton(
-                    tooltip: 'Tìm',
-                    icon: const Icon(Icons.arrow_forward),
-                    onPressed: () => _search(_query.text),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        SearchField(controller: _query, onSubmitted: _search, onClear: _clear, onOpenScan: widget.onOpenScan),
         const SizedBox(height: AppSpacing.md),
-        Text('Lọc nhanh (trong 100 g/ml)', style: theme.textTheme.labelLarge),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            for (final filter in QuickFilter.values)
-              FilterChip(
-                label: Text(quickFilterLabel(filter)),
-                selected: _filters.contains(filter),
-                onSelected: (selected) =>
-                    setState(() => _filters = selected ? {..._filters, filter} : ({..._filters}..remove(filter))),
-              ),
-          ],
-        ),
-        if (_filters.contains(QuickFilter.lowSugar))
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.xs),
-            child: Text(
-              lowSugarDrinkNote,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ),
+        QuickFilterBar(selected: _filters, onChanged: (filters) => setState(() => _filters = filters)),
         if (recent.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(child: Text('Gần đây', style: theme.textTheme.labelLarge)),
-              TextButton(
-                onPressed: () => ref.read(recentSearchesProvider.notifier).clear(),
-                child: const Text('Xóa tất cả'),
-              ),
-            ],
-          ),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              for (final query in recent)
-                InputChip(
-                  label: Text(query),
-                  onPressed: () => _search(query),
-                  onDeleted: () => ref.read(recentSearchesProvider.notifier).remove(query),
-                  deleteButtonTooltipMessage: 'Xóa "$query" khỏi gần đây',
-                ),
-            ],
+          const SizedBox(height: AppSpacing.sm),
+          RecentSearchesBar(
+            queries: recent,
+            onSearch: _search,
+            onRemove: (query) => ref.read(recentSearchesProvider.notifier).remove(query),
+            onClearAll: () => ref.read(recentSearchesProvider.notifier).clear(),
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
@@ -184,10 +126,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   List<Widget> _loaded(SearchResponse response, String? englishQuery, ThemeData theme) {
-    final items = applyQuickFilters(withNutritionFirst(response.items), _filters);
-    final hiddenByFilters = response.items.length - items.length;
+    // Kept in the sources' order: a result without numbers is often the right product, whose numbers the detail
+    // screen gets from the barcode lookup.
+    final items = applyQuickFilters(response.items, _filters);
+    final hidden = response.items.where((item) => !_filters.every((filter) => filter.matches(item)));
+    final hiddenByFilters = hidden.length;
+    final hiddenWithoutData = hidden.where((item) => !hasCardNutrition(item)).length;
+    final hiddenSuspect = hidden.where((item) => item.nutrientsSuspect && hasCardNutrition(item)).length;
     return [
-      Text('${items.length} kết quả cho "${response.query}"', style: theme.textTheme.titleMedium),
+      Row(
+        children: [
+          Icon(Icons.manage_search, color: theme.colorScheme.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text('${items.length} kết quả cho "${response.query}"', style: theme.textTheme.titleMedium)),
+        ],
+      ),
       if (englishQuery != null)
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -208,7 +161,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Text(
-            'Đã ẩn $hiddenByFilters món không đạt bộ lọc hoặc thiếu số liệu để lọc.',
+            [
+              'Đã ẩn $hiddenByFilters món không đạt bộ lọc hoặc thiếu số liệu để lọc.',
+              if (hiddenWithoutData > 0)
+                '$hiddenWithoutData món chưa có số liệu trong kết quả tìm kiếm: bỏ lọc rồi mở món để xem.',
+              if (hiddenSuspect > 0) '$hiddenSuspect món có số liệu nguồn có thể sai.',
+            ].join(' '),
             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),

@@ -15,7 +15,7 @@ class PersonalCheckCard extends StatelessWidget {
     required this.allergens,
     required this.shares,
     required this.limits,
-    required this.hasPortion,
+    required this.portionLabel,
     required this.isLoadingAllergens,
     super.key,
   });
@@ -24,9 +24,9 @@ class PersonalCheckCard extends StatelessWidget {
   final List<PortionShare> shares;
   final PersonalLimits limits;
 
-  /// False while the portion field holds no valid amount, so [shares] is empty for that reason and not for lack of
-  /// data.
-  final bool hasPortion;
+  /// The portion compared, e.g. "440 g"; null while the portion field holds no valid amount, so [shares] is empty
+  /// for that reason and not for lack of data.
+  final String? portionLabel;
   final bool isLoadingAllergens;
 
   String _allergenName(String tag) => limits.allergenNames[tag] ?? tag;
@@ -86,14 +86,14 @@ class PersonalCheckCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
       ],
       if (shares.isNotEmpty) ...[
-        Text('Khẩu phần này chiếm trong chỉ tiêu cả ngày:', style: theme.textTheme.bodyMedium),
+        Text('$portionLabel này chiếm trong chỉ tiêu cả ngày:', style: theme.textTheme.bodyMedium),
         for (final share in shares) _ShareRow(share: share),
       ] else if (!hasLimits)
         Text(
           'Hồ sơ hiện chưa có chỉ tiêu mỗi ngày (dưới 18 tuổi, mang thai hoặc cho con bú, hoặc hồ sơ cần sửa).',
           style: muted,
         )
-      else if (!hasPortion)
+      else if (portionLabel == null)
         Text('Nhập khẩu phần hợp lệ để so với chỉ tiêu.', style: muted)
       else
         Text('Chưa đủ số liệu của món để so với chỉ tiêu.', style: muted),

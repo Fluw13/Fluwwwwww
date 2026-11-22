@@ -65,25 +65,48 @@ void main() {
   Finder portionField() => find.widgetWithText(TextField, 'Khẩu phần bạn ăn');
   String portionText(WidgetTester tester) => tester.widget<TextField>(portionField()).controller!.text;
 
-  testWidgets('món không có số liệu xếp cuối với nhãn "Chưa có số liệu"; đồ tươi tiếng Việt tìm thêm bằng tiếng Anh', (
-    tester,
-  ) async {
-    tester.view
-      ..physicalSize = const Size(390, 1600)
-      ..devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    final calls = <Uri>[];
-    await openSearch(tester, _backend([_noDataItem, chickenItem], calls: calls));
+  testWidgets(
+    'món không có số liệu giữ thứ tự nguồn; món OFF có mã thì "Mở để xem số liệu"; đồ tươi tìm thêm bằng tiếng Anh',
+    (tester) async {
+      tester.view
+        ..physicalSize = const Size(390, 1600)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final calls = <Uri>[];
+      final offWithoutData = {
+        ..._noDataItem,
+        'id': 'off:8935001282266',
+        'name': 'Latte trà sữa',
+        'barcode': '8935001282266',
+      };
+      await openSearch(tester, _backend([offWithoutData, _noDataItem, chickenItem], calls: calls));
 
-    await searchFor(tester, 'ức gà');
+      await searchFor(tester, 'ức gà');
 
-    expect(calls.single.queryParameters, {'q': 'ức gà', 'en': 'chicken breast'});
-    expect(find.text('Đã tìm thêm bằng tiếng Anh: chicken breast'), findsOneWidget);
-    expect(find.text('Chưa có số liệu'), findsOneWidget);
-    expect(find.text('Chưa có'), findsNothing, reason: 'không còn ba ô "Chưa có" trên thẻ không có số liệu');
+      expect(calls.single.queryParameters, {'q': 'ức gà', 'en': 'chicken breast'});
+      expect(find.text('Đã tìm thêm bằng tiếng Anh: chicken breast'), findsOneWidget);
+      expect(find.text('Mở để xem số liệu'), findsOneWidget, reason: 'màn Chi tiết tra mã vạch, thường có số liệu');
+      expect(find.text('Chưa có số liệu'), findsOneWidget, reason: 'không có mã vạch thì không tra thêm được');
+      expect(find.text('Chưa có'), findsNothing, reason: 'không còn ba ô "Chưa có" trên thẻ không có số liệu');
+      expect(
+        tester.getTopLeft(find.text('Latte trà sữa')).dy,
+        lessThan(tester.getTopLeft(find.textContaining('Chicken, broiler')).dy),
+        reason: 'chỉ mục tìm kiếm của OFF chậm cập nhật: món đúng thường chưa có số liệu, không đẩy xuống cuối',
+      );
+    },
+  );
+
+  testWidgets('lọc nhanh vẫn loại món chưa có số liệu và nói rõ số món đó', (tester) async {
+    await openSearch(tester, _backend([_noDataItem, chickenItem]));
+    await searchFor(tester, 'gà');
+
+    await tester.tap(find.text('Protein ≥ 20 g'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bánh quy không số liệu'), findsNothing);
     expect(
-      tester.getTopLeft(find.text('Bánh quy không số liệu')).dy,
-      greaterThan(tester.getTopLeft(find.textContaining('Chicken, broiler')).dy),
+      find.textContaining('1 món chưa có số liệu trong kết quả tìm kiếm: bỏ lọc rồi mở món để xem.'),
+      findsOneWidget,
     );
   });
 
@@ -139,7 +162,6 @@ void main() {
     await searchFor(tester, 'coca');
     await tester.tap(find.text('Coca-Cola'));
     await tester.pumpAndSettle();
-
     expect(portionText(tester), '355');
     await scrollTo(tester, find.widgetWithText(ChoiceChip, '1 khẩu phần (355 ml)'));
     expect(tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '1 khẩu phần (355 ml)')).selected, isTrue);
@@ -220,8 +242,9 @@ void main() {
     await scrollTo(tester, find.text('Chưa có số liệu'));
     expect(tester.takeException(), isNull);
 
-    await scrollTo(tester, find.text('Coca-Cola'), delta: -200);
-    await tester.tap(find.text('Coca-Cola'));
+    // The result named Coca-Cola, below the one without data (whose brand is also Coca-Cola).
+    await scrollTo(tester, find.text('Coca-Cola').last);
+    await tester.tap(find.text('Coca-Cola').last);
     await tester.pumpAndSettle();
     await scrollTo(tester, find.widgetWithText(ChoiceChip, '200 ml'));
     expect(tester.takeException(), isNull);
