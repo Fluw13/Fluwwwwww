@@ -122,13 +122,19 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
               ),
             ),
           ],
-          data: (window) => _dayContent(window.unreadableCount, days, selected, limits),
+          data: (window) => _dayContent(window.unreadableCount, days, selected, today, limits),
         ),
       ],
     );
   }
 
-  List<Widget> _dayContent(int unreadableCount, List<NoteDay> days, CalendarDate selected, PersonalLimits limits) {
+  List<Widget> _dayContent(
+    int unreadableCount,
+    List<NoteDay> days,
+    CalendarDate selected,
+    CalendarDate today,
+    PersonalLimits limits,
+  ) {
     final theme = Theme.of(context);
     final day = days.where((candidate) => candidate.date == selected).firstOrNull;
     final entryCount = day?.entriesBySlot.values.fold<int>(0, (sum, list) => sum + list.length) ?? 0;
@@ -141,7 +147,12 @@ class _NoteScreenState extends ConsumerState<NoteScreen> {
         ),
         const SizedBox(height: AppSpacing.md),
       ],
-      DaySummaryCard(totals: day?.dayTotal ?? NutrientTotals.of(const []), entryCount: entryCount, limits: limits),
+      DaySummaryCard(
+        title: selected == today ? 'Mục tiêu hôm nay' : 'Ngày ${selected.day}/${selected.month}',
+        totals: day?.dayTotal ?? NutrientTotals.of(const []),
+        entryCount: entryCount,
+        limits: limits,
+      ),
       for (final slot in mealSlotDisplayOrder) ...[
         const SizedBox(height: AppSpacing.md),
         MealSlotSection(

@@ -61,7 +61,8 @@ void main() {
     ]);
 
     expect(find.text('Một số chỉ tiêu chưa đạt:'), findsOneWidget);
-    final icons = tester.widgetList<Icon>(find.byType(Icon)).toList();
+    // The first icon belongs to the card header.
+    final icons = tester.widgetList<Icon>(find.byType(Icon)).skip(1).toList();
     expect(icons.map((icon) => (icon.icon, icon.color)), [
       (Icons.info_outline, theme.colorScheme.onSurfaceVariant),
       (Icons.error_outline, theme.colorScheme.tertiary),

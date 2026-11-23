@@ -66,25 +66,30 @@ class _WeekStripState extends State<WeekStrip> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final selected = widget.selected;
-    final days = weekStartingOn(mondayOf(selected));
+    final monday = mondayOf(selected);
+    final days = weekStartingOn(monday);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
           children: [
-            IconButton(
-              tooltip: 'Tuần trước',
-              icon: const Icon(Icons.chevron_left),
-              onPressed: () => widget.onSelected(selected.addDays(-DateTime.daysPerWeek)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.calendar_today_outlined, size: 22, color: theme.colorScheme.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(child: Text(monthLabel(selected), style: theme.textTheme.titleLarge)),
+              ],
             ),
-            Expanded(
-              child: Text(monthLabel(selected), textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
-            ),
-            IconButton(
-              tooltip: 'Tuần sau',
-              icon: const Icon(Icons.chevron_right),
-              onPressed: () => widget.onSelected(selected.addDays(DateTime.daysPerWeek)),
+            _WeekPill(
+              label: monday == mondayOf(widget.today) ? 'Tuần này' : 'Tuần ${monday.day}/${monday.month}',
+              onPrevious: () => widget.onSelected(selected.addDays(-DateTime.daysPerWeek)),
+              onNext: () => widget.onSelected(selected.addDays(DateTime.daysPerWeek)),
             ),
           ],
         ),
@@ -92,10 +97,12 @@ class _WeekStripState extends State<WeekStrip> {
           Align(
             child: TextButton(onPressed: () => widget.onSelected(widget.today), child: const Text('Về hôm nay')),
           ),
-        const SizedBox(height: AppSpacing.sm),
+        // Not clipped, so the card shadows show and the row runs on to the screen edge as in the design.
         SingleChildScrollView(
           controller: _days,
           scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Row(
             children: [
               for (final day in days) ...[
@@ -113,6 +120,50 @@ class _WeekStripState extends State<WeekStrip> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The design's "Tuần này" pill, between the previous and next week buttons.
+class _WeekPill extends StatelessWidget {
+  const _WeekPill({required this.label, required this.onPrevious, required this.onNext});
+
+  final String label;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.primary;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainer, borderRadius: BorderRadius.circular(999)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Tuần trước',
+            visualDensity: VisualDensity.compact,
+            color: color,
+            icon: const Icon(Icons.chevron_left),
+            onPressed: onPrevious,
+          ),
+          Flexible(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Tuần sau',
+            visualDensity: VisualDensity.compact,
+            color: color,
+            icon: const Icon(Icons.chevron_right),
+            onPressed: onNext,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -136,8 +187,9 @@ class _DayButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foreground = isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface;
+    final scheme = theme.colorScheme;
     final label = isToday ? 'Hôm nay' : weekdayShortLabel(day);
+    final borderRadius = BorderRadius.circular(AppRadius.card);
 
     return Semantics(
       button: true,
@@ -145,29 +197,54 @@ class _DayButton extends StatelessWidget {
       label: '$label ngày ${day.day} tháng ${day.month}${hasEntries ? ', có món đã ghi' : ''}',
       excludeSemantics: true,
       onTap: onTap,
-      child: Material(
-        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 64),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-            child: Column(
-              children: [
-                Text(label, style: theme.textTheme.labelMedium?.copyWith(color: foreground)),
-                Text('${day.day}', style: theme.textTheme.titleLarge?.copyWith(color: foreground)),
-                // The dot repeats what the semantics label says, so the information is not colour-only.
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: hasEntries ? (isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primary) : null,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(color: scheme.primary.withValues(alpha: 0.3), offset: const Offset(0, 4), blurRadius: 10)
+            else
+              BoxShadow(color: Colors.black.withValues(alpha: 0.05), offset: const Offset(0, 1), blurRadius: 2),
+          ],
+        ),
+        child: Material(
+          color: isSelected ? scheme.primary : scheme.surfaceContainerLowest,
+          borderRadius: borderRadius,
+          child: InkWell(
+            borderRadius: borderRadius,
+            onTap: onTap,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 58),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm + AppSpacing.xs),
+              child: Column(
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: isSelected ? scheme.primaryContainer : scheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    '${day.day}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontSize: 22,
+                      height: 28 / 22,
+                      color: isSelected ? scheme.onPrimary : scheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  // The dot repeats what the semantics label says, so the information is not colour-only.
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: hasEntries ? (isSelected ? scheme.tertiaryContainer : scheme.primary) : null,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

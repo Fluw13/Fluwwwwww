@@ -32,23 +32,30 @@ class FluwBottomBar extends StatelessWidget {
               right: 0,
               bottom: 0,
               height: barHeight + bottomInset,
-              child: Material(
-                color: colorScheme.surfaceContainerLowest,
-                elevation: 8,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: bottomInset),
-                  child: Row(
-                    children: [
-                      for (final tab in AppTab.values)
-                        Expanded(
-                          child: _TabItem(
-                            tab: tab,
-                            selected: tab == currentTab,
-                            showIcon: tab != AppTab.scan,
-                            onTap: () => onSelected(tab),
+              // The design's upward shadow (y -4, blur 20, black 5%); Material elevation only casts downwards.
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), offset: const Offset(0, -4), blurRadius: 20),
+                  ],
+                ),
+                child: Material(
+                  color: colorScheme.surface,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: bottomInset),
+                    child: Row(
+                      children: [
+                        for (final tab in AppTab.values)
+                          Expanded(
+                            child: _TabItem(
+                              tab: tab,
+                              selected: tab == currentTab,
+                              showIcon: tab != AppTab.scan,
+                              onTap: () => onSelected(tab),
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -98,7 +105,7 @@ class _TabItem extends StatelessWidget {
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(tab.label, maxLines: 1, style: theme.textTheme.labelMedium?.copyWith(color: color)),
+                  child: Text(tab.label, maxLines: 1, style: theme.textTheme.labelSmall?.copyWith(color: color)),
                 ),
               ),
             ],
@@ -123,7 +130,9 @@ class _ScanButton extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: AppPalette.accent.withValues(alpha: 0.35), blurRadius: 16)],
+          boxShadow: [
+            BoxShadow(color: AppPalette.accent.withValues(alpha: 0.35), offset: const Offset(0, 8), blurRadius: 20),
+          ],
         ),
         child: Material(
           color: colorScheme.primary,

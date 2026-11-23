@@ -77,12 +77,29 @@ void main() {
     expect(textTheme.labelMedium?.fontFamily, AppFonts.body);
   });
 
-  test('tiêu đề, header và số lớn đều Plus Jakarta Sans 600 như thiết kế', () {
+  test('tiêu đề và header Plus Jakarta Sans 600, số lớn Plus Jakarta Sans 700 như file Figma', () {
     final textTheme = AppTheme.light().textTheme;
 
-    for (final style in [textTheme.displayLarge, textTheme.headlineMedium, textTheme.titleLarge]) {
+    for (final style in [textTheme.displayLarge, textTheme.titleLarge]) {
       expect(style?.fontFamily, AppFonts.heading);
       expect(style?.fontWeight, FontWeight.w600);
+    }
+    expect(textTheme.titleLarge?.fontSize, 18);
+    for (final style in [textTheme.headlineMedium, textTheme.numberMedium]) {
+      expect(style?.fontFamily, AppFonts.heading);
+      expect(style?.fontWeight, FontWeight.w700);
+    }
+    expect(textTheme.headlineMedium?.fontSize, 28);
+  });
+
+  test('chữ nội dung theo thang chữ của thiết kế, chữ phụ màu onSurfaceVariant ở cả sáng và tối', () {
+    for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+      final textTheme = theme.textTheme;
+
+      expect((textTheme.bodyMedium?.fontSize, textTheme.bodyMedium?.fontWeight), (13, FontWeight.w500));
+      expect((textTheme.labelSmall?.fontSize, textTheme.labelSmall?.fontWeight), (11, FontWeight.w700));
+      expect((textTheme.titleSmall?.fontSize, textTheme.titleSmall?.fontWeight), (14, FontWeight.w600));
+      expect(textTheme.bodySmall?.color, theme.colorScheme.onSurfaceVariant);
     }
   });
 
