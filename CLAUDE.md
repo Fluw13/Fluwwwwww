@@ -205,7 +205,9 @@ features/<tên>/
   - `data/`: `food_item_json` (đọc hợp đồng M1a; món sai hợp đồng thì bỏ riêng; chỉ nhận link https), `food_api` (`PRODUCT_NOT_FOUND` và `INVALID_BARCODE` → null), `recent_searches_storage` (shared_preferences key `recent_searches`, tối đa 8, lỗi đọc/ghi nào cũng bỏ qua — không phải dữ liệu sức khỏe).
   - `domain/`: `FoodItem` (dùng `NutritionFacts` của core), `SearchResponse` (`isPartial` khi một nguồn lỗi), `food_assessment` (`AllergenCheck`: chưa biết / không trùng trong danh sách đã ghi / trùng nặng-nhẹ; `PortionShare`).
     - `QuickFilter` (C, D13): đường ≤ 5 g/100 g hoặc ≤ 2,5 g/100 ml (đồ uống), protein ≥ 20 g, dưới 200 kcal (`lowSugarMaxPer100g`, `lowSugarMaxPer100ml`, `highProteinMinPer100`, `lowEnergyBelowKcalPer100`); thiếu số liệu thì không đạt. Nhãn "Đường ≤ 5 g", "Protein ≥ 20 g", "Dưới 200 kcal" dưới "Lọc nhanh (trong 100 g/ml)"; bật lọc đường thì hiện `lowSugarDrinkNote`.
-    - `result_ranking`: `hasCardNutrition` (có ít nhất kcal, protein hoặc đường), `withNutritionFirst` đưa món không có số liệu xuống cuối, giữ thứ tự nguồn; thẻ kết quả ghi "Chưa có số liệu".
+    - `card_nutrition` (PR #45, B4): `hasCardNutrition` (có ít nhất kcal, protein hoặc đường). Kết quả **giữ thứ tự của nguồn** (index tìm kiếm OFF cũ, món đúng thường chỉ có số ở trang sản phẩm); thẻ thiếu số liệu ghi "Mở để xem số liệu" (món OFF có mã) hoặc "Chưa có số liệu"; lọc nhanh ẩn chúng và nói ẩn bao nhiêu. Đã bỏ `withNutritionFirst`.
+    - Trường tùy chọn từ backend (PR #44/#45): `FoodItem.packageQuantity`, `servingQuantity` (`{amount, unit}`, trường sai dạng thì bỏ riêng trường đó), `nutrientsSuspect`. Chip "Cả chai (440 ml)" / "Cả gói (400 g)" chỉ khi cùng đơn vị với số liệu và trong 1–2000; khẩu phần mặc định = 1 suất (số `servingQuantity` thắng chuỗi `servingSize`), không có thì cả gói, không có nữa thì 100. `nutrientsSuspect` → "Số liệu nguồn có thể sai — hãy đối chiếu nhãn trên bao bì.", loại khỏi lọc nhanh.
+    - Số theo 100 không được trông như cả gói (lỗi FLuw báo 22/11, trà sữa latte 8935001282266: OFF chỉ có 26 kcal/100 g, không có dung tích): thẻ kết quả có nhãn "Trong 100 g/ml"; Chi tiết có ô "Tổng năng lượng … cho X g" theo khẩu phần, bảng "Bảng dinh dưỡng trong 100 g" ghi rõ không phải cả gói; nguồn không có dung tích/khẩu phần thì có lời nhắc ngay trên ô khẩu phần (đồ uống: 1 ml ≈ 1 g); thẻ đối chiếu hồ sơ nằm dưới ô khẩu phần ("440 g này chiếm…"); nút thêm ghi "440 g · 114 kcal"; `/barcode` không thấy thì "Sản phẩm không còn trên Open Food Facts, số liệu có thể đã cũ."
     - `serving_size` (`servingAmount`): số cuối có đơn vị g/gr/gram/gam/ml trong `servingSize` ("1 bottle (355 ml)" → 355), làm tròn 0,1, phải cùng đơn vị với số liệu (không đổi g ↔ ml) và trong 1–2000.
   - **Tìm đồ tươi tiếng Việt qua USDA (C, D23):**
     - `vietnamese_text`: `canonicalVietnamese` (chữ thường, dấu dựng sẵn và dấu rời cho cùng một dạng, dấu câu thành dấu cách), `foldVietnamese` (bỏ dấu, đ → d). Dart không có chuẩn hóa Unicode nên tự làm bằng bảng 12 nguyên âm × 6 thanh.
@@ -317,6 +319,12 @@ features/<tên>/
   - Chưa làm: xuất dữ liệu (JSON/CSV); cơ chế báo người dùng khi chính sách đổi (mục 9 của chính sách hứa "app sẽ báo"; hiện chỉ đồng ý sức khỏe/ảnh có phiên bản để hỏi lại); tóm tắt quyền riêng tư ở lần mở app đầu tiên.
 - **Khởi động:** `main.dart` khóa màn dọc (thiết kế chỉ có màn dọc; màn ngang thì thanh ghim đáy chiếm gần hết chỗ). iOS `Info.plist` cũng chỉ còn màn dọc (iPhone: Portrait; iPad: Portrait + PortraitUpsideDown) + `UIRequiresFullScreen` (iPad đa nhiệm bỏ qua khóa xoay, và App Store đòi đủ 4 hướng nếu thiếu khóa này). `main.dart` đăng ký giấy phép phông và dữ liệu (`core/licenses/`). `FluwApp` gọi `backendWarmUpProvider` (GET `/health`, lỗi thì bỏ qua) lúc mở app và mỗi lần quay lại app, để Render free thức dậy trước khi người dùng tìm. `pumpFluwApp` thay bằng hàm rỗng để `MockClient` của test chỉ thấy lượt gọi test mong đợi.
 - **Giấy phép:** thẻ "Về Fluw" (`AboutCard`) trên Hồ Sơ và nút trên màn chưa có hồ sơ mở `showLicensePage(useRootNavigator: true)` (toàn màn hình, che thanh tab) (gói, phông OFL, dữ liệu OFF ODbL/CC BY-SA, USDA CC0). Giấy phép BSD của Flutter và các gói yêu cầu kèm thông báo khi phát hành bản build.
+- **Giao diện theo Figma (PR #43, #45, #46; số đo đọc bằng Figma MCP 22/11, file `2E8p4ZnGESwih1lNFyWeMA`):**
+  - Cỡ chữ (`core/theme/app_typography.dart`): tiêu đề mục PJS SemiBold 18/24; số lớn PJS **Bold** 28 (-0.56; `PlusJakartaSans-Bold.ttf` đóng gói lại); nhãn Inter Bold 11 (+0.44); `bodyMedium` Inter Medium 13; `bodySmall` Inter Regular 12 màu mờ; `bodyLarge` 14; `titleLarge` 18; thêm `numberMedium` (22 Bold), `value` (Inter Bold 13). Chữ vẫn phóng theo cỡ chữ máy.
+  - Widget chung: `AppCard` (bo 16, bóng y1 blur2 5%), `SectionHeader` (icon, tiêu đề, chữ phụ, phần phải tự xuống dòng khi chật), `SectionCard` (bỏ vạch xanh, thêm `icon:`/`subtitle:`; `accentColor` chỉ tô icon), `MealSlotIcon`, `readableOn()` (làm đậm màu biểu đồ đến khi chữ đạt 4.5:1). `AppRadius.card` = 16, `AppRadius.inner` = 12.
+  - `core/widgets/nutrient_target_status.dart`: `NutrientTargetKind` và `NutrientTargetStatus.of(...)` (chữ chỉ tiêu, %, thanh, vượt, chữ và màu khi vượt) — mọi hàng/ô "đã nạp / chỉ tiêu" đọc từ đây; vẫn dựa `isOverAsShown`.
+  - Hồ Sơ (PR #46): thẻ thể trạng (chiều cao, cân nặng, BMI cùng hàng; khối cân nặng mong muốn với "Đã đạt X%" từ lịch sử cân, ẩn khi chưa đủ 2 lần cân); ô chỉ tiêu có màu; "Dị ứng & bệnh nền" (đỏ: dị ứng nặng; vàng: nhẹ và bệnh có theo dõi; xám: bệnh chỉ ghi chú). Thiết lập: `SegmentedPills` (48 dp, xếp dọc khi chữ to), ô nhập bo 12 (chỉ màn này), dải BMI theo `ProfileDraft.previewBmi` (chỉ khi hồ sơ thật sự có BMI), nút "Lưu hồ sơ" ghim đáy.
+  - Cố ý không chép từ thiết kế (sai sự thật hoặc chưa có chức năng): Nutri-Score/Grade, sao đánh giá, GI, % RDI, "Chuẩn mục tiêu", "An toàn", "Hội viên", "chuẩn y khoa", "Độ hoàn thiện hồ sơ", ảnh món/ảnh đại diện, "LIVE RADAR", ước lượng gram từ ảnh, thẻ nước, nhắc thông minh, danh mục món. Nút chính giữ `#006C49` (tương phản).
 - **Hiển thị số:** kcal và mg là số nguyên, gram 1 chữ số thập phân (`formatNutrientAmount` ở search, `formatWhole` ở Nhật ký).
 - **Icon app:** chữ F trắng + chấm mint trên nền `#006C49` (Plus Jakarta Sans, OFL). Android có icon thích ứng (`mipmap-anydpi-v26`, `values/colors.xml`) và icon cũ; iOS đủ cỡ trong `AppIcon.appiconset` (không kênh alpha). Sinh bằng script Pillow ở scratchpad; FLuw có logo riêng thì thay ảnh.
 - Thư viện đang dùng (đều miễn phí, BSD/MIT/Apache): `go_router`, `flutter_riverpod`, `shared_preferences`, `drift` + `drift_flutter`, `collection`, `flutter_localizations`, `http`, `flutter_local_notifications`, `timezone`, `mobile_scanner`, `image_picker`; dev: `drift_dev`, `build_runner`.
@@ -385,7 +393,7 @@ features/<tên>/
 
 ### CI `.github/workflows/ci.yml` (PR #36, D21)
 - 3 job giữ tên `backend`, `frontend`, `android-apk` (Render `checksPass` và quy tắc merge ở mục 1 dựa vào đó); `timeout-minutes` 10 / 30 / 45.
-- Action ghim theo SHA của đúng commit tag đang trỏ tới, kèm chú thích `# vX` (checkout v5.1.0, setup-node v5.0.0, subosito/flutter-action v2.23.0, setup-java v4.9.1, upload-artifact v4.6.2). Nâng bản thì đổi cả SHA lẫn chú thích (tra SHA bằng `git ls-remote`).
+- Action ghim theo SHA của đúng commit tag đang trỏ tới, kèm chú thích `# vX` (checkout v5.1.0, setup-node v5.0.0, subosito/flutter-action v2.23.0, setup-java v5.7.0, upload-artifact v6.0.0; PR #42 lên Node.js 24). Nâng bản thì đổi cả SHA lẫn chú thích (tra SHA bằng `git ls-remote`).
 - `cancel-in-progress` chỉ cho `pull_request`. Lượt chạy trên `main` luôn chạy xong, để Render không bỏ sót commit backend.
 - Job `frontend` chạy `flutter test` hai lượt: UTC và `TZ=Asia/Ho_Chi_Minh`.
 
@@ -424,6 +432,11 @@ tests/                    node:test, helper startServer
     | Gemini | 8/phút, 200/ngày (cửa sổ trượt 24 giờ), 4 ảnh cùng lúc; đổi bằng `GEMINI_MAX_PER_MINUTE`, `GEMINI_MAX_PER_DAY`, `GEMINI_MAX_CONCURRENT` (sai/thiếu thì mặc định) | 503 `RECOGNITION_BUSY`, log `[Recognition] gemini: 8 calls per 60 s` |
 
     - Mức công bố của nguồn: OFF 10 lượt tìm/phút và 100 lượt đọc sản phẩm/phút mỗi IP; USDA 1.000 lượt/giờ mỗi key. Mọi người dùng đi qua máy chủ Render, nên dùng chung hạn mức đó.
+  - **Sửa theo QA dữ liệu thật (PR #44, FLuw duyệt 22/11):**
+    - FoodItem thêm (tùy chọn) `packageQuantity`, `servingQuantity` (`{ amount, unit: "g" | "ml" } | null`; đơn vị có thể khác `basis`, app chỉ dùng khi cùng đơn vị; gói nhiều lốc lấy 1 gói, chuỗi không rõ thì null; đọc ở `providers/openFoodFacts/quantity.js`) và `nutrientsSuspect` (`areNutrientsSuspect` ở `models/nutrients.js`: P + C + F > 105 g/100, hoặc kcal lệch 4P + 4C + 9F > 30% và > 40 kcal; bỏ qua độ lệch kcal khi có cồn/polyol).
+    - Basis OFF: "100ml" → ml; "100g" + kem → g; gói/khẩu phần ghi ml → ml kể cả khi OFF ghi "100g" (Coca-Cola 5449000000996: 44 kcal/100 ml); ghi g → g; nhóm đồ uống uống liền (trừ bột pha, đồ khô) → ml; còn lại g.
+    - Tìm kiếm: index tìm kiếm OFF dừng khoảng 12/2024, không có số lượng gói, chỉ khớp trường tiếng Anh và không gộp dấu. Nên: đọc `/product` cho tối đa 5 món đầu thiếu kcal hoặc nghi ngờ (qua `barcodeService.find`, chung cache và hạn mức 90/phút, hẹn min(3 s, phần còn lại của 8 s); sản phẩm không còn trên OFF thì bỏ); từ có dấu tìm thêm bản bỏ dấu (`lib/foldVietnamese.js`; lượt gốc trước, cả hai qua hạn mức 10/phút; món của bản bỏ dấu phải chứa đủ mọi từ trong tên/hãng); bỏ trùng mã theo số 0 đầu và món không tên; kết quả còn thiếu chỉ cache 5 phút. `langs=vi,en` giữ nguyên (đo thật: như `en`).
+    - Prompt Gemini: `searchQueryEn` chỉ cho một thực phẩm đơn, món ghép để rỗng (parser đổi thành null); bỏ ví dụ "beef pho".
   - Key USDA gửi bằng header `X-Api-Key`, không nằm trong URL. User-Agent `FluwApp/0.2 (+https://github.com/Fluw13/Fluwwwwww/issues)` (liên hệ qua Issues, không có thông tin cá nhân của FLuw).
   - `createApp(services)` nhận service để test; `src/createServices.js` lắp nguồn thật, `server.js` gọi một lần.
   - Chạy thử ở môi trường agent: Node cần `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` mới đi qua proxy (Render không cần).
@@ -650,6 +663,7 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 | M4 | Nhật ký: lịch tuần, 4 khung, thêm/xóa món, SQLite | Xong: domain (#21), SQLite v4, màn Nhật Ký, "Thêm vào Nhật ký" ở Chi tiết; sửa món đã ghi (PR #39) |
 | M5 | Quét mã vạch + nhận diện ảnh, chọn khẩu phần | Xong: M5a mã vạch, M5b nhận diện ảnh bằng Gemini miễn phí (FLuw chọn 14/11, PR #35); khẩu phần chọn ở màn Chi tiết; hộp đồng ý gửi ảnh bản 2 (PR #37) |
 | M6 | Trang chủ, gợi ý nên/không nên, đánh giá cuối ngày, nhắc 10h/17h/22h | Xong: M6a (PR #33, `e714d28`), M6b nhắc ghi bữa ăn (PR #34, `5226475`); chữ đánh giá ngày và hàm "vượt" chung ở A3 (PR #41, D14) |
+| Giao diện + QA thật | Giao diện theo Figma; tester thử dữ liệu OFF thật (16 lỗi B1–B16) | Xong 25/11: PR #43 (nền chung, Trang Chủ, Nhật Ký), #44 (backend B2–B6, B12, B15), #45 (Tra Cứu, Chi tiết, Quét, lỗi app B1, B4, B7–B11, B14, B16), #46 (Hồ Sơ, Thiết lập, tài liệu) |
 | Kiểm tra lần 2 | Pháp lý, công thức, sản phẩm, backend (D1–D24, mục 5) | PR #36 (D, backend + CI), #37 (A2, pháp lý), #38 (A1, hồ sơ an toàn), #39 (C, sản phẩm) đã merge 21/11; #41 (A3: D6 đường là mức gợi ý, D10 "Carb (bột đường)", D11 natri cho mọi người lớn, D12 màn "Cách Fluw tính", D14) |
 | M7 | Tài khoản + đánh giá sao (Firebase Auth + Neon) | Làm sau; khi bắt đầu, FLuw tạo project Firebase và database Neon |
 | M8 | Nước uống: mục tiêu, thêm nhanh, lịch nhắc, cài đặt | Chờ UI0 |
@@ -688,6 +702,15 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 22–25/11/2026 — Giao diện theo Figma, tester với dữ liệu thật
+- **FLuw báo (22/11):** giao diện chưa giống Figma; tìm "latte trà sữa" thấy 26 kcal/100 ml trong khi chai 440 ml; hỏi sao chưa cử tester.
+- **Figma:** đọc file `2E8p4ZnGESwih1lNFyWeMA` bằng Figma MCP (danh sách frame + 1 lượt `use_figma` lấy kiểu chữ, bo góc, padding, màu, bóng của 7 màn). Ảnh app trước/sau chụp 390 dp bằng widget test tạm (`frontend/test/zz_*`, bị `.git/info/exclude`, không commit).
+- **Tester (QA):** 40 từ khóa, 66 mã vạch OFF thật → 16 lỗi (B1–B16). Lỗi trà sữa: OFF chỉ có 26 kcal/100 g, không có dung tích; app làm số /100 trông như cả chai và mặc định 100.
+- **PR #42:** CI lên Node.js 24 (setup-java v5.7.0, upload-artifact v6.0.0), FLuw duyệt sửa workflow.
+- **PR #43** (nền chung, Trang Chủ, Nhật Ký): 630 test. **PR #44** (backend, FLuw duyệt 22/11): 135 test, 46 đột biến (45 bắt, 1 tương đương) + 6 đột biến kiểm chéo đều bắt; chạy thật OFF (latte có 26 kcal ở kết quả tìm, Coca-Cola theo ml/330 ml, Dalat Milk 500 ml, "hảo hảo" ra mì Hảo Hảo). **PR #45** (Tra Cứu, Chi tiết, Quét, lỗi app, đọc 3 trường mới): 652 test. **PR #46** (Hồ Sơ, Thiết lập, CLAUDE.md): 665 test. Mọi lượt cả UTC và `TZ=Asia/Ho_Chi_Minh`; `flutter analyze`, `dart format` sạch; không tràn ở 320×568 cỡ chữ 200%/310%.
+- **Review chéo:** agent chính xem ảnh đặt cạnh Figma từng màn, đọc lại logic dùng chung (`nutrient_target_status`, `readableOn`) và backend (đọc trang sản phẩm, bản bỏ dấu, cờ nghi ngờ), ghép từng đợt không xung đột.
+- **Chưa kiểm:** APK trên điện thoại thật, ảnh OFF thật trong app, USDA bằng key thật. Còn lại thấp: chip lọc nhanh chữ hơi to so với thiết kế; gõ không dấu ("tra sua") vẫn ra kết quả kém (index OFF chỉ khớp trường tiếng Anh).
 
 ### 21/11/2026 — Kiểm tra toàn diện lần 2 (giám đốc): pháp lý, công thức, sản phẩm, backend
 - **Merge PR #35** (M5, `334147d`).
