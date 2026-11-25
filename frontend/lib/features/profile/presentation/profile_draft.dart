@@ -4,6 +4,7 @@ import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
+import 'package:fluw/features/profile/domain/bmi.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/dietary_preferences.dart';
@@ -125,6 +126,30 @@ final class ProfileDraft {
         !(asksPregnancy && isPregnantOrBreastfeeding == true) &&
         goal != null &&
         goal != WeightGoal.maintain;
+  }
+
+  /// The BMI of the typed height and weight, shown as the user types. Only where the profile would get one: an
+  /// adult within the age limits who has said she is not pregnant or breastfeeding, with both numbers in range.
+  Bmi? previewBmi({required CalendarDate today}) {
+    final birthDate = this.birthDate;
+    final heightCm = parseDecimal(heightText);
+    final weightKg = parseDecimal(weightText);
+    if (birthDate == null ||
+        heightCm == null ||
+        weightKg == null ||
+        (asksPregnancy && isPregnantOrBreastfeeding != false)) {
+      return null;
+    }
+    final age = ageInYears(birthDate: birthDate, today: today);
+    if (age < minimumAgeYears ||
+        age > maximumAgeYears ||
+        heightCm < minHeightCm ||
+        heightCm > maxHeightCm ||
+        weightKg < minWeightKg ||
+        weightKg > maxWeightKg) {
+      return null;
+    }
+    return Bmi.fromMeasurements(weightKg: weightKg, heightCm: heightCm);
   }
 
   @override

@@ -15,6 +15,7 @@ class AboutCard extends StatelessWidget {
     final theme = Theme.of(context);
     return SectionCard(
       title: 'Về Fluw',
+      icon: Icons.info_outline,
       children: [
         Text(
           'Dữ liệu dinh dưỡng từ Open Food Facts (ODbL) và USDA FoodData Central (CC0).',
