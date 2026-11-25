@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
-import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
 import 'package:fluw/features/profile/presentation/profile_labels.dart';
+import 'package:fluw/features/profile/presentation/segmented_pills.dart';
+import 'package:fluw/features/profile/presentation/setup_section_card.dart';
 
 class AllergiesSection extends StatelessWidget {
   const AllergiesSection({
@@ -24,19 +25,33 @@ class AllergiesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final unselected = [
       for (final allergen in Allergen.values)
         if (!allergies.containsKey(allergen)) allergen,
     ];
 
-    return SectionCard(
+    return SetupSectionCard(
       title: '4. Dị ứng',
-      accentColor: theme.colorScheme.error,
+      markerColor: colors.error,
       children: [
-        Text(
-          'Fluw cảnh báo khi Open Food Facts có ghi nhóm dị ứng bạn chọn cho sản phẩm đó. Fluw chưa xét mục '
-          '"có thể chứa" (vết), và dữ liệu có thể thiếu hoặc sai: luôn đọc nhãn trên bao bì.',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.sm + AppSpacing.xs),
+          decoration: BoxDecoration(color: colors.errorContainer, borderRadius: BorderRadius.circular(AppRadius.inner)),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.error_outline, color: colors.error, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Fluw cảnh báo khi Open Food Facts có ghi nhóm dị ứng bạn chọn cho sản phẩm đó. Fluw chưa xét mục '
+                  '"có thể chứa" (vết), và dữ liệu có thể thiếu hoặc sai: luôn đọc nhãn trên bao bì.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: colors.onErrorContainer),
+                ),
+              ),
+            ],
+          ),
         ),
         for (final MapEntry(key: allergen, value: severity) in allergies.entries) ...[
           const SizedBox(height: AppSpacing.sm),
@@ -57,8 +72,11 @@ class AllergiesSection extends StatelessWidget {
             children: [
               for (final allergen in unselected)
                 ActionChip(
-                  avatar: const Icon(Icons.add, size: 18),
+                  avatar: Icon(Icons.add, size: 18, color: colors.primary),
                   label: Text(allergenLabel(allergen)),
+                  backgroundColor: colors.surfaceContainerLow,
+                  side: BorderSide.none,
+                  shape: const StadiumBorder(),
                   // New allergies start as severe: under-warning is the riskier mistake.
                   onPressed: () => onAllergyChanged(allergen, AllergySeverity.severe),
                 ),
@@ -100,10 +118,10 @@ class _SelectedAllergy extends StatelessWidget {
     final isSevere = severity == AllergySeverity.severe;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.xs, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.sm + AppSpacing.xs, AppSpacing.xs, AppSpacing.xs, AppSpacing.sm),
       decoration: BoxDecoration(
         color: isSevere ? theme.colorScheme.errorContainer : theme.colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(AppRadius.control),
+        borderRadius: BorderRadius.circular(AppRadius.inner),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,13 +144,13 @@ class _SelectedAllergy extends StatelessWidget {
               IconButton(onPressed: onRemoved, tooltip: 'Bỏ dị ứng $label', icon: const Icon(Icons.close)),
             ],
           ),
-          SegmentedButton<AllergySeverity>(
-            segments: [
-              for (final value in AllergySeverity.values)
-                ButtonSegment(value: value, label: Text(allergySeverityLabel(value))),
-            ],
-            selected: {severity},
-            onSelectionChanged: (selection) => onSeverityChanged(selection.single),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(end: AppSpacing.sm),
+            child: SegmentedPills<AllergySeverity>(
+              options: {for (final value in AllergySeverity.values) value: allergySeverityLabel(value)},
+              selected: severity,
+              onSelected: onSeverityChanged,
+            ),
           ),
         ],
       ),

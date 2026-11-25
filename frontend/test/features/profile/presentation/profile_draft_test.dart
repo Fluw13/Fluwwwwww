@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
+import 'package:fluw/features/profile/domain/bmi.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/dietary_preferences.dart';
@@ -183,5 +184,38 @@ void main() {
     expect(_filled(heightText: '166'), isNot(_filled()));
     expect(_filled(conditionNote: 'Hen'), isNot(_filled()));
     expect(_filled(isPregnantOrBreastfeeding: true), isNot(_filled()));
+  });
+
+  group('BMI xem trước', () {
+    test('người lớn, không mang thai, số trong giới hạn: BMI theo số đang nhập (58,5 kg, 165 cm → 21.4)', () {
+      final bmi = _filled().previewBmi(today: fixtureToday)!;
+      expect(bmi.displayValue, 21.4);
+      expect(bmi.category, BmiCategory.normal);
+    });
+
+    test('chưa trả lời câu hỏi mang thai hoặc đang mang thai: không có BMI', () {
+      expect(_filled(isPregnantOrBreastfeeding: null).previewBmi(today: fixtureToday), isNull);
+      expect(_filled(isPregnantOrBreastfeeding: true).previewBmi(today: fixtureToday), isNull);
+    });
+
+    test('Khác theo công thức Nam không bị hỏi mang thai nên vẫn có BMI', () {
+      final draft = _filled(sex: Sex.other, bmrFormulaForOther: BmrFormula.male, isPregnantOrBreastfeeding: null);
+      expect(draft.previewBmi(today: fixtureToday), isNotNull);
+    });
+
+    test('dưới 18 tuổi hoặc trên 100 tuổi: không có BMI', () {
+      expect(_filled(birthDate: CalendarDate(2008, 11, 12)).previewBmi(today: fixtureToday), isNull);
+      expect(_filled(birthDate: CalendarDate(2008, 11, 11)).previewBmi(today: fixtureToday), isNotNull);
+      expect(_filled(birthDate: CalendarDate(1925, 11, 11)).previewBmi(today: fixtureToday), isNull);
+    });
+
+    test('thiếu số hoặc ngoài giới hạn chiều cao, cân nặng: không có BMI', () {
+      expect(_filled(heightText: '').previewBmi(today: fixtureToday), isNull);
+      expect(_filled(heightText: '99').previewBmi(today: fixtureToday), isNull);
+      expect(_filled(heightText: '251').previewBmi(today: fixtureToday), isNull);
+      expect(_filled(weightText: '19,9').previewBmi(today: fixtureToday), isNull);
+      expect(_filled(weightText: '300.1').previewBmi(today: fixtureToday), isNull);
+      expect(_filled(heightText: '100', weightText: '300').previewBmi(today: fixtureToday), isNotNull);
+    });
   });
 }

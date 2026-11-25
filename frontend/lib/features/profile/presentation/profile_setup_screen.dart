@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/core/time/today_provider.dart';
@@ -24,6 +25,7 @@ import 'package:fluw/features/profile/presentation/conditions_section.dart';
 import 'package:fluw/features/profile/presentation/daily_targets_view.dart';
 import 'package:fluw/features/profile/presentation/diet_section.dart';
 import 'package:fluw/features/profile/presentation/profile_draft.dart';
+import 'package:fluw/features/profile/presentation/profile_save_bar.dart';
 
 class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({required this.onOpenPrivacy, super.key});
@@ -150,94 +152,124 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           title: const Text('Thiết lập hồ sơ'),
           actions: [TextButton(onPressed: _isSaving ? null : _save, child: const Text('Lưu'))],
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          children: [
-            BasicInfoSection(
-              nameController: _name,
-              sex: _sex,
-              onSexChanged: (sex) => _update(() => _sex = sex),
-              bmrFormula: _bmrFormula,
-              onBmrFormulaChanged: (formula) => _update(() => _bmrFormula = formula),
-              asksPregnancy: draft.asksPregnancy,
-              isPregnantOrBreastfeeding: _isPregnantOrBreastfeeding,
-              onPregnancyChanged: (answer) => _update(() => _isPregnantOrBreastfeeding = answer),
-              birthDate: _birthDate,
-              onBirthDateChanged: (date) => _update(() => _birthDate = date),
-              today: today,
-              errors: errors,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            BodyGoalSection(
-              heightController: _height,
-              weightController: _weight,
-              targetWeightController: _targetWeight,
-              goal: draft.goal,
-              showsWeeklyChange: draft.needsWeeklyChange(today: today),
-              weeklyChangeKg: _weeklyChangeKg,
-              onWeeklyChangeChanged: (kg) => _update(() => _weeklyChangeKg = kg),
-              activityLevel: _activityLevel,
-              onActivityLevelChanged: (level) => _update(() => _activityLevel = level),
-              trainingType: _trainingType,
-              onTrainingTypeChanged: (type) => _update(() => _trainingType = type),
-              errors: errors,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ConditionsSection(
-              conditions: _conditions,
-              onConditionChanged: (condition, {required selected}) => _update(
-                () => _conditions = selected ? {..._conditions, condition} : ({..._conditions}..remove(condition)),
+        bottomNavigationBar: ProfileSaveBar(onSave: _isSaving ? null : _save),
+        body: Theme(
+          data: _withFormFields(theme),
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
+              BasicInfoSection(
+                nameController: _name,
+                sex: _sex,
+                onSexChanged: (sex) => _update(() => _sex = sex),
+                bmrFormula: _bmrFormula,
+                onBmrFormulaChanged: (formula) => _update(() => _bmrFormula = formula),
+                asksPregnancy: draft.asksPregnancy,
+                isPregnantOrBreastfeeding: _isPregnantOrBreastfeeding,
+                onPregnancyChanged: (answer) => _update(() => _isPregnantOrBreastfeeding = answer),
+                birthDate: _birthDate,
+                onBirthDateChanged: (date) => _update(() => _birthDate = date),
+                today: today,
+                errors: errors,
               ),
-              noteController: _conditionNote,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AllergiesSection(
-              allergies: _allergies,
-              onAllergyChanged: (allergen, severity) => _update(
-                () => _allergies = severity == null
-                    ? ({..._allergies}..remove(allergen))
-                    : {..._allergies, allergen: severity},
+              const SizedBox(height: AppSpacing.md),
+              BodyGoalSection(
+                heightController: _height,
+                weightController: _weight,
+                targetWeightController: _targetWeight,
+                bmi: draft.previewBmi(today: today),
+                goal: draft.goal,
+                showsWeeklyChange: draft.needsWeeklyChange(today: today),
+                weeklyChangeKg: _weeklyChangeKg,
+                onWeeklyChangeChanged: (kg) => _update(() => _weeklyChangeKg = kg),
+                activityLevel: _activityLevel,
+                onActivityLevelChanged: (level) => _update(() => _activityLevel = level),
+                trainingType: _trainingType,
+                onTrainingTypeChanged: (type) => _update(() => _trainingType = type),
+                errors: errors,
               ),
-              noteController: _allergyNote,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            DietSection(
-              dietStyle: _dietStyle,
-              onDietStyleChanged: (style) => _update(() => _dietStyle = style),
-              preferences: _preferences,
-              onPreferenceChanged: (preference, {required selected}) => _update(
-                () => _preferences = selected ? {..._preferences, preference} : ({..._preferences}..remove(preference)),
+              const SizedBox(height: AppSpacing.md),
+              ConditionsSection(
+                conditions: _conditions,
+                onConditionChanged: (condition, {required selected}) => _update(
+                  () => _conditions = selected ? {..._conditions, condition} : ({..._conditions}..remove(condition)),
+                ),
+                noteController: _conditionNote,
               ),
-              limitsSugar: _limitsSugar,
-              onLimitsSugarChanged: (value) => _update(() => _limitsSugar = value),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SectionCard(
-              title: 'Chỉ tiêu mỗi ngày (xem trước)',
-              children: [
-                switch (result) {
-                  DraftValid(:final profile) => DailyTargetsView(targets: calculateDailyTargets(profile, today: today)),
-                  DraftInvalid() => Text(
-                    'Điền đủ thông tin ở trên để xem calo, protein, đường và nước mỗi ngày.',
-                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(height: AppSpacing.md),
+              AllergiesSection(
+                allergies: _allergies,
+                onAllergyChanged: (allergen, severity) => _update(
+                  () => _allergies = severity == null
+                      ? ({..._allergies}..remove(allergen))
+                      : {..._allergies, allergen: severity},
+                ),
+                noteController: _allergyNote,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DietSection(
+                dietStyle: _dietStyle,
+                onDietStyleChanged: (style) => _update(() => _dietStyle = style),
+                preferences: _preferences,
+                onPreferenceChanged: (preference, {required selected}) => _update(
+                  () =>
+                      _preferences = selected ? {..._preferences, preference} : ({..._preferences}..remove(preference)),
+                ),
+                limitsSugar: _limitsSugar,
+                onLimitsSugarChanged: (value) => _update(() => _limitsSugar = value),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SectionCard(
+                title: 'Chỉ tiêu mỗi ngày (xem trước)',
+                icon: Icons.track_changes_outlined,
+                children: [
+                  switch (result) {
+                    DraftValid(:final profile) => DailyTargetsView(
+                      targets: calculateDailyTargets(profile, today: today),
+                    ),
+                    DraftInvalid() => Text(
+                      'Điền đủ thông tin ở trên để xem calo, protein, đường và nước mỗi ngày.',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  },
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_outline, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: AppSpacing.xs),
+                  Flexible(
+                    child: Text(
+                      'Hồ sơ chỉ lưu trên máy này và sửa lại được bất cứ lúc nào.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall,
+                    ),
                   ),
-                },
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            FilledButton.icon(
-              onPressed: _isSaving ? null : _save,
-              icon: const Icon(Icons.check),
-              label: const Text('Lưu hồ sơ'),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Hồ sơ chỉ lưu trên máy này và sửa lại được bất cứ lúc nào.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// The form's fields, rounded like the design's inputs.
+  static ThemeData _withFormFields(ThemeData theme) {
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.inner),
+      borderSide: BorderSide(color: color, width: 2),
+    );
+    final colors = theme.colorScheme;
+    return theme.copyWith(
+      inputDecorationTheme: theme.inputDecorationTheme.copyWith(
+        border: border(Colors.transparent),
+        enabledBorder: border(Colors.transparent),
+        focusedBorder: border(colors.primary),
+        errorBorder: border(colors.error),
+        focusedErrorBorder: border(colors.error),
       ),
     );
   }

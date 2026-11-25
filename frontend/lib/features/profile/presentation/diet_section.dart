@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
-import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/diet_style.dart';
 import 'package:fluw/features/profile/domain/food_preference.dart';
 import 'package:fluw/features/profile/presentation/profile_labels.dart';
+import 'package:fluw/features/profile/presentation/selectable_tile.dart';
+import 'package:fluw/features/profile/presentation/setup_section_card.dart';
 
 class DietSection extends StatelessWidget {
   const DietSection({
@@ -26,10 +28,11 @@ class DietSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    return SectionCard(
+    return SetupSectionCard(
       title: '5. Chế độ ăn & sở thích',
-      accentColor: theme.colorScheme.secondary,
+      markerColor: colors.secondary,
       children: [
         Text('Chế độ ăn', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.sm),
@@ -42,6 +45,15 @@ class DietSection extends StatelessWidget {
                 label: Text(dietStyleLabel(style)),
                 selected: dietStyle == style,
                 onSelected: (_) => onDietStyleChanged(style),
+                // Filled like the design's chosen pill; the tick keeps the choice clear without colour.
+                selectedColor: colors.primary,
+                checkmarkColor: colors.onPrimary,
+                backgroundColor: colors.surfaceContainerLow,
+                side: BorderSide.none,
+                shape: const StadiumBorder(),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: dietStyle == style ? colors.onPrimary : colors.onSurface,
+                ),
               ),
           ],
         ),
@@ -52,22 +64,25 @@ class DietSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Thói quen ăn uống', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.sm),
         SwitchListTile(
-          contentPadding: EdgeInsets.zero,
+          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.inner)),
+          tileColor: limitsSugar ? selectedTileColor(colors) : colors.surfaceContainerLow,
           value: limitsSugar,
           onChanged: onLimitsSugarChanged,
-          title: const Text('Tôi muốn giảm ngọt'),
-          subtitle: const Text(
+          title: Text('Tôi muốn giảm ngọt', style: theme.textTheme.titleSmall),
+          subtitle: Text(
             'Mức gợi ý đường tổng dưới 5% năng lượng (dựa trên khuyến nghị đường tự do của WHO 2015).',
+            style: theme.textTheme.bodySmall,
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
         for (final preference in FoodPreference.values)
-          CheckboxListTile(
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
+          SelectableTile(
             value: preferences.contains(preference),
-            onChanged: (selected) => onPreferenceChanged(preference, selected: selected ?? false),
-            title: Text(foodPreferenceLabel(preference)),
+            onChanged: (selected) => onPreferenceChanged(preference, selected: selected),
+            title: foodPreferenceLabel(preference),
           ),
       ],
     );

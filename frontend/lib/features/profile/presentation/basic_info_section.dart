@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
-import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/bmr_formula.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/presentation/field_error_text.dart';
 import 'package:fluw/features/profile/presentation/profile_draft.dart';
 import 'package:fluw/features/profile/presentation/profile_labels.dart';
+import 'package:fluw/features/profile/presentation/segmented_pills.dart';
+import 'package:fluw/features/profile/presentation/setup_section_card.dart';
 
 class BasicInfoSection extends StatelessWidget {
   const BasicInfoSection({
@@ -47,7 +48,7 @@ class BasicInfoSection extends StatelessWidget {
     final sex = this.sex;
     final bmrFormula = this.bmrFormula;
 
-    return SectionCard(
+    return SetupSectionCard(
       title: '1. Thông tin cơ bản',
       children: [
         TextField(
@@ -68,6 +69,7 @@ class BasicInfoSection extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Ngày sinh',
                 prefixIcon: const Icon(Icons.calendar_today_outlined),
+                suffixIcon: Icon(Icons.edit_calendar_outlined, color: theme.colorScheme.primary),
                 errorText: errors[ProfileField.birthDate],
               ),
               child: Text(_birthDateText()),
@@ -77,15 +79,10 @@ class BasicInfoSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         Text('Giới tính sinh học', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.sm),
-        SegmentedButton<Sex>(
-          emptySelectionAllowed: true,
-          segments: [for (final value in Sex.values) ButtonSegment(value: value, label: Text(sexLabel(value)))],
-          selected: {?sex},
-          onSelectionChanged: (selection) {
-            if (selection.isNotEmpty) {
-              onSexChanged(selection.single);
-            }
-          },
+        SegmentedPills<Sex>(
+          options: {for (final value in Sex.values) value: sexLabel(value)},
+          selected: sex,
+          onSelected: onSexChanged,
         ),
         FieldErrorText(errors[ProfileField.sex]),
         const SizedBox(height: AppSpacing.xs),
@@ -97,17 +94,10 @@ class BasicInfoSection extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text('Tính BMR theo công thức nào?', style: theme.textTheme.labelLarge),
           const SizedBox(height: AppSpacing.sm),
-          SegmentedButton<BmrFormula>(
-            emptySelectionAllowed: true,
-            segments: [
-              for (final value in BmrFormula.values) ButtonSegment(value: value, label: Text(bmrFormulaLabel(value))),
-            ],
-            selected: {?bmrFormula},
-            onSelectionChanged: (selection) {
-              if (selection.isNotEmpty) {
-                onBmrFormulaChanged(selection.single);
-              }
-            },
+          SegmentedPills<BmrFormula>(
+            options: {for (final value in BmrFormula.values) value: bmrFormulaLabel(value)},
+            selected: bmrFormula,
+            onSelected: onBmrFormulaChanged,
           ),
           FieldErrorText(errors[ProfileField.bmrFormula]),
         ],
@@ -115,18 +105,10 @@ class BasicInfoSection extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text('Bạn đang mang thai hoặc cho con bú?', style: theme.textTheme.labelLarge),
           const SizedBox(height: AppSpacing.sm),
-          SegmentedButton<bool>(
-            emptySelectionAllowed: true,
-            segments: const [
-              ButtonSegment(value: true, label: Text('Có')),
-              ButtonSegment(value: false, label: Text('Không')),
-            ],
-            selected: {?isPregnantOrBreastfeeding},
-            onSelectionChanged: (selection) {
-              if (selection.isNotEmpty) {
-                onPregnancyChanged(selection.single);
-              }
-            },
+          SegmentedPills<bool>(
+            options: const {true: 'Có', false: 'Không'},
+            selected: isPregnantOrBreastfeeding,
+            onSelected: onPregnancyChanged,
           ),
           FieldErrorText(errors[ProfileField.pregnancy]),
           if (isPregnantOrBreastfeeding == true) ...[
@@ -146,10 +128,7 @@ class BasicInfoSection extends StatelessWidget {
     if (birthDate == null) {
       return 'Chọn ngày sinh';
     }
-    final day = birthDate.day.toString().padLeft(2, '0');
-    final month = birthDate.month.toString().padLeft(2, '0');
-    final age = ageInYears(birthDate: birthDate, today: today);
-    return '$day/$month/${birthDate.year} ($age tuổi)';
+    return '${calendarDateLabel(birthDate)} (${ageInYears(birthDate: birthDate, today: today)} tuổi)';
   }
 
   Future<void> _pickBirthDate(BuildContext context) async {

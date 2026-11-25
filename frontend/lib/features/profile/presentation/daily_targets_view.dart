@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/theme/nutrient_colors.dart';
+import 'package:fluw/core/theme/readable_color.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/calorie_target.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
@@ -20,7 +21,10 @@ class DailyTargetsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final colors = theme.extension<NutrientColors>()!;
+    // Chart colours such as the sugar orange are too light for an icon on the tile, so they are deepened to 3:1.
+    Color icon(Color color) => readableOn(color, scheme.surfaceContainerLow, minContrast: 3);
 
     final content = switch (targets) {
       AdultTargets(
@@ -34,30 +38,37 @@ class DailyTargetsView extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // The calorie target leads, full width, like the highlighted tile of the design; its note can be long.
+            TargetTile(
+              label: 'Năng lượng',
+              value: formatWhole(calories.kcal),
+              unit: 'kcal/ngày',
+              note: _calorieNote(calories, tdee: tdee),
+              icon: Icons.local_fire_department_outlined,
+              iconColor: scheme.tertiary,
+              background: scheme.tertiaryContainer,
+              foreground: scheme.onTertiaryContainer,
+              isLarge: true,
+            ),
+            const SizedBox(height: AppSpacing.sm),
             TileGrid(
               children: [
-                TargetTile(
-                  label: 'Năng lượng',
-                  value: formatWhole(calories.kcal),
-                  unit: 'kcal/ngày',
-                  note: _calorieNote(calories, tdee: tdee),
-                  icon: Icons.local_fire_department_outlined,
-                  iconColor: colors.energy,
-                ),
                 TargetTile(
                   label: 'Protein (đạm)',
                   value: _range(protein.minGrams, protein.maxGrams),
                   unit: 'g/ngày',
                   note: 'Đủ khi đạt ${formatDecimal(protein.minGrams)} g',
                   icon: Icons.egg_outlined,
-                  iconColor: colors.protein,
+                  iconColor: scheme.secondary,
+                  background: scheme.secondaryContainer,
+                  foreground: scheme.onSecondaryContainer,
                 ),
                 TargetTile(
                   label: 'Đường tổng (mức gợi ý)',
                   value: '< ${formatWhole(nutrients.sugarsMaxGrams)}',
                   unit: 'g/ngày',
                   icon: Icons.cookie_outlined,
-                  iconColor: colors.sugars,
+                  iconColor: icon(colors.sugars),
                 ),
                 TargetTile(
                   label: 'Chất béo',
@@ -65,7 +76,7 @@ class DailyTargetsView extends StatelessWidget {
                   unit: 'g/ngày',
                   note: 'Béo bão hòa < ${formatWhole(nutrients.saturatedFatMaxGrams)} g',
                   icon: Icons.opacity_outlined,
-                  iconColor: colors.fat,
+                  iconColor: icon(colors.fat),
                 ),
                 TargetTile(
                   label: 'Carb (bột đường)',
@@ -75,13 +86,14 @@ class DailyTargetsView extends StatelessWidget {
                   },
                   unit: nutrients.carbohydratesGrams == null ? null : 'g/ngày',
                   icon: Icons.rice_bowl_outlined,
-                  iconColor: colors.carbohydrates,
+                  iconColor: icon(colors.carbohydrates),
                 ),
                 TargetTile(
                   label: 'Natri tối đa',
                   value: '< ${formatWhole(dailySodiumMaxMg)}',
                   unit: 'mg/ngày',
                   icon: Icons.grain_outlined,
+                  iconColor: scheme.onSurfaceVariant,
                 ),
                 TargetTile(
                   label: 'Tổng lượng nước (gồm cả nước trong thức ăn)',
@@ -89,7 +101,7 @@ class DailyTargetsView extends StatelessWidget {
                   unit: 'lít/ngày',
                   note: '35 ml mỗi kg: mức Fluw chọn, đối chiếu EFSA 2010',
                   icon: Icons.water_drop_outlined,
-                  iconColor: colors.water,
+                  iconColor: icon(colors.water),
                 ),
               ],
             ),
@@ -130,10 +142,7 @@ class DailyTargetsView extends StatelessWidget {
       children: [
         content,
         const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Số liệu là ước tính, không thay thế tư vấn y tế.',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
+        Text('Số liệu là ước tính, không thay thế tư vấn y tế.', style: theme.textTheme.bodySmall),
       ],
     );
   }
@@ -178,7 +187,7 @@ class _Note extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Text(text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+      child: Text(text, style: theme.textTheme.bodySmall),
     );
   }
 }

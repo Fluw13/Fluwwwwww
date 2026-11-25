@@ -1,23 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
+import 'package:fluw/core/widgets/app_card.dart';
 import 'package:fluw/core/widgets/erase_all_data_button.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/profile/domain/age.dart';
-import 'package:fluw/features/profile/domain/bmi.dart';
-import 'package:fluw/features/profile/domain/calorie_target.dart';
 import 'package:fluw/features/profile/domain/daily_targets.dart';
-import 'package:fluw/features/profile/domain/goal_duration.dart';
 import 'package:fluw/features/profile/domain/health_profile.dart';
-import 'package:fluw/features/profile/domain/weight_goal.dart';
 import 'package:fluw/features/profile/presentation/about_card.dart';
 import 'package:fluw/features/profile/presentation/appearance_card.dart';
+import 'package:fluw/features/profile/presentation/body_status_card.dart';
 import 'package:fluw/features/profile/presentation/daily_targets_view.dart';
-import 'package:fluw/features/profile/presentation/dietary_summary_card.dart';
-import 'package:fluw/features/profile/presentation/profile_labels.dart';
-import 'package:fluw/features/profile/presentation/target_tile.dart';
-import 'package:fluw/features/profile/presentation/tile_grid.dart';
+import 'package:fluw/features/profile/presentation/diet_preferences_card.dart';
+import 'package:fluw/features/profile/presentation/health_notes_section.dart';
+import 'package:fluw/features/profile/presentation/profile_header_card.dart';
+import 'package:fluw/features/profile/presentation/profile_save_bar.dart';
 import 'package:fluw/features/profile/presentation/weight_log_card.dart';
 
 class ProfileOverview extends StatelessWidget {
@@ -42,47 +39,23 @@ class ProfileOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final age = ageInYears(birthDate: profile.birthDate, today: today);
     final targets = calculateDailyTargets(profile, today: today);
-    final note = profile.conditionNote;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        _Header(profile: profile, age: age),
+        ProfileHeaderCard(profile: profile, age: age),
         const SizedBox(height: AppSpacing.md),
         if (profile.hasReachedTarget) ...[
           _TargetReachedBanner(onUpdate: onEdit),
           const SizedBox(height: AppSpacing.md),
         ],
-        SectionCard(
-          title: 'Thể trạng & mục tiêu',
-          children: [
-            TileGrid(
-              children: [
-                TargetTile(label: 'Chiều cao', value: formatDecimal(profile.heightCm), unit: 'cm'),
-                TargetTile(label: 'Cân nặng', value: formatDecimal(profile.weightKg), unit: 'kg'),
-                // Taken from the targets, so a profile that fails validation (e.g. edited limits) shows no BMI.
-                if (targets case AdultTargets(:final bmi)) _bmiTile(bmi),
-                TargetTile(
-                  label: 'Cân nặng mong muốn',
-                  value: formatDecimal(profile.targetWeightKg),
-                  unit: 'kg',
-                  note: _goalNote(targets),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              '${activityLevelLabel(profile.activityLevel)} · ${trainingTypeLabel(profile.trainingType)}',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        ),
+        BodyStatusCard(profile: profile, targets: targets, onEdit: onEdit),
         const SizedBox(height: AppSpacing.md),
         SectionCard(
           title: 'Chỉ tiêu mỗi ngày',
+          icon: Icons.track_changes_outlined,
           trailing: IconButton(
             onPressed: onOpenMethodology,
             icon: const Icon(Icons.info_outline),
@@ -90,27 +63,12 @@ class ProfileOverview extends StatelessWidget {
           ),
           children: [DailyTargetsView(targets: targets)],
         ),
-        if (profile.conditions.isNotEmpty || note != null) ...[
-          const SizedBox(height: AppSpacing.md),
-          SectionCard(
-            title: 'Bệnh nền & ghi chú',
-            accentColor: theme.colorScheme.tertiary,
-            children: [
-              for (final condition in profile.conditions)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(healthConditionLabel(condition)),
-                  subtitle: Text(healthConditionDescription(condition)),
-                ),
-              if (note != null)
-                ListTile(contentPadding: EdgeInsets.zero, title: const Text('Ghi chú'), subtitle: Text(note)),
-            ],
-          ),
-        ],
+        const SizedBox(height: AppSpacing.lg),
+        HealthNotesSection(profile: profile, onEdit: onEdit),
+        const SizedBox(height: AppSpacing.lg),
+        DietPreferencesCard(dietary: profile.dietary, limitsSugar: profile.limitsSugar),
         const SizedBox(height: AppSpacing.md),
         WeightLogCard(profile: profile),
-        const SizedBox(height: AppSpacing.md),
-        DietarySummaryCard(dietary: profile.dietary),
         const SizedBox(height: AppSpacing.md),
         const AppearanceCard(),
         const SizedBox(height: AppSpacing.md),
@@ -118,92 +76,12 @@ class ProfileOverview extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         FilledButton.icon(
           onPressed: onEdit,
-          icon: const Icon(Icons.edit_outlined),
+          style: FilledButton.styleFrom(shape: largeButtonShape),
+          icon: const Icon(Icons.edit_note),
           label: const Text('Cập nhật hồ sơ'),
         ),
         const SizedBox(height: AppSpacing.md),
         EraseAllDataButton(onPressed: onEraseAllData),
-      ],
-    );
-  }
-
-  Widget _bmiTile(Bmi bmi) {
-    return TargetTile(
-      label: 'BMI (thang châu Á)',
-      value: formatDecimal(bmi.displayValue),
-      note: bmiCategoryLabel(bmi.category),
-    );
-  }
-
-  String _goalNote(DailyTargets targets) {
-    if (profile.hasReachedTarget) {
-      return 'Đã đạt cân nặng mong muốn';
-    }
-    final goal = profile.goal;
-    if (goal == WeightGoal.maintain) {
-      return weightGoalLabel(goal);
-    }
-    final difference = formatDecimal((profile.targetWeightKg - profile.weightKg).abs());
-    final summary = '${weightGoalLabel(goal)} $difference kg';
-    // Only a valid adult profile has a calorie target and a valid speed; the targets card explains the other cases.
-    if (targets is! AdultTargets) {
-      return summary;
-    }
-    final calories = targets.calories;
-    final isRaised = calories.isRaisedToMinimum;
-    // A raised target changes the weight more slowly than the chosen speed.
-    final weeklyChangeKg = isRaised
-        ? weeklyChangeKgFromDailyGap(targets.tdee - calories.kcal)
-        : profile.weeklyChangeKg!;
-    // Compared as shown: a minimum at or above TDEE leaves no gap, and "0 kg/tuần" would mean never.
-    if ((weeklyChangeKg * 100).round() <= 0) {
-      return '$summary · chưa ước tính được thời gian';
-    }
-    final speed = formatDecimal(weeklyChangeKg, maxFractionDigits: 2);
-    final weeks = estimateWeeksToTarget(
-      currentKg: profile.weightKg,
-      targetKg: profile.targetWeightKg,
-      weeklyChangeKg: weeklyChangeKg,
-    );
-    final slowing = goal == WeightGoal.lose ? 'cân thường giảm chậm dần' : 'cân thường tăng chậm dần';
-    return '$summary · ${isRaised ? '≈ ' : ''}$speed kg/tuần · ít nhất khoảng $weeks tuần (ước tính; $slowing)';
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.profile, required this.age});
-
-  final HealthProfile profile;
-  final int age;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final name = profile.displayName;
-
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 32,
-          backgroundColor: theme.colorScheme.primaryContainer,
-          foregroundColor: theme.colorScheme.onPrimaryContainer,
-          child: name == null
-              ? const Icon(Icons.person, size: 32)
-              : Text(name.characters.first.toUpperCase(), style: theme.textTheme.headlineSmall),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(name ?? 'Hồ sơ của bạn', style: theme.textTheme.headlineSmall),
-              Text(
-                '$age tuổi · ${sexLabel(profile.sex)}',
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -218,26 +96,33 @@ class _TargetReachedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bạn đã đạt cân nặng mong muốn',
-              style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+    final colors = theme.colorScheme;
+    return AppCard(
+      color: colors.primaryContainer,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.flag_outlined, color: colors.onPrimaryContainer),
+          const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bạn đã đạt cân nặng mong muốn',
+                  style: theme.textTheme.titleMedium?.copyWith(color: colors.onPrimaryContainer),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Fluw đang tính chỉ tiêu để giữ cân. Đặt mục tiêu mới nếu bạn muốn tiếp tục tăng hoặc giảm.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colors.onPrimaryContainer),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                FilledButton.tonal(onPressed: onUpdate, child: const Text('Cập nhật mục tiêu')),
+              ],
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Fluw đang tính chỉ tiêu để giữ cân. Đặt mục tiêu mới nếu bạn muốn tiếp tục tăng hoặc giảm.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            FilledButton.tonal(onPressed: onUpdate, child: const Text('Cập nhật mục tiêu')),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

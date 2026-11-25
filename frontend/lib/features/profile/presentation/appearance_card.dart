@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/settings/theme_mode_controller.dart';
 import 'package:fluw/core/widgets/section_card.dart';
+import 'package:fluw/features/profile/presentation/segmented_pills.dart';
 
 /// Lets the user go back to following the phone's light/dark setting after using the header toggle.
 class AppearanceCard extends ConsumerWidget {
@@ -17,14 +18,12 @@ class AppearanceCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SectionCard(
       title: 'Giao diện',
+      icon: Icons.palette_outlined,
       children: [
-        SegmentedButton<ThemeMode>(
-          segments: [
-            for (final MapEntry(key: mode, value: label) in _labels.entries)
-              ButtonSegment(value: mode, label: Text(label)),
-          ],
-          selected: {ref.watch(themeModeProvider)},
-          onSelectionChanged: (selection) => ref.read(themeModeProvider.notifier).select(selection.single),
+        SegmentedPills<ThemeMode>(
+          options: _labels,
+          selected: ref.watch(themeModeProvider),
+          onSelected: ref.read(themeModeProvider.notifier).select,
         ),
       ],
     );

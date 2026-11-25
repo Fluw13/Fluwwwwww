@@ -88,7 +88,7 @@ void main() {
       tester,
       saved: buildProfile(conditions: {HealthCondition.diabetes, HealthCondition.hypertension}),
     );
-    await scrollTo(tester, find.text('Bệnh nền & ghi chú'));
+    await scrollTo(tester, find.text('Dị ứng & bệnh nền'));
     await scrollTo(tester, find.textContaining('Theo dõi natri'));
 
     final diabetes = find.textContaining('Theo dõi đường tổng: Fluw dùng mức gợi ý dưới 5% năng lượng');
@@ -230,6 +230,37 @@ void main() {
     expect(find.textContaining('Bạn đang thiếu cân'), findsOneWidget);
   });
 
+  testWidgets('Thiết lập: BMI theo số đang nhập, đọc được bằng trình đọc màn hình; mang thai thì ẩn', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openProfileTab(tester, saved: buildProfile(sex: Sex.female));
+    await tester.tap(find.text('Chỉnh sửa'));
+    await tester.pumpAndSettle();
+
+    await scrollTo(tester, find.text('BMI (thang châu Á)'));
+    expect(find.bySemanticsLabel('BMI (thang châu Á) 22.8, Bình thường'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Cân nặng'), '90');
+    await tester.pumpAndSettle();
+    expect(find.text('29.3'), findsOneWidget);
+    expect(find.text('Béo phì'), findsOneWidget);
+
+    await scrollTo(tester, find.text('Có'), delta: -200);
+    await tester.tap(find.text('Có'));
+    await tester.pumpAndSettle();
+    expect(find.text('BMI (thang châu Á)'), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('Hồ Sơ: "Thêm dị ứng / bệnh nền" mở form hồ sơ', (tester) async {
+    await openProfileTab(tester, saved: buildProfile());
+
+    await scrollTo(tester, find.text('Thêm dị ứng / bệnh nền'));
+    expect(find.text('Chưa khai báo dị ứng hay bệnh nền.'), findsOneWidget);
+    await tester.tap(find.text('Thêm dị ứng / bệnh nền'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1. Thông tin cơ bản'), findsOneWidget);
+  });
+
   testWidgets('bộ chọn ngày sinh không cho chọn ngày chưa đủ 18 tuổi', (tester) async {
     await openProfileTab(tester);
     await tester.tap(find.text('Thiết lập hồ sơ').last);
@@ -340,8 +371,10 @@ void main() {
 
     expect(find.text('Đã ghi cân nặng.'), findsOneWidget);
     expect(((await tester.runAsync(repositoryOf(tester).load)) as LoadedProfile).profile.weightKg, 68.5);
-    await scrollTo(tester, find.textContaining('đã đi được 30%'), delta: -200);
-    expect(find.textContaining('đã đi được 30%'), findsOneWidget);
+    // The progress shows with the target weight, near the top of the page.
+    await scrollTo(tester, find.text('Đã đạt 30%'), delta: -200);
+    expect(find.text('Đã đạt 30%'), findsOneWidget);
+    expect(find.text('Từ 70 kg ngày 01/11/2026'), findsOneWidget);
   });
 
   testWidgets('mang thai hoặc cho con bú: chỉ hiện các lần cân, không hiện tiến độ tới cân nặng mong muốn', (
@@ -361,11 +394,12 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    expect(find.text('Cân nặng mong muốn'), findsOneWidget);
+    expect(find.textContaining('Đã đạt'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
     await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
     expect(find.text('70 kg'), findsOneWidget);
     expect(find.text('68 kg'), findsOneWidget);
-    expect(find.textContaining('đã đi được'), findsNothing);
-    expect(find.textContaining('quãng đường'), findsNothing);
   });
 
   testWidgets('ô cân nặng trong hộp thoại báo lỗi khi ngoài giới hạn, không ghi gì', (tester) async {
@@ -421,8 +455,8 @@ void main() {
     await tester.runAsync(() => weightLog.record(WeightEntry(date: appTestToday, weightKg: 70)));
     await tester.pumpAndSettle();
 
-    await scrollTo(tester, find.text('Ghi cân nặng hôm nay'));
-    expect(find.textContaining('đã đi được'), findsNothing);
+    expect(find.text('Cân nặng mong muốn'), findsOneWidget);
+    expect(find.textContaining('Đã đạt'), findsNothing);
   });
 
   testWidgets('đổi cân nặng trong Thiết lập thì cũng ghi vào lịch sử cân hôm nay', (tester) async {
@@ -508,6 +542,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Theo công thức Nữ'));
     await tester.pumpAndSettle();
+    // The save bar pinned at the bottom covers the end of the first screen.
+    await scrollTo(tester, find.text('Không'));
     await tester.tap(find.text('Không'));
     await scrollTo(tester, find.widgetWithText(TextField, 'Cân nặng mong muốn'));
     await tester.enterText(find.widgetWithText(TextField, 'Chiều cao'), '165');
@@ -571,7 +607,8 @@ void main() {
       await tester.pumpAndSettle();
       await scrollTo(tester, find.textContaining('Nhu cầu năng lượng và đạm khi mang thai'), delta: 100);
       expect(tester.takeException(), isNull);
-      await scrollTo(tester, find.text('Lưu hồ sơ'), delta: 100);
+      await scrollTo(tester, find.text('Hồ sơ chỉ lưu trên máy này và sửa lại được bất cứ lúc nào.'), delta: 100);
+      expect(find.text('Lưu hồ sơ').hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       // The weigh-in dialog opens with the keyboard up.

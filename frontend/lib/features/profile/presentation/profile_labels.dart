@@ -1,5 +1,6 @@
 import 'package:fluw/core/format/decimal_text.dart';
 import 'package:fluw/core/nutrition/fluw_thresholds.dart';
+import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/features/profile/domain/activity_level.dart';
 import 'package:fluw/features/profile/domain/age.dart';
 import 'package:fluw/features/profile/domain/allergen.dart';
@@ -14,6 +15,10 @@ import 'package:fluw/features/profile/domain/profile_validation.dart';
 import 'package:fluw/features/profile/domain/sex.dart';
 import 'package:fluw/features/profile/domain/training_type.dart';
 import 'package:fluw/features/profile/domain/weight_goal.dart';
+
+/// dd/MM/yyyy, e.g. "01/11/2026".
+String calendarDateLabel(CalendarDate date) =>
+    '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
 String sexLabel(Sex sex) => switch (sex) {
   Sex.male => 'Nam',

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 
-/// Two tiles per row like the design, or one per row when the space is too narrow for two to stay readable.
+/// Two tiles per row like the design, each row as tall as its taller tile, or one per row when the space is too
+/// narrow for two to stay readable.
 class TileGrid extends StatelessWidget {
   const TileGrid({required this.children, super.key});
 
@@ -13,12 +14,25 @@ class TileGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= _minTwoColumnWidth ? 2 : 1;
-        final tileWidth = (constraints.maxWidth - AppSpacing.sm * (columns - 1)) / columns;
-        return Wrap(
+        if (constraints.maxWidth < _minTwoColumnWidth) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, spacing: AppSpacing.sm, children: children);
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [for (final child in children) SizedBox(width: tileWidth, child: child)],
+          children: [
+            for (var index = 0; index < children.length; index += 2)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    Expanded(child: children[index]),
+                    Expanded(child: index + 1 < children.length ? children[index + 1] : const SizedBox.shrink()),
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );
