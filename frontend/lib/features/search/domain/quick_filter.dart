@@ -9,13 +9,17 @@ const double highProteinMinPer100 = 20;
 const double lowEnergyBelowKcalPer100 = 200;
 
 /// The design's quick criteria, applied per 100 g / 100 ml. A food without the needed number never matches,
-/// so missing data is not mistaken for a low or high value.
+/// so missing data is not mistaken for a low or high value; neither does one whose numbers the server flags as
+/// implausible.
 enum QuickFilter {
   lowSugar,
   highProtein,
   under200Kcal;
 
   bool matches(FoodItem item) {
+    if (item.nutrientsSuspect) {
+      return false;
+    }
     final per100 = item.facts.per100;
     final sugarMax = item.facts.unit == QuantityUnit.milliliter ? lowSugarMaxPer100ml : lowSugarMaxPer100g;
     return switch (this) {

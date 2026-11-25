@@ -19,12 +19,16 @@ class FoodMetric extends StatelessWidget {
       children: [
         Text(
           nutrientLabel(nutrient),
-          style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         Text(
           value == null ? 'Chưa có' : formatNutrientAmount(nutrient, value),
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: theme.textTheme.labelLarge?.copyWith(
             color: value == null ? theme.colorScheme.onSurfaceVariant : color,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],

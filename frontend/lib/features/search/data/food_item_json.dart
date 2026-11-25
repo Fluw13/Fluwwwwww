@@ -4,6 +4,7 @@ import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/features/search/domain/food_attribution.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
+import 'package:fluw/features/search/domain/food_quantity.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
 import 'package:fluw/features/search/domain/search_response.dart';
 import 'package:fluw/features/search/domain/source_status.dart';
@@ -68,7 +69,24 @@ FoodItem? foodItemFromJson(Object? json) {
     facts: NutritionFacts(per100: Nutrients(values), unit: unit),
     allergenTags: allergenTags is List ? [for (final tag in allergenTags) ?_text(tag)] : null,
     attribution: attribution,
+    packageQuantity: _quantityFromJson(json['packageQuantity']),
+    servingQuantity: _quantityFromJson(json['servingQuantity']),
+    nutrientsSuspect: json['nutrientsSuspect'] == true,
   );
+}
+
+/// The optional quantities came later than the rest of the contract: a wrong shape drops only the quantity, never
+/// the food, and an older server that sends none reads the same as a source that has none.
+FoodQuantity? _quantityFromJson(Object? json) {
+  if (json is! Map<String, Object?>) {
+    return null;
+  }
+  final amount = json['amount'];
+  final unit = _unitKeys[json['unit']];
+  if (amount is! num || !amount.isFinite || amount <= 0 || unit == null) {
+    return null;
+  }
+  return FoodQuantity(amount: amount.toDouble(), unit: unit);
 }
 
 SearchResponse searchResponseFromJson(Map<String, Object?> json) {

@@ -69,6 +69,14 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// For screens with a running progress bar, where pumpAndSettle never ends.
+  Future<void> scrollToWhileLoading(WidgetTester tester, Finder finder) async {
+    final list = find.byWidgetPredicate((widget) => widget is Scrollable && widget.axis == Axis.vertical).hitTestable();
+    final element = list.evaluate().first;
+    await tester.scrollUntilVisible(finder, 200, scrollable: find.byElementPredicate((e) => identical(e, element)));
+    await tester.pump();
+  }
+
   testWidgets('tìm kiếm hiện kết quả từ cả hai nguồn, số liệu theo 100 g/ml, và lưu vào Gần đây', (tester) async {
     final calls = <Uri>[];
     await openSearch(tester, _backend([yoghurtSearchItem, colaItem, chickenItem], calls: calls));
@@ -192,12 +200,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls.last.path, '/api/foods/barcode/8934673607827');
-    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
     expect(find.text('Khẩu phần ghi trên bao bì: 1 portion (100 g)'), findsOneWidget);
+    expect(
+      find.text('Có thành phần bạn dị ứng. Xem phần "Đối chiếu hồ sơ của bạn" bên dưới.'),
+      findsOneWidget,
+      reason: 'thẻ đối chiếu nằm dưới ô khẩu phần nên cảnh báo cũng hiện ở đầu trang',
+    );
 
     await scrollTo(tester, find.widgetWithText(TextField, 'Khẩu phần bạn ăn'));
     await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '200');
     await tester.pumpAndSettle();
+    await scrollTo(tester, find.text('Có thành phần bạn dị ứng nặng: Sữa.'));
+    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
     await scrollTo(tester, find.text('29.4 g'));
     expect(find.text('29.4 g'), findsOneWidget);
     expect(find.text('Chưa có dữ liệu'), findsWidgets);
@@ -226,9 +240,10 @@ void main() {
     await tester.tap(find.textContaining('Chicken, broiler'));
     await tester.pumpAndSettle();
 
+    await scrollTo(tester, find.text('Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.'));
     expect(find.text('Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.'), findsOneWidget);
     await scrollTo(tester, find.text('USDA: carb gồm cả chất xơ.'));
-    expect(find.text('Carb (bột đường)'), findsOneWidget);
+    expect(find.text('Carb (bột đường)'), findsWidgets);
     await scrollTo(tester, find.textContaining('USDA FoodData Central (CC0 1.0)'));
     expect(find.textContaining('USDA FoodData Central (CC0 1.0)'), findsOneWidget);
   });
@@ -243,6 +258,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Khẩu phần phải trong khoảng 1–2000 g.'), findsOneWidget);
+    await scrollTo(tester, find.text('Nhập khẩu phần hợp lệ để tính.'));
     expect(find.text('–'), findsWidgets);
   });
 
@@ -252,6 +268,7 @@ void main() {
     await tester.tap(find.textContaining('Chicken, broiler'));
     await tester.pumpAndSettle();
 
+    await scrollTo(tester, find.textContaining('Thiết lập hồ sơ để Fluw cảnh báo dị ứng'));
     expect(find.textContaining('Thiết lập hồ sơ để Fluw cảnh báo dị ứng'), findsOneWidget);
   });
 
@@ -277,6 +294,7 @@ void main() {
 
     await openFirstResult(tester, 'sữa chua', 'Vinamilk sữa chua dâu');
 
+    await scrollTo(tester, find.textContaining('Không đọc được hồ sơ trên máy nên chưa đối chiếu được dị ứng'));
     expect(find.textContaining('Không đọc được hồ sơ trên máy nên chưa đối chiếu được dị ứng'), findsOneWidget);
   });
 
@@ -286,6 +304,7 @@ void main() {
 
     await openFirstResult(tester, 'chicken', 'Chicken, broiler');
 
+    await scrollTo(tester, find.textContaining('Hồ sơ hiện chưa có chỉ tiêu mỗi ngày'));
     expect(find.textContaining('Hồ sơ hiện chưa có chỉ tiêu mỗi ngày'), findsOneWidget);
     expect(find.textContaining('Thiết lập hồ sơ để Fluw'), findsNothing);
   });
@@ -306,6 +325,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
+    await scrollToWhileLoading(tester, find.text('Đang tải thông tin dị ứng của sản phẩm...'));
     expect(find.text('Đang tải thông tin dị ứng của sản phẩm...'), findsOneWidget);
     expect(find.textContaining('không có dữ liệu dị ứng'), findsNothing);
     product.complete(_json({'item': yoghurtProduct}));
@@ -334,8 +354,9 @@ void main() {
 
     await tester.tap(find.widgetWithText(TextButton, 'Thử lại'));
     await tester.pumpAndSettle();
-    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
     expect(find.textContaining('Chưa tải được đủ thông tin sản phẩm'), findsNothing);
+    await scrollTo(tester, find.text('Có thành phần bạn dị ứng nặng: Sữa.'));
+    expect(find.text('Có thành phần bạn dị ứng nặng: Sữa.'), findsOneWidget);
   });
 
   testWidgets(
@@ -358,7 +379,9 @@ void main() {
 
       await tester.enterText(find.widgetWithText(TextField, 'Khẩu phần bạn ăn'), '2000');
       await tester.pumpAndSettle();
+      await scrollTo(tester, find.text('Natri (bạn đang theo dõi)'));
 
+      expect(find.text('2000 g này chiếm trong chỉ tiêu cả ngày:'), findsOneWidget);
       expect(find.text('Cao hơn mức gợi ý cả ngày.'), findsOneWidget);
       expect(find.text('Vượt mục tiêu calo cả ngày.'), findsOneWidget);
       expect(find.text('Natri (bạn đang theo dõi)'), findsOneWidget);

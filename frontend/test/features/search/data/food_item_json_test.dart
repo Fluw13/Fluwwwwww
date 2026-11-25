@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/features/search/data/food_item_json.dart';
+import 'package:fluw/features/search/domain/food_quantity.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
 import 'package:fluw/features/search/domain/source_status.dart';
 
@@ -85,5 +86,47 @@ void main() {
     expect(response.sources, {FoodSource.openFoodFacts: SourceStatus.ok, FoodSource.usda: SourceStatus.unavailable});
     expect(response.isPartial, isTrue);
     expect(searchResponseFromJson(searchBody('x', [], usda: 'not_configured')).isPartial, isFalse);
+  });
+
+  test(
+    'dung tích cả gói, khẩu phần dạng số, cờ số liệu đáng ngờ: đọc được khi có, máy chủ cũ không gửi thì như trước',
+    () {
+      final old = foodItemFromJson(colaItem)!;
+      expect((old.packageQuantity, old.servingQuantity, old.nutrientsSuspect), (null, null, false));
+
+      final full = foodItemFromJson(
+        _with(colaItem, {
+          'packageQuantity': {'amount': 440, 'unit': 'ml'},
+          'servingQuantity': {'amount': 330.5, 'unit': 'ml'},
+          'nutrientsSuspect': true,
+        }),
+      )!;
+      expect(full.packageQuantity, const FoodQuantity(amount: 440, unit: QuantityUnit.milliliter));
+      expect(full.servingQuantity, const FoodQuantity(amount: 330.5, unit: QuantityUnit.milliliter));
+      expect(full.nutrientsSuspect, isTrue);
+
+      final nulls = foodItemFromJson(
+        _with(colaItem, {'packageQuantity': null, 'servingQuantity': null, 'nutrientsSuspect': null}),
+      )!;
+      expect((nulls.packageQuantity, nulls.servingQuantity, nulls.nutrientsSuspect), (null, null, false));
+    },
+  );
+
+  test('dung tích sai dạng thì bỏ riêng trường đó, món vẫn giữ', () {
+    for (final bad in <Object?>[
+      {'amount': 440, 'unit': 'oz'},
+      {'amount': '440', 'unit': 'ml'},
+      {'amount': 0, 'unit': 'ml'},
+      {'amount': -5, 'unit': 'g'},
+      {'amount': double.infinity, 'unit': 'g'},
+      {'unit': 'g'},
+      440,
+      'cả chai',
+    ]) {
+      final item = foodItemFromJson(_with(colaItem, {'packageQuantity': bad, 'servingQuantity': bad}));
+      expect(item, isNotNull, reason: '$bad');
+      expect((item!.packageQuantity, item.servingQuantity), (null, null), reason: '$bad');
+    }
+    expect(foodItemFromJson(_with(colaItem, {'nutrientsSuspect': 'yes'}))!.nutrientsSuspect, isFalse);
   });
 }

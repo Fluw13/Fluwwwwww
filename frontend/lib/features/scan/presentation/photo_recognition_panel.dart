@@ -6,12 +6,14 @@ import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/nutrition/personal_limits.dart';
 import 'package:fluw/core/nutrition/personal_limits_provider.dart';
+import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
 import 'package:fluw/features/scan/data/food_photo_picker.dart';
 import 'package:fluw/features/scan/data/photo_consent_storage.dart';
 import 'package:fluw/features/scan/data/recognition_api.dart';
 import 'package:fluw/features/scan/domain/recognition_result.dart';
+import 'package:fluw/features/scan/presentation/viewfinder_corners.dart';
 
 sealed class _PhotoState {
   const _PhotoState();
@@ -186,23 +188,56 @@ class _PhotoRecognitionPanelState extends ConsumerState<PhotoRecognitionPanel> {
     return SectionCard(
       title: 'Nhận diện món qua ảnh',
       children: [
-        Text('Chụp hoặc chọn ảnh món ăn; Fluw gợi ý tên món để bạn tra số liệu dinh dưỡng.', style: muted),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            FilledButton.icon(
-              onPressed: busy ? null : () => _recognize(PhotoSource.camera),
-              icon: const Icon(Icons.photo_camera_outlined),
-              label: const Text('Chụp ảnh'),
-            ),
-            OutlinedButton.icon(
-              onPressed: busy ? null : () => _recognize(PhotoSource.gallery),
-              icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Chọn ảnh'),
-            ),
-          ],
+        Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: ViewfinderCorners(color: theme.colorScheme.primary, length: AppSpacing.md, thickness: 3),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  children: [
+                    Icon(Icons.restaurant_outlined, size: 40, color: theme.colorScheme.primary),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Chụp hoặc chọn ảnh món ăn; Fluw gợi ý tên món để bạn tra số liệu dinh dưỡng. Khẩu phần do bạn '
+                      'chọn, Fluw không ước lượng từ ảnh.',
+                      textAlign: TextAlign.center,
+                      style: muted,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+                          onPressed: busy ? null : () => _recognize(PhotoSource.camera),
+                          icon: const Icon(Icons.photo_camera_outlined),
+                          label: const Text('Chụp ảnh'),
+                        ),
+                        OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                          onPressed: busy ? null : () => _recognize(PhotoSource.gallery),
+                          icon: const Icon(Icons.photo_library_outlined),
+                          label: const Text('Chọn ảnh'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         // Read out by screen readers as it changes.
@@ -222,14 +257,30 @@ class _PhotoRecognitionPanelState extends ConsumerState<PhotoRecognitionPanel> {
                 Text('Không thấy món ăn trong ảnh. Hãy chụp gần và rõ món ăn hơn.', style: theme.textTheme.bodyMedium),
               ],
               _Recognized(:final result) => [
-                Text('AI (Google Gemini) gợi ý, có thể sai. Chọn món để tra số liệu:', style: muted),
+                Row(
+                  children: [
+                    Icon(Icons.auto_awesome_outlined, size: 18, color: theme.colorScheme.primary),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text('AI (Google Gemini) gợi ý, có thể sai. Chọn món để tra số liệu:', style: muted),
+                    ),
+                  ],
+                ),
                 for (final food in result.foods)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.search),
-                    title: Text(food.name),
-                    subtitle: Text('Tìm "${food.searchQuery}"'),
-                    onTap: () => widget.onSearchFood(food),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    child: Material(
+                      color: theme.colorScheme.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                      clipBehavior: Clip.antiAlias,
+                      child: ListTile(
+                        leading: Icon(Icons.search, color: theme.colorScheme.primary),
+                        title: Text(food.name, style: theme.textTheme.titleMedium),
+                        subtitle: Text('Tìm "${food.searchQuery}"'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => widget.onSearchFood(food),
+                      ),
+                    ),
                   ),
               ],
             },

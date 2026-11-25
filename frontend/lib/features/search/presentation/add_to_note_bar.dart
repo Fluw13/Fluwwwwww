@@ -5,7 +5,10 @@ import 'package:fluw/core/diary/food_logger.dart';
 import 'package:fluw/core/diary/logged_food.dart';
 import 'package:fluw/core/diary/meal_slot_labels.dart';
 import 'package:fluw/core/diary/meal_time.dart';
+import 'package:fluw/core/format/decimal_text.dart';
+import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
+import 'package:fluw/core/nutrition/shown_amount.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/time/calendar_date.dart';
 import 'package:fluw/core/time/clock_provider.dart';
@@ -40,6 +43,13 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
   late DiaryTarget _target = ref.read(diaryTargetProvider) ?? DiaryTarget.current(ref.read(clockProvider)());
   bool _isSaving = false;
 
+  /// "440 g · 114 kcal", or just the amount when the source has no energy: what the user is about to log.
+  String _amountWords(double portion) {
+    final kcal = widget.facts.forQuantity(portion)[Nutrient.energyKcal];
+    final amount = '${formatDecimal(portion)} ${widget.facts.unit.symbol}';
+    return kcal == null ? amount : '$amount · ${formatShownAmount(Nutrient.energyKcal, kcal)} kcal';
+  }
+
   String _dayWords(CalendarDate day, CalendarDate currentDay) =>
       day == currentDay ? 'hôm nay' : 'ngày ${day.day}/${day.month}';
 
@@ -72,7 +82,7 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
       }
     }
     diaryTarget.choose(null);
-    messenger.showSnackBar(SnackBar(content: Text('Đã thêm $name vào $where')));
+    messenger.showSnackBar(SnackBar(content: Text('Đã thêm $name (${_amountWords(portion)}) vào $where')));
     if (mounted) {
       widget.onAdded?.call();
     }
@@ -129,7 +139,17 @@ class _AddToNoteBarState extends ConsumerState<AddToNoteBar> {
                 FilledButton.icon(
                   onPressed: portion == null || _isSaving ? null : () => _add(portion),
                   icon: const Icon(Icons.add),
-                  label: Text(_isSaving ? 'Đang thêm...' : 'Thêm vào Nhật ký'),
+                  label: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(_isSaving ? 'Đang thêm...' : 'Thêm vào Nhật ký'),
+                      if (portion != null && !_isSaving)
+                        Text(
+                          _amountWords(portion),
+                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimary),
+                        ),
+                    ],
+                  ),
                 ),
                 if (portion == null)
                   Padding(

@@ -88,6 +88,37 @@ const Map<String, Object?> chickenItem = {
   },
 };
 
+/// Kirin "Latte trà sữa" as Open Food Facts had it on 22/11/2026: per 100 g, no quantity and no serving size, so
+/// nothing says the bottle is 440 ml.
+const Map<String, Object?> latteItem = {
+  'id': 'off:8935001282266',
+  'source': 'openFoodFacts',
+  'name': 'Latte trà sữa',
+  'brand': 'Kirin',
+  'barcode': '8935001282266',
+  'imageUrl': 'https://images.openfoodfacts.org/images/products/893/500/128/2266/front_en.9.400.jpg',
+  'servingSize': null,
+  'basis': {'amount': 100, 'unit': 'g'},
+  'nutrients': {
+    'energyKcal': 26,
+    'proteinG': 0.6,
+    'carbohydratesG': 4.42,
+    'sugarsG': null,
+    'fatG': 0.68,
+    'saturatedFatG': null,
+    'sodiumMg': null,
+  },
+  'allergenTags': null,
+  'attribution': {
+    'source': 'Open Food Facts',
+    'license': 'ODbL',
+    'imageLicense': 'CC BY-SA',
+    'url': 'https://world.openfoodfacts.org/product/8935001282266',
+  },
+};
+
+final Map<String, Object?> latteProduct = {...latteItem, 'allergenTags': <String>[]};
+
 Map<String, Object?> searchBody(String query, List<Map<String, Object?>> items, {String usda = 'ok'}) => {
   'query': query,
   'items': items,
