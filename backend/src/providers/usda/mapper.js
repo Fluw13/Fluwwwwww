@@ -1,4 +1,10 @@
-const { MAX_GRAMS_PER_100, MAX_KCAL_PER_100, MAX_SODIUM_MG_PER_100, toNutrientValue } = require('../../models/nutrients');
+const {
+    MAX_GRAMS_PER_100,
+    MAX_KCAL_PER_100,
+    MAX_SODIUM_MG_PER_100,
+    areNutrientsSuspect,
+    toNutrientValue,
+} = require('../../models/nutrients');
 
 // FoodData Central nutrient ids, first match wins. Foundation foods often report energy only through Atwater
 // factors (2048 "specific" fits the food better than 2047 "general") and total sugars under 1063 instead of 2000.
@@ -11,6 +17,7 @@ const NUTRIENT_IDS = {
     saturatedFatG: { ids: [1258], max: MAX_GRAMS_PER_100 },
     sodiumMg: { ids: [1093], max: MAX_SODIUM_MG_PER_100 },
 };
+const ALCOHOL_ID = 1018;
 
 const valuesById = (foodNutrients) => {
     const values = new Map();
@@ -43,8 +50,12 @@ const toFoodItem = (food) => {
         barcode: null,
         imageUrl: null,
         servingSize: null,
+        // Foundation and SR Legacy foods are not packaged products.
+        packageQuantity: null,
+        servingQuantity: null,
         basis: { amount: 100, unit: 'g' },
         nutrients,
+        nutrientsSuspect: areNutrientsSuspect(nutrients, { hasUncountedEnergy: (values.get(ALCOHOL_ID) ?? 0) > 0 }),
         // FoodData Central has no allergen tags; null tells the app that allergen data is unknown.
         allergenTags: null,
         traceTags: null,

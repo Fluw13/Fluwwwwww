@@ -1,0 +1,268 @@
+{
+  "5449000000996": {
+    "code": "5449000000996",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "5449000000996",
+      "product_name": "Coca-Cola Original",
+      "brands": "COCA-COLA SERVICES SA/NV",
+      "quantity": "330 ml",
+      "product_quantity": 330,
+      "product_quantity_unit": "ml",
+      "serving_size": "1 portion (330 ml)",
+      "serving_quantity": 330,
+      "serving_quantity_unit": "ml",
+      "nutrition_data_per": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 10.9,
+        "energy-kcal_100g": 44,
+        "energy-kj_100g": 185,
+        "energy_100g": 185,
+        "fat_100g": 0,
+        "proteins_100g": 0,
+        "saturated-fat_100g": 0,
+        "sodium_100g": 0,
+        "sugars_100g": 10.9
+      },
+      "categories_tags": [
+        "en:beverages-and-beverages-preparations",
+        "en:beverages",
+        "en:non-alcoholic-beverages",
+        "en:soft-drinks",
+        "en:carbonated-drinks",
+        "en:flavoured-soft-drinks",
+        "en:sodas",
+        "en:colas",
+        "pt:bebidas cafeína"
+      ],
+      "allergens_tags": [],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/544/900/000/0996/front_en.1129.200.jpg"
+    }
+  },
+  "3017624010701": {
+    "code": "3017624010701",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "3017624010701",
+      "product_name": "Nutella",
+      "brands": "Ferrero",
+      "quantity": "400.0 g",
+      "product_quantity": 400,
+      "product_quantity_unit": "g",
+      "nutrition_data_per": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 57.5,
+        "energy-kcal_100g": 539,
+        "energy-kj_100g": 2228,
+        "energy_100g": 2228,
+        "fat_100g": 30.9,
+        "proteins_100g": 6.3,
+        "saturated-fat_100g": 10.6,
+        "sodium_100g": 0.043,
+        "sugars_100g": 56.3
+      },
+      "categories_tags": [
+        "en:breakfasts",
+        "en:spreads",
+        "en:sweet-spreads",
+        "fr:pates-a-tartiner",
+        "en:hazelnut-spreads",
+        "en:chocolate-spreads",
+        "en:cocoa-and-hazelnuts-spreads",
+        "de:Other"
+      ],
+      "allergens_tags": [
+        "en:nuts"
+      ],
+      "traces_tags": [
+        "en:milk",
+        "en:nuts",
+        "en:soybeans"
+      ],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/301/762/401/0701/front_en.100.200.jpg"
+    }
+  },
+  "8935001282266": {
+    "code": "8935001282266",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "product_name": "Latte trà sữa",
+      "product_name_vi": "Latte trà sữa",
+      "brands": "Kirin",
+      "nutrition_data_per": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 4.42,
+        "energy-kcal_100g": 26,
+        "energy_100g": 108,
+        "fat_100g": 0.68,
+        "proteins_100g": 0.6
+      },
+      "allergens_tags": [],
+      "traces_tags": []
+    }
+  },
+  "8934563215057": {
+    "code": "8934563215057",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "8934563215057",
+      "product_name": "Đệ Nhất - Phở bò",
+      "product_name_vi": "Đệ Nhất - Phở bò",
+      "quantity": "05 gói x 68g",
+      "product_quantity": "340",
+      "product_quantity_unit": "g",
+      "allergens_tags": [],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/456/321/5057/front_en.3.200.jpg"
+    }
+  },
+  "0012000018800": {
+    "code": "0012000018800",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "0012000018800",
+      "product_name": "Pepsi Zero Sugar",
+      "brands": "Pepsi",
+      "quantity": "20 fl oz, 1.25 pt, 591 mL",
+      "product_quantity": 591.47,
+      "product_quantity_unit": "ml",
+      "serving_size": "1 bottle, 20 fl oz",
+      "serving_quantity": 591.47,
+      "serving_quantity_unit": "ml",
+      "nutrition_data_per": "100ml",
+      "nutriments": {
+        "carbohydrates_100g": 0,
+        "energy-kcal_100g": 0,
+        "energy_100g": 0,
+        "fat_100g": 0,
+        "sodium_100g": 0.0109895683635687,
+        "sugars_100g": 0
+      },
+      "categories_tags": [
+        "en:beverages-and-beverages-preparations",
+        "en:beverages",
+        "en:non-alcoholic-beverages",
+        "en:soft-drinks",
+        "en:artificially-sweetened-beverages",
+        "en:carbonated-drinks",
+        "en:flavoured-soft-drinks",
+        "en:diet-beverages",
+        "en:sodas",
+        "en:colas",
+        "en:diet-sodas",
+        "en:diet-cola-soft-drink"
+      ],
+      "allergens_tags": [
+        "en:Phenylalanine"
+      ],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/001/200/001/8800/front_en.47.200.jpg"
+    }
+  },
+  "57045399": {
+    "code": "57045399",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "57045399",
+      "product_name": "Coca-Cola",
+      "brands": "Coca-Cola",
+      "quantity": "500ml",
+      "product_quantity": 500,
+      "product_quantity_unit": "ml",
+      "serving_size": "500 g",
+      "serving_quantity": 500,
+      "serving_quantity_unit": "g",
+      "nutrition_data_per": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 5.4,
+        "energy-kcal_100g": 21,
+        "energy-kj_100g": 91.8,
+        "energy_100g": 91.8,
+        "fat_100g": 0,
+        "proteins_100g": 0,
+        "sugars_100g": 2.12
+      },
+      "categories_tags": [
+        "en:beverages-and-beverages-preparations",
+        "en:beverages",
+        "en:non-alcoholic-beverages",
+        "en:carbonated-drinks",
+        "en:soft-drinks",
+        "en:sodas",
+        "en:colas",
+        "en:sweetened-beverages"
+      ],
+      "allergens_tags": [],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/000/005/704/5399/front_en.9.200.jpg"
+    }
+  },
+  "8938503131421": {
+    "code": "8938503131421",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "8938503131421",
+      "product_name": "DALAT MILK sữa chua uống có đường",
+      "product_name_vi": "DALAT MILK sữa chua uống có đường",
+      "brands": "DalatMilk ✅",
+      "quantity": "500ml",
+      "product_quantity": 500,
+      "product_quantity_unit": "ml",
+      "nutrition_data_per": "100ml",
+      "nutriments": {
+        "carbohydrates_100g": 12.6,
+        "energy-kcal_100g": 84.3,
+        "energy_100g": 352,
+        "fat_100g": 2.7,
+        "proteins_100g": 2.4
+      },
+      "allergens_tags": [],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/850/313/1421/front_en.6.200.jpg"
+    }
+  },
+  "7898121320915": {
+    "code": "7898121320915",
+    "status": 0,
+    "status_verbose": "product not found"
+  },
+  "8934588712081": {
+    "code": "8934588712081",
+    "status": 1,
+    "status_verbose": "product found",
+    "product": {
+      "code": "8934588712081",
+      "product_name": "Rock star nước tăng lực",
+      "product_name_vi": "Rock star nước tăng lực",
+      "brands": "Rockstar",
+      "quantity": "250ml",
+      "product_quantity": 250,
+      "product_quantity_unit": "ml",
+      "serving_size": "1 portion (250 ml)",
+      "serving_quantity": 250,
+      "serving_quantity_unit": "ml",
+      "nutrition_data_per": "100ml",
+      "nutriments": {
+        "carbohydrates_100g": 44.5,
+        "energy-kcal_100g": 170,
+        "energy_100g": 711,
+        "fat_100g": 0,
+        "proteins_100g": 0,
+        "saturated-fat_100g": 0,
+        "sodium_100g": 0.189,
+        "sugars_100g": 42.5
+      },
+      "allergens_tags": [],
+      "traces_tags": [],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/458/871/2081/front_en.3.200.jpg"
+    }
+  }
+}

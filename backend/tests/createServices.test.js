@@ -196,3 +196,62 @@ test('Gemini trả 429 qua fetchJson thật thì 503 RECOGNITION_BUSY và lần 
     }
     assert.equal(fetch.mock.callCount(), 1);
 });
+
+const qaProducts = require('./fixtures/off-products-qa.json');
+const qaSearch = require('./fixtures/off-search-qa.json');
+
+// Open Food Facts as captured on 22/11/2026: the search index has stale hits, the product API the current data.
+const stubOpenFoodFacts = () =>
+    mock.method(globalThis, 'fetch', async (url) => {
+        const { host, pathname, searchParams } = new URL(url);
+        if (host === 'search.openfoodfacts.org') {
+            return new Response(JSON.stringify({ hits: qaSearch[searchParams.get('q')] ?? [] }));
+        }
+        const code = pathname.match(/product\/(\d+)\.json$/)[1];
+        const body = qaProducts[code]?.product ? qaProducts[code] : { status: 0, status_verbose: 'product not found' };
+        return new Response(JSON.stringify(body), { status: body.status === 1 ? 200 : 404 });
+    });
+
+const productReads = (fetch) => fetch.mock.calls.filter((call) => new URL(call.arguments[0]).host === 'world.openfoodfacts.org');
+
+test('tìm kiếm đọc trang sản phẩm qua cache của tra mã vạch: Rockstar thật có 170 kcal, 250 ml; mở chi tiết không gọi lại nguồn', async () => {
+    const fetch = stubOpenFoodFacts();
+    const { foodSearchService, barcodeService } = createServices(loadConfig({}));
+
+    const { items } = await foodSearchService.search('nước tăng lực');
+    const { item } = await barcodeService.lookUp('8934588712081');
+
+    assert.equal(items.length, 1);
+    assert.equal(items[0].nutrients.energyKcal, 170);
+    assert.deepEqual(items[0].packageQuantity, { amount: 250, unit: 'ml' });
+    assert.deepEqual(items[0].basis, { amount: 100, unit: 'ml' });
+    assert.deepEqual(item, items[0]);
+    assert.equal(productReads(fetch).length, 1);
+    assert.ok(productReads(fetch)[0].arguments[1].signal instanceof AbortSignal);
+});
+
+test('sản phẩm đã xóa bị bỏ khỏi kết quả và được nhớ như mã không có; tra mã sau đó trả 404 từ cache', async () => {
+    const fetch = stubOpenFoodFacts();
+    const { foodSearchService, barcodeService } = createServices(loadConfig({}));
+
+    const result = await foodSearchService.search('bánh mì');
+    await assert.rejects(barcodeService.lookUp('8938535022582'), (error) => error.code === 'PRODUCT_NOT_FOUND');
+
+    assert.deepEqual(result.items, []);
+    assert.equal(productReads(fetch).length, 2);
+});
+
+test('đọc sản phẩm khi tìm kiếm dùng chung hạn mức 90 lượt/phút của tra mã vạch; hết thì giữ món như kết quả tìm', async () => {
+    mock.method(console, 'error', () => {});
+    const fetch = stubOpenFoodFacts();
+    const { foodSearchService, barcodeService } = createServices(loadConfig({}), { now: () => 0 });
+
+    for (let i = 0; i < 90; i++) {
+        await assert.rejects(barcodeService.lookUp(validGtin(String(893000000000 + i))), (error) => error.status === 404);
+    }
+    const { items } = await foodSearchService.search('nước tăng lực');
+
+    assert.equal(productReads(fetch).length, 90);
+    assert.equal(items[0].barcode, '8934588712081');
+    assert.equal(items[0].nutrients.energyKcal, null);
+});

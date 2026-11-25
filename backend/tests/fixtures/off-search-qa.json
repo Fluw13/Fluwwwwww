@@ -1,0 +1,330 @@
+{
+  "bánh mì": [
+    {
+      "code": "8938535022582",
+      "product_name": "Bánh mì",
+      "nutriments": {
+        "carbohydrates_100g": 57.6,
+        "energy-kcal_100g": 316,
+        "fat_100g": 55.6,
+        "proteins_100g": 7.56
+      }
+    },
+    {
+      "code": "8934680043199",
+      "product_name": "Bánh mì tươi",
+      "nutriments": {
+        "carbohydrates_100g": 318,
+        "energy-kcal_100g": 127,
+        "fat_100g": 31,
+        "proteins_100g": 81,
+        "saturated-fat_100g": 6.5,
+        "sugars_100g": 217
+      }
+    }
+  ],
+  "bia": [
+    {
+      "code": "7898121320915",
+      "product_name": "Bia",
+      "nutriments": {
+        "carbohydrates_100g": 29,
+        "energy-kcal_100g": 160,
+        "fat_100g": 100,
+        "saturated-fat_100g": 14,
+        "sodium_100g": 0.113
+      }
+    }
+  ],
+  "snack": [
+    {
+      "code": "206429558569",
+      "product_name": "Attack a snack",
+      "brands": [
+        "Snack"
+      ],
+      "nutriments": {
+        "sugars_100g": 4,
+        "proteins_100g": 13,
+        "fat_100g": 8.699999809265137,
+        "energy-kcal_100g": 243,
+        "saturated-fat_100g": 5.099999904632568,
+        "carbohydrates_100g": 29
+      }
+    },
+    {
+      "code": "0206429558569",
+      "product_name": "Attack a snack",
+      "brands": [
+        "Snack"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 29,
+        "energy-kcal_100g": 243,
+        "fat_100g": 8.69999980926514,
+        "proteins_100g": 13,
+        "saturated-fat_100g": 5.09999990463257,
+        "sugars_100g": 4
+      }
+    }
+  ],
+  "hảo hảo": [
+    {
+      "code": "8934840000130",
+      "product_name": "Nước khoáng không ga tự nhiên Vĩnh Hảo",
+      "brands": [
+        "Vĩnh Hảo"
+      ],
+      "quantity": "0,5 l",
+      "traces_tags": [
+        "en:flouride"
+      ],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/484/000/0130/front_vi.4.200.jpg"
+    }
+  ],
+  "hao hao": [
+    {
+      "code": "8934563635138",
+      "product_name": "Hao Hao",
+      "nutriments": {
+        "sodium_100g": 2.7142857142857197,
+        "energy-kcal_100g": 457.14285714286,
+        "saturated-fat_100g": 10,
+        "carbohydrates_100g": 64.285714285714,
+        "proteins_100g": 10,
+        "sugars_100g": 12.857142857143,
+        "fat_100g": 17.142857142857
+      },
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/456/363/5138/front_en.3.200.jpg"
+    },
+    {
+      "code": "8934563151157",
+      "product_name": "Fried noodles",
+      "brands": [
+        "Hao Hao"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 67.5,
+        "energy-kcal_100g": 481,
+        "energy-kj_100g": 2010,
+        "fat_100g": 19.6,
+        "proteins_100g": 8.67
+      }
+    },
+    {
+      "code": "4607054455082",
+      "product_name": "Sunflower Seeds",
+      "brands": [
+        "Hao Hao"
+      ],
+      "nutriments": {
+        "proteins_100g": 30,
+        "fat_100g": 53.333333333333336,
+        "carbohydrates_100g": 3.3333333333333335,
+        "saturated-fat_100g": 7.666666666666666,
+        "energy-kcal_100g": 633.3333333333334
+      }
+    },
+    {
+      "code": "9036763163110",
+      "product_name": "Hao Hao Vagetarian Flavour",
+      "brands": [
+        "Acecook"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 61,
+        "energy-kcal_100g": 437,
+        "saturated-fat_100g": 9.5,
+        "fat_100g": 17,
+        "proteins_100g": 8.699999809265137,
+        "sugars_100g": 6.599999904632568
+      }
+    }
+  ],
+  "nước tăng lực": [
+    {
+      "code": "8934588712081",
+      "product_name": "Rock star nước tăng lực",
+      "quantity": "250ml",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/458/871/2081/front_en.3.200.jpg"
+    }
+  ],
+  "sữa chua": [
+    {
+      "code": "4897050114100",
+      "product_name": "Sữa chua G Duck"
+    },
+    {
+      "code": "8934673607827",
+      "product_name": "Vinamilk sữa chua dâu",
+      "brands": [
+        "Vinamilk"
+      ],
+      "quantity": "100g",
+      "nutriments": {
+        "carbohydrates_100g": 16,
+        "energy-kcal_100g": 99.4,
+        "fat_100g": 2.6,
+        "proteins_100g": 3,
+        "sodium_100g": 0.036,
+        "sugars_100g": 14.7
+      },
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/467/360/7827/front_en.3.200.jpg"
+    },
+    {
+      "code": "8934673500432",
+      "product_name": "Vinamilk sữa chua trân châu",
+      "quantity": "100g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/467/350/0432/front_en.3.200.jpg"
+    },
+    {
+      "code": "8934673613828",
+      "product_name": "Vinamilk Sữa chua ít đường",
+      "quantity": "100g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/467/361/3828/front_en.3.200.jpg"
+    },
+    {
+      "code": "8935217413508",
+      "product_name": "Sữa chua TH ít đường",
+      "brands": [
+        "Th"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 11,
+        "energy-kcal_100g": 84.8000030517578,
+        "fat_100g": 3.20000004768372,
+        "proteins_100g": 3
+      },
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/521/741/3508/front_en.3.200.jpg"
+    },
+    {
+      "code": "8936078571703",
+      "product_name": "BN Sandwich sữa chua Lava",
+      "quantity": "100g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/607/857/1703/front_en.7.200.jpg"
+    },
+    {
+      "code": "8938520490280",
+      "product_name": "Bánh mì sữa chua Shika",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/852/049/0280/front_en.4.200.jpg"
+    },
+    {
+      "code": "8938512932026",
+      "product_name": "SG milk sữa chua nếp cẩm",
+      "quantity": "100g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/851/293/2026/front_en.3.200.jpg"
+    },
+    {
+      "code": "8938512932187",
+      "product_name": "SGM - sữa chua uống hương dâu",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/851/293/2187/front_en.4.200.jpg"
+    },
+    {
+      "code": "8935007147156",
+      "product_name": "LOTHAMILK sữa chua uống thanh trùng",
+      "quantity": "490ml",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/500/714/7156/front_en.3.200.jpg"
+    }
+  ],
+  "sua chua": [
+    {
+      "code": "0604331008133",
+      "product_name": "Sua",
+      "brands": [
+        "Wine"
+      ]
+    },
+    {
+      "code": "8888500033009",
+      "product_name": "Mee Sua",
+      "brands": [
+        "Tai Ann"
+      ],
+      "quantity": "300g",
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/888/850/003/3009/front_en.3.200.jpg"
+    },
+    {
+      "code": "0078758721",
+      "product_name": "Sua dacc"
+    },
+    {
+      "code": "78758721",
+      "product_name": "Sua dacc"
+    },
+    {
+      "code": "8935051500082",
+      "product_name": "Sua Bap",
+      "nutriments": {
+        "fat_100g": 0.83076923076923,
+        "proteins_100g": 0.49230769230769,
+        "sugars_100g": 2.6769230769231003,
+        "energy-kcal_100g": 47.076923076923,
+        "sodium_100g": 0.070769230769232,
+        "carbohydrates_100g": 10.153846153846,
+        "saturated-fat_100g": 0.030769230769231
+      },
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/893/505/150/0082/front_en.3.200.jpg"
+    },
+    {
+      "code": "0007875821721",
+      "product_name": "Sua dac"
+    },
+    {
+      "code": "007875821721",
+      "product_name": "Sua dac"
+    },
+    {
+      "code": "7896069581849",
+      "product_name": "Extrato de soja",
+      "brands": [
+        "Sua mãe"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 8.89999961853027,
+        "energy-kcal_100g": 160,
+        "fat_100g": 7.80000019073486,
+        "proteins_100g": 13,
+        "saturated-fat_100g": 0.800000011920929,
+        "sodium_100g": 2.63779520049809
+      }
+    },
+    {
+      "code": "0084909000521",
+      "product_name": "Tamarin Me Chua 150g",
+      "brands": [
+        "Me Chua"
+      ],
+      "quantity": "150 g",
+      "nutriments": {
+        "energy-kcal_100g": 256,
+        "proteins_100g": 3.0999999046326,
+        "carbohydrates_100g": 57,
+        "sugars_100g": 37,
+        "fat_100g": 0.60000002384186,
+        "saturated-fat_100g": 0,
+        "energy-kj_100g": 1085,
+        "sodium_100g": 0.095999997854232
+      },
+      "categories_tags": [
+        "fr:fruits-asiatiques"
+      ],
+      "image_front_small_url": "https://images.openfoodfacts.org/images/products/008/490/900/0521/front_fr.22.200.jpg"
+    },
+    {
+      "code": "0086382043071",
+      "product_name": "Ca Phe Sua",
+      "brands": [
+        "Lee’s Coffee"
+      ],
+      "nutriments": {
+        "carbohydrates_100g": 12.8,
+        "energy-kcal_100g": 68.8,
+        "fat_100g": 1.56,
+        "proteins_100g": 0.938,
+        "saturated-fat_100g": 1.5,
+        "sodium_100g": 0.0719,
+        "sugars_100g": 12.2
+      }
+    }
+  ]
+}
