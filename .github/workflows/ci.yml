@@ -9,10 +9,11 @@ on:
 permissions:
   contents: read
 
-# Only PR runs are cancelled by a newer push. A run on main must finish: Render deploys a backend commit only after its
-# checks pass, and a cancelled run would leave that commit undeployed.
+# Only PR runs are cancelled by a newer push. A push run on main must finish: Render deploys a backend commit only after
+# its checks pass, and a cancelled run would leave that commit undeployed. Manual runs get their own group, because a
+# queued run in a group replaces the one already pending there.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -78,15 +79,21 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      # The release key is only used for code already merged into main; a PR build runs code nobody has reviewed yet.
+      # The release key is only used for code already merged into main (push, or a manual run on main); a PR build
+      # runs code nobody has reviewed yet.
       - name: Prepare release keystore
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          # Expressions compare strings ignoring case, so a branch named "Main" would pass the `if` above.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Khóa ký thật chỉ dùng cho branch main."
+            exit 1
+          fi
           if [ -z "$KEYSTORE_BASE64" ]; then
             echo "::warning::Chưa có secret ANDROID_KEYSTORE_BASE64, APK được ký bằng debug key."
             exit 0
@@ -99,12 +106,16 @@ jobs:
           printf 'storeFile=upload-keystore.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
       - name: Use debug key outside main
-        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
-        run: echo "::notice::Bản build này không từ main nên APK được ký bằng debug key, không cài đè được bản Fluw đã cài từ main."
+        if: github.ref != 'refs/heads/main' || (github.event_name != 'push' && github.event_name != 'workflow_dispatch')
+        run: echo "::notice::Bản build này không chạy trên main nên chỉ kiểm build bằng debug key, không lưu APK."
       - run: flutter build apk --release
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+      # A private repo on GitHub Free has 500 MB of artifact storage. A ~40 MB APK from every run, or kept for days on
+      # a busy day of merges, would fill it and make this job fail, which also stops the Render deploy (it waits for
+      # green checks). A fresh signed APK is one manual run on main away.
+      - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: fluw-apk
           path: frontend/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1

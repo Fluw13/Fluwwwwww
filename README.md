@@ -74,7 +74,7 @@ Mọi con số chỉ là **ước tính tham khảo**, không thay thế tư v�
 
 ## Quyền riêng tư
 
-Bản đầy đủ: [`PRIVACY.md`](PRIVACY.md), cũng có trong app (Hồ Sơ → Về Fluw → Quyền riêng tư và điều khoản). Liên hệ, góp ý: [GitHub Issues](https://github.com/Fluw13/Fluwwwwww/issues) (trang công khai, đừng đăng thông tin sức khỏe ở đó).
+Bản đầy đủ: [`PRIVACY.md`](PRIVACY.md), cũng có trong app (Hồ Sơ → Về Fluw → Quyền riêng tư và điều khoản). Liên hệ, góp ý: [GitHub Issues](https://github.com/Fluw13/Fluwwwwww/issues) (đừng đăng thông tin sức khỏe ở đó). Khi repo Private, chỉ người có quyền vào repo mới mở được Issues và link `PRIVACY.md`.
 
 Căn cứ: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP (hiệu lực 1/1/2026). Thông tin sức khỏe là dữ liệu cá nhân nhạy cảm, nên app phải nói rõ dữ liệu nào được xử lý, để làm gì, ai nhận, và chỉ lưu khi bạn đồng ý.
 
@@ -135,24 +135,26 @@ flutter run
 
 ## Cài APK lên điện thoại Android
 
-1. Vào tab **Actions** của repo trên GitHub, chọn lần chạy **CI** mới nhất có dấu xanh **của branch `main`** (cột branch ghi `main`, sự kiện `push`).
+1. Vào tab **Actions** của repo trên GitHub, chọn lần chạy **CI** mới nhất có dấu xanh **của branch `main`** (cột branch ghi `main`; sự kiện `push`, hoặc `workflow_dispatch` nếu bạn vừa bấm Run workflow).
 2. Ở mục **Artifacts**, tải **fluw-apk** (file .zip) và giải nén ra `app-release.apk`.
 3. Chép file vào điện thoại, mở và cho phép "Cài ứng dụng không rõ nguồn gốc" khi được hỏi.
 
-Chỉ bản build từ `main` được ký bằng keystore của bạn, nên cài đè được bản cũ và giữ nguyên dữ liệu. APK của Pull Request ký bằng khóa debug: không cài đè được bản đã cài từ `main` (phải gỡ app, mất dữ liệu), nên chỉ dùng để thử nhanh trên máy khác. Trên `main` mà thiếu secret keystore thì CI cũng dùng khóa debug và báo cảnh báo.
+Chỉ lượt chạy trên `main` mới lưu APK, ký bằng keystore của bạn, nên cài đè được bản cũ và giữ nguyên dữ liệu. File chỉ giữ **1 ngày** (repo Private chỉ có 500 MB lưu artifact miễn phí). Hết hạn thì build lại: tab **Actions** → **CI** → **Run workflow**, chọn branch `main` (tốn khoảng 12 phút Actions). Lượt chạy của Pull Request chỉ kiểm build bằng khóa debug, không lưu APK. Trên `main` mà thiếu secret keystore thì CI dùng khóa debug và báo cảnh báo.
 
-### Tạo keystore (làm một lần, đã xong 12/11/2026)
+### Tạo keystore
+
+Ai có file APK cũng đọc được tên ghi trong chứng chỉ ký, nên lệnh dưới đặt sẵn tên `Fluw` (`-dname`) thay vì hỏi tên thật. Đổi keystore thì chạy trong một thư mục trống (hoặc đổi tên file `upload-keystore.jks` cũ trước), nếu không `keytool` sẽ mở file cũ và báo alias `upload` đã có.
 
 1. Tạo file keystore. Lệnh `keytool` có sẵn trong JDK:
 
    ```bash
-   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   keytool -genkeypair -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -dname "CN=Fluw"
    ```
 
    Trên Windows, nếu không gọi được `keytool` thì dùng bản đi kèm Android Studio (PowerShell):
 
    ```powershell
-   & "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+   & "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkeypair -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload -dname "CN=Fluw"
    ```
 
    Mật khẩu: **chữ cái không dấu và số, tối thiểu 6 ký tự**. Nếu được hỏi mật khẩu riêng cho key thì nhập **giống hệt** mật khẩu keystore.
@@ -162,7 +164,7 @@ Chỉ bản build từ `main` được ký bằng keystore của bạn, nên cà
    - macOS: `base64 -i upload-keystore.jks -o keystore-base64.txt`
    - Linux: `base64 -w 0 upload-keystore.jks > keystore-base64.txt`
 
-3. Trên GitHub: **Settings → Secrets and variables → Actions → New repository secret**, thêm 4 secret:
+3. Trên GitHub: **Settings → Secrets and variables → Actions → New repository secret**, thêm 4 secret (đổi keystore thì bấm vào từng secret đã có → **Update**):
 
    | Tên | Giá trị |
    |---|---|
@@ -172,7 +174,7 @@ Chỉ bản build từ `main` được ký bằng keystore của bạn, nên cà
    | `ANDROID_KEY_PASSWORD` | giống hệt mật khẩu keystore |
 
 4. Xóa `keystore-base64.txt`.
-5. Cất `upload-keystore.jks` và mật khẩu ở nơi an toàn: mất chúng thì không cập nhật được app trên Google Play.
+5. Cất `upload-keystore.jks` và mật khẩu ở nơi an toàn: mất chúng thì không cập nhật được app trên Google Play. Đổi keystore thì bản build sau ký bằng khóa mới, điện thoại phải gỡ app một lần (mất dữ liệu trên máy).
 6. Không commit file `.jks`, không gửi file hay mật khẩu cho ai, kể cả trong chat.
 
 ## Lộ trình

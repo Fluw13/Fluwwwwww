@@ -26,6 +26,7 @@
     - đã có review chéo;
     - các lỗi review đã sửa.
   - Merge bằng merge commit, tiêu đề `Merge PR #N: ...`.
+  - Merge qua GitHub API ghi email chính của tài khoản GitHub của FLuw làm tác giả merge commit. Chỉ merge khi FLuw đã bật "Keep my email addresses private" (Settings → Emails); chưa bật thì chờ (FLuw đồng ý 26/11).
   - PR có đụng `backend/` hoặc `.github/workflows/` thì phải chờ FLuw duyệt.
     - `backend/`: merge là Render deploy production.
     - Workflow CI: CI xanh là điều kiện để Render deploy.
@@ -59,7 +60,7 @@
 | Frontend | Flutter 3.47.9 / Dart 3.13.7, thư mục `frontend/`, chỉ Android và iOS, id `com.fluw.app` |
 | Backend | Node.js ≥ 22.9 (22.x) + Express 5, thư mục `backend/`, entry `server.js` |
 | Hosting backend | Render, workspace "My Workspace", service `Fluw` (`srv-dbed4jlg1s2s73f7jrdg`), `https://fluw.onrender.com` |
-| APK | CI build, tải ở GitHub Actions → artifact `fluw-apk`; chỉ lượt chạy trên `main` ký bằng keystore thật |
+| APK | CI build, tải ở GitHub Actions → artifact `fluw-apk`; chỉ lượt chạy trên `main` lưu APK (giữ 1 ngày), ký bằng keystore thật |
 
 **Render (VERIFIED 11/11/2026):**
 - Cấu hình build và chạy: root dir `backend`, build `npm install`, start `node server.js`, gói free, region virginia.
@@ -385,16 +386,18 @@ features/<tên>/
 
 ### Android signing
 - `android/app/build.gradle.kts` đọc `android/key.properties` nếu có. Không có thì bản release ký bằng debug key.
-- CI tạo `key.properties` và `android/app/upload-keystore.jks` từ 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, **chỉ khi `push` lên `main`** (PR #36, D21). Trên `main` mà thiếu secret thì cảnh báo và dùng debug key.
-- PR và `workflow_dispatch` build bằng debug key, kèm `::notice::` (APK đó không cài đè được bản đã cài từ `main`). Bản để cài lên điện thoại phải lấy từ lượt chạy trên `main`.
-- Bước có `if` chỉ chặn code build (Gradle, plugin, action) đọc secret; một PR từ branch trong repo sửa chính `ci.yml` vẫn đọc được repo secret. Chặn hẳn bằng Environment `release` (việc FLuw, mục 7).
+- CI tạo `key.properties` và `android/app/upload-keystore.jks` từ 4 secret: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, **chỉ khi chạy trên `main`** (push, D21 ở PR #36; thêm Run workflow trên `main` từ PR #47), không bao giờ cho PR. Trên `main` mà thiếu secret thì cảnh báo và dùng debug key.
+- PR (và Run workflow trên branch khác) build bằng debug key chỉ để kiểm build, không tải APK lên (kèm `::notice::`). Lượt trên `main` (chỉ `push` và `workflow_dispatch`, danh sách cho phép) tải APK lên, giữ 1 ngày (PR #47): repo Private trên GitHub Free chỉ có 500 MB lưu artifact, mỗi APK khoảng 40 MB, ngày nhiều merge có thể 6 lượt trên `main`, GitHub tính lại dung lượng chậm 6–12 giờ; đầy thì job `android-apk` đỏ và Render không deploy. Cần APK mới thì Run workflow trên `main` (re-run chỉ được trong 30 ngày).
+- Biểu thức của GitHub Actions so chuỗi không phân biệt hoa thường (branch `Main` cũng khớp `refs/heads/main`), nên bước keystore kiểm lại `$GITHUB_REF` trong shell, sai thì dừng.
+- Ai có APK cũng đọc được tên trong chứng chỉ ký: tạo keystore bằng `-dname "CN=Fluw"` (README), không ghi tên thật.
+- Bước có `if` chỉ chặn code build (Gradle, plugin, action) đọc secret; một PR từ branch trong repo sửa chính `ci.yml` vẫn đọc được repo secret. Chặn hẳn bằng Environment `release` (việc FLuw, mục 7; repo Private trên GitHub Free không có Environments, cần GitHub Pro).
 - `key.properties`, `*.jks`, `*.keystore` đã nằm trong `android/.gitignore`. Không bao giờ commit.
 - `build.gradle.kts` phải `import java.util.Properties`: trong script Gradle, `java` là extension của plugin Java nên `java.util.Properties()` không compile.
 
 ### CI `.github/workflows/ci.yml` (PR #36, D21)
 - 3 job giữ tên `backend`, `frontend`, `android-apk` (Render `checksPass` và quy tắc merge ở mục 1 dựa vào đó); `timeout-minutes` 10 / 30 / 45.
 - Action ghim theo SHA của đúng commit tag đang trỏ tới, kèm chú thích `# vX` (checkout v5.1.0, setup-node v5.0.0, subosito/flutter-action v2.23.0, setup-java v5.7.0, upload-artifact v6.0.0; PR #42 lên Node.js 24). Nâng bản thì đổi cả SHA lẫn chú thích (tra SHA bằng `git ls-remote`).
-- `cancel-in-progress` chỉ cho `pull_request`. Lượt chạy trên `main` luôn chạy xong, để Render không bỏ sót commit backend.
+- `cancel-in-progress` chỉ cho `pull_request`. Lượt chạy trên `main` luôn chạy xong, để Render không bỏ sót commit backend. Nhóm `concurrency` theo cả sự kiện lẫn ref (PR #47): một lượt mới vào nhóm sẽ thay lượt đang chờ trong nhóm, nên Run workflow không được thay lượt push đang chờ.
 - Job `frontend` chạy `flutter test` hai lượt: UTC và `TZ=Asia/Ho_Chi_Minh`.
 
 ### Backend `backend/`
@@ -545,7 +548,7 @@ FLuw trả lời 2 câu: app chỉ cho người từ 18 tuổi; liên hệ qua G
 - **Backend và CI (D):**
   - D19: hạn mức chung trước khi gọi nguồn ngoài (bảng ở mục 3), natri tối đa 40.000 mg/100 g, `traceTags`, nosniff, NFC, gzip.
   - D20: User-Agent `FluwApp/0.2 (+https://github.com/Fluw13/Fluwwwwww/issues)`.
-  - D21: chỉ giải mã keystore khi push lên `main`; ghim action bằng SHA; `cancel-in-progress` chỉ cho PR; lượt test `TZ=Asia/Ho_Chi_Minh`; `timeout-minutes`.
+  - D21: chỉ giải mã keystore khi push lên `main` (PR #47 thêm Run workflow trên `main`; PR vẫn không bao giờ); ghim action bằng SHA; `cancel-in-progress` chỉ cho PR; lượt test `TZ=Asia/Ho_Chi_Minh`; `timeout-minutes`.
 - **Sản phẩm (C):**
   - D13: lọc nhanh đường ≤ 5 g/100 g (≤ 2,5 g/100 ml), protein ≥ 20 g, dưới 200 kcal.
   - D22: số giữ kiểu thiết kế "1,850 / 58.5"; giới hạn khẩu phần viết "1–2000 g".
@@ -625,26 +628,34 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 ### Câu hỏi
 - Không còn câu hỏi mở.
 
-- Môi trường cloud của agent: environment "Fluwwwwww" (personal) mở thêm `world.openfoodfacts.org`, `search.openfoodfacts.org`, `api.nal.usda.gov` (FLuw duyệt 13/11).
+- Môi trường cloud của agent: environment "Fluwwwwww" (personal) mở thêm `world.openfoodfacts.org`, `search.openfoodfacts.org`, `api.nal.usda.gov` (FLuw duyệt 13/11) và `productionresultssa3.blob.core.windows.net` (kho artifact của GitHub, để tải APK gửi FLuw, 26/11; link tải của GitHub có thể trỏ sang host `productionresultssa*` khác).
 
 ### Việc FLuw làm trên GitHub / Render
 - Xóa 22 branch cũ trên GitHub.
 - Key USDA cho môi trường agent: lần đầu (13/11) agent lưu nhầm kiểu `Authorization: Bearer` nên USDA báo `API_KEY_INVALID` (không phải lỗi của key). 14/11 lưu lại với header `X-Api-Key`, nhưng proxy chưa áp dụng (thử `X-Api-Key: DEMO_KEY` vẫn không bị thay). Key trên Render chưa có request nào để kiểm; FLuw kiểm bằng cách tìm `chicken breast` trong app (có kết quả USDA là key đúng). Đề xuất M1b dùng bộ dữ liệu tải về của USDA (CC0, không cần key) qua host `fdc.nal.usda.gov`, chờ FLuw đồng ý.
 - `GEMINI_API_KEY` trên Render: đã có (log `[Config] ... Gemini bật` ngày 21/11). Kiểm lại bằng log `[Config]` sau mỗi lần deploy.
-- **GitHub, ruleset cho `main` (tùy chọn; agent không có công cụ tạo ruleset, FLuw quyết 22/11 không bắt buộc, agent vẫn chỉ merge khi CI xanh cả 3 job):** Settings → Rules → Rulesets → New branch ruleset, target `main`: bật "Require a pull request before merging", "Require status checks to pass" (chọn `backend`, `frontend`, `android-apk`), "Block force pushes" và chặn xóa branch.
-- **Tùy chọn, GitHub Environment `release` cho keystore:** PR sửa `ci.yml` vẫn đọc được repo secret. Cách chặn hẳn:
+- **GitHub, ruleset cho `main` (tùy chọn; chỉ làm được khi repo public hoặc tài khoản GitHub Pro; agent không có công cụ tạo ruleset, FLuw quyết 22/11 không bắt buộc, agent vẫn chỉ merge khi CI xanh cả 3 job):** Settings → Rules → Rulesets → New branch ruleset, target `main`: bật "Require a pull request before merging", "Require status checks to pass" (chọn `backend`, `frontend`, `android-apk`), "Block force pushes" và chặn xóa branch.
+- **Tùy chọn, GitHub Environment `release` cho keystore (chỉ làm được khi repo public hoặc tài khoản GitHub Pro):** PR sửa `ci.yml` vẫn đọc được repo secret. Cách chặn hẳn:
   - Tạo Environment `release` (Settings → Environments), "Deployment branches and tags" chỉ `main`; chuyển 4 secret `ANDROID_*` sang đó.
-  - Agent mở một PR workflow nhỏ thêm vào job `android-apk`: `environment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'release' || '' }}` (trường hợp tên rỗng cho PR chưa kiểm trên GitHub).
+  - Agent mở một PR workflow nhỏ thêm vào job `android-apk`: `environment: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && 'release' || '' }}` (trường hợp tên rỗng cho PR chưa kiểm trên GitHub).
   - Không đặt "Required reviewers": job sẽ chờ duyệt, Render chờ CI xanh nên deploy backend cũng bị chặn.
   - Cách tạm: chỉ người tin cậy mới có quyền push branch.
-- **Key Gemini (VERIFIED 22/11 qua ảnh FLuw gửi):** key `...f1FQ` thuộc "Dự án Gemini mặc định", mức thanh toán "Cấp độ miễn phí" (chưa gắn thanh toán). Giới hạn key chỉ dùng "Generative Language API": bỏ, vì key chỉ nằm trên Render và project không gắn thanh toán. Nếu sau này gắn thanh toán: đặt hạn mức chi tiêu vài đô và cảnh báo ngân sách. Nếu hạn mức miễn phí của model thấp hơn 8/phút hoặc 200/ngày: đặt `GEMINI_MAX_PER_MINUTE` / `GEMINI_MAX_PER_DAY` trên Render thấp hơn, rồi xem dòng `[Config]`.
+- **Key Gemini (VERIFIED 22/11 qua ảnh FLuw gửi):** key thuộc "Dự án Gemini mặc định", mức thanh toán "Cấp độ miễn phí" (chưa gắn thanh toán). Giới hạn key chỉ dùng "Generative Language API": bỏ, vì key chỉ nằm trên Render và project không gắn thanh toán. Nếu sau này gắn thanh toán: đặt hạn mức chi tiêu vài đô và cảnh báo ngân sách. Nếu hạn mức miễn phí của model thấp hơn 8/phút hoặc 200/ngày: đặt `GEMINI_MAX_PER_MINUTE` / `GEMINI_MAX_PER_DAY` trên Render thấp hơn, rồi xem dòng `[Config]`.
 - **Render (VERIFIED 22/11 qua ảnh FLuw gửi):** gói Hobby, "No card on file" nên không thể bị trừ tiền. Băng thông gói Hobby chưa xác minh (nguồn bên thứ ba nói 5 GB/tháng từ 1/8/2026). Tùy chọn: đổi build command sang `npm ci --omit=dev`.
+- **Ẩn thông tin cá nhân khỏi repo (FLuw chọn 26/11), làm đúng thứ tự:**
+  1. Settings → Emails: bật "Keep my email addresses private" và "Block command line pushes that expose my email". Trước khi bật, merge commit agent làm qua API mang email chính của tài khoản.
+  2. Keystore mới bằng `-dname "CN=Fluw"` trong thư mục trống (README), cập nhật 4 secret `ANDROID_*`; bản build sau khi đổi phải gỡ app một lần.
+  3. Merge PR #47 (APK chỉ lưu ở `main`, 1 ngày).
+  4. Xóa mọi artifact cũ (khoảng 50 APK, 2 GB): `gh api --paginate` để lấy đủ id (mỗi trang chỉ 30), rồi `-X DELETE` từng id. Đợi 6–12 giờ để GitHub tính lại dung lượng (xem ở Billing) rồi mới làm bước 5, để lượt CI đầu tiên sau khi đổi không báo hết dung lượng.
+  5. Settings → General → Change visibility → Private. Agent kiểm CI và lần deploy Render kế tiếp (Render phải còn quyền đọc repo qua GitHub).
+  - Lịch sử git cũ vẫn còn thông tin cá nhân; Private chỉ ẩn, không xóa. FLuw không chọn viết lại lịch sử.
+  - Ngay khi đổi Private, người ngoài không mở được `PRIVACY.md` trên GitHub, GitHub Issues (kênh liên hệ trong chính sách) và link liên hệ trong User-Agent gửi OFF (D20). Hiện chưa có người dùng ngoài FLuw nên chấp nhận; xem mục pháp lý bên dưới.
 - Đã xong 12/11: keystore + 4 secret Android, Health Check `/health`, `USDA_API_KEY` trên Render.
 
 ### Pháp lý còn mở (trước khi lên cửa hàng)
 - Xuất dữ liệu (JSON/CSV) cho người dùng.
 - Cơ chế báo người dùng khi chính sách đổi (`PRIVACY.md` mục 9 hứa "app sẽ báo cho bạn"; hiện chỉ đồng ý sức khỏe/ảnh có phiên bản để hỏi lại).
-- Google Play / App Store: URL chính sách quyền riêng tư dùng `https://github.com/Fluw13/Fluwwwwww/blob/main/PRIVACY.md`.
+- Google Play / App Store cần URL chính sách quyền riêng tư công khai. Từ lúc repo Private (không chỉ khi lên cửa hàng), người ngoài không mở được `https://github.com/Fluw13/Fluwwwwww/blob/main/PRIVACY.md` lẫn GitHub Issues (kênh liên hệ trong chính sách và trong User-Agent gửi OFF). Trước khi lên cửa hàng: đặt chính sách và kênh liên hệ ở chỗ công khai (vd một repo public riêng chỉ có `PRIVACY.md` + Issues), rồi sửa `PRIVACY.md`, `privacy_policy_text.dart` (tăng phiên bản), README và User-Agent backend.
 - Tóm tắt quyền riêng tư ở lần mở app đầu tiên (chưa làm).
 - **Chuyển dữ liệu ra nước ngoài (FLuw quyết 22/11: chưa làm; chỉ xem lại, nên hỏi luật sư, khi phát hành công khai trên cửa hàng):** từ khóa, mã vạch, IP tới Render (Hoa Kỳ), ảnh tới Google Gemini. Luật 91/2025 (Điều 20–22) và Nghị định 356/2025 có thể yêu cầu hồ sơ đánh giá tác động nộp Bộ Công an (Cục A05). Miễn trừ / hoãn 5 năm ở Điều 38 dành cho doanh nghiệp nhỏ, khởi nghiệp, không áp dụng khi xử lý dữ liệu nhạy cảm; chưa rõ cá nhân phát triển app miễn phí có thuộc diện nào. Chi tiết ở báo cáo pháp lý (legal.md mục H3, chỉ có trong scratchpad của phiên kiểm tra 18/11).
 - **Google Play:** app sức khỏe phải điền Health apps declaration trung thực (dinh dưỡng, ghi bữa ăn, cân nặng; không dùng Health Connect); Play Console Help ghi app sức khỏe có thể phải dùng tài khoản Organization (cần D-U-N-S) → FLuw chọn loại tài khoản trước khi trả 25 USD. Mô tả trên cửa hàng phải có câu "không phải thiết bị y tế, không chẩn đoán, điều trị, chữa hay phòng bệnh" và nhắc hỏi chuyên gia y tế.
@@ -680,15 +691,15 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 - **Open Food Facts:** dữ liệu ODbL, ảnh CC BY-SA; phải ghi nguồn trên giao diện. Nhiều sản phẩm Việt Nam thiếu `categories_tags` và dinh dưỡng.
 - **USDA FoodData Central:** tên thực phẩm bằng tiếng Anh. Từ khóa tiếng Việt đi qua bảng `vietnameseFoodGlossary` (PR #39) hoặc từ tiếng Anh của Gemini; chưa kiểm từng từ trong bảng với USDA thật.
 - **Gradle wrapper:** `gradle-wrapper.jar` và `gradlew` bị `.gitignore` của template bỏ qua; Flutter tự tạo khi build.
-- **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần. Từ PR #36 chỉ build trên `main` có keystore; APK của PR ký bằng debug key, không cài đè được.
+- **Chữ ký APK:** từ 12/11 CI ký bằng keystore của FLuw (run `43198464929`, không còn cảnh báo thiếu secret). Bản cài trước đó ký bằng debug key nên phải gỡ một lần. Từ PR #36 chỉ build trên `main` có keystore; APK của PR ký bằng debug key, không cài đè được; từ PR #47 không còn lưu APK của PR.
 - **M1, khi thêm `express.json()`:** `errorHandler` phải giữ `error.status` 4xx (JSON hỏng → 400, body quá lớn → 413) thay vì trả 500.
 - **Express 5** gọi callback của `app.listen` cả khi lỗi; `server.js` đã bỏ qua nhánh lỗi để handler `'error'` xử lý.
 - **Chi phí (kiểm 14/11):**
   - Render: 1 web service gói free, không có Postgres/Key Value, tắt preview. Gói free không tự tính tiền; FLuw xem mục Billing trên dashboard để chắc workspace không gắn gói trả phí.
-  - GitHub: repo **public** nên Actions và artifact miễn phí; artifact APK tự xóa sau 14 ngày.
+  - GitHub: repo Private (từ khi FLuw đổi, mục 7) trên GitHub Free có 2.000 phút Actions/tháng và 500 MB lưu artifact; hết thì Actions bị chặn (không gắn thanh toán), CI đỏ và Render không deploy. Một lượt CI tốn khoảng 12 phút tính tiền (mỗi job làm tròn lên: frontend 5, android-apk 6, backend 1); 11–25/11 có khoảng 60 lượt, tức khoảng 1.500 phút/tháng ở nhịp làm nhiều. APK chỉ lưu ở `main`, 1 ngày. GitHub Pro (gói Student Developer Pack) có 3.000 phút; dung lượng artifact của Pro chưa xác minh (mạng agent chặn docs.github.com).
   - Figma Starter, Open Food Facts, USDA, phông OFL, mọi gói Flutter/npm: miễn phí. Gemini dùng gói miễn phí, có hạn mức chung ở backend (8/phút, 200/ngày); project của key ở cấp miễn phí, không gắn thanh toán (FLuw kiểm 22/11). Chưa tạo Firebase/Neon (M7): khi tạo, giữ gói free (Firebase Spark, không bật Blaze).
   - Không có lịch tự chạy (scheduled task) nào còn bật.
-- **Repo public:** ai cũng xem được code, CLAUDE.md, ảnh thiết kế. Không để thông tin cá nhân của FLuw trong repo (14/11 đã thay ngày sinh thật trong test; lịch sử git cũ vẫn còn vì không force push).
+- **Repo đang public, FLuw chọn chuyển Private (26/11, mục 7):** khi còn public, ai cũng xem được code, CLAUDE.md, ảnh thiết kế, lịch sử commit và tải được APK. Không để thông tin cá nhân của FLuw trong repo, kể cả CLAUDE.md (14/11 đã thay ngày sinh thật trong test; 26/11 bỏ 4 ký tự cuối của key Gemini; lịch sử git cũ vẫn còn vì không force push). APK không chứa dữ liệu của người dùng (dữ liệu sức khỏe chỉ ở SQLite trên máy); 26/11 đã quét 374 file trong APK, không có email, ngày sinh, tên, trừ chứng chỉ ký của keystore cũ (mục 7, bước 2).
 - **Sao lưu Android/iCloud:** mặc định bật, hệ điều hành có thể sao lưu SQLite vào tài khoản của chính người dùng; README đã ghi rõ.
 - **Gemini:**
   - Gói miễn phí giới hạn lượt/phút và lượt/ngày (hết lượt hoặc vượt hạn mức chung của backend → `RECOGNITION_BUSY`), và Google có thể dùng nội dung gửi lên (kể cả cho người xem lại) để cải thiện sản phẩm → app hỏi đồng ý trước lần gửi ảnh đầu tiên, rút lại được, chỉ gửi ảnh đã xóa vị trí/thời gian chụp, không kèm dữ liệu sức khỏe.
@@ -702,6 +713,21 @@ Chỉ áp dụng khi `tuổi ≥ 18` và không mang thai/cho con bú.
 ## 10. Nhật ký công việc
 
 Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở file nào, vì sao, test đã chạy.
+
+### 26/11/2026 — Ẩn thông tin cá nhân của FLuw (PR #47)
+- **FLuw hỏi:** người khác tải APK có thấy hết thông tin của mình không.
+- **Kiểm (không đổi code):**
+  - Chứng chỉ ký APK của `main` (đọc bằng script Python ở scratchpad, khối APK Signature Scheme v2) và lịch sử commit (tác giả, nội dung cũ) có thông tin cá nhân; chi tiết chỉ báo FLuw trong chat, không ghi vào repo.
+  - Quét 374 file trong APK (`grep -a`): không có email, ngày sinh, tên; chỉ có `Fluw13` (link GitHub công khai trong app).
+  - CLAUDE.md có 4 ký tự cuối của key Gemini.
+- **FLuw chọn:** chuyển repo sang Private (không viết lại lịch sử); tạo keystore mới tên trung tính ngay. Thứ tự các bước ở mục 7.
+- **Sửa:**
+  - `ci.yml`: chỉ tải APK lên ở lượt chạy trên `main`, giữ 1 ngày (trước là mọi lượt, 14 ngày). Repo Private chỉ có 500 MB artifact; khoảng 50 APK × 40 MB trong 14 ngày sẽ làm job `android-apk` đỏ. Run workflow trên `main` giờ cũng ký bằng keystore và lưu APK (trước chỉ push), để có APK mới mà không cần merge; PR vẫn không bao giờ nhận keystore. Nhóm `concurrency` tách theo sự kiện.
+  - README: lệnh `keytool` thêm `-dname "CN=Fluw"`, chạy trong thư mục trống khi đổi keystore, APK 1 ngày và Run workflow trên `main`; Issues và `PRIVACY.md` không mở được với người ngoài khi Private.
+  - CLAUDE.md: bỏ 4 ký tự key; quy tắc chỉ merge sau khi FLuw bật email riêng tư (mục 1); giới hạn của repo Private (mục 9); kênh liên hệ và URL chính sách phải dời ra chỗ công khai trước khi lên cửa hàng (mục 7).
+  - Môi trường agent mở thêm host kho artifact của GitHub để tải APK gửi FLuw.
+- **Sửa theo review độc lập (trước khi push):** giữ 5 ngày vẫn có thể vượt 500 MB (15 lượt `main` trong 5 ngày) → 2 ngày; re-run chỉ trong 30 ngày → Run workflow trên `main` ký và lưu APK; ruleset và Environments không có cho repo Private trên GitHub Free → ghi rõ; bản nháp ghi số commit và mã commit chứa ngày sinh, tên trong chứng chỉ → bỏ khỏi repo; xóa artifact phải `--paginate` và đợi GitHub tính lại dung lượng; `keytool` mở lại file cũ khi đổi keystore → thư mục trống; số commit có email đếm sai (đếm cả dòng người commit) → bỏ số. Review lần 2: so chuỗi không phân biệt hoa thường và điều kiện dạng loại trừ → danh sách sự kiện cho phép + kiểm `$GITHUB_REF` trong shell; 2 ngày vẫn sát 500 MB → 1 ngày; Run workflow có thể thay lượt push đang chờ → nhóm `concurrency` theo sự kiện; bỏ số dung lượng GitHub Pro chưa xác minh; bỏ ngày sinh giả và tuổi khỏi nhật ký 14/11.
+- **Test:** `ci.yml` đọc bằng `yaml.safe_load`, đúng 3 job; bước keystore và bước tải APK cùng điều kiện `github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')`, bước debug key là phủ định (kiểm bằng bảng mọi cặp sự kiện × ref), `retention-days: 1` (bản nháp đầu hỏng YAML vì chữ `main:` trong lệnh `echo`, đã sửa). Không đổi code app, không chạy `flutter test`.
 
 ### 22–25/11/2026 — Giao diện theo Figma, tester với dữ liệu thật
 - **FLuw báo (22/11):** giao diện chưa giống Figma; tìm "latte trà sữa" thấy 26 kcal/100 ml trong khi chai 440 ml; hỏi sao chưa cử tester.
@@ -803,7 +829,7 @@ Mục mới nhất ở trên. Mỗi mục ghi: ngày, PR, đã sửa gì ở fil
   - SQLite với 6.570 món (3 năm): thêm/xóa ~1 ms, đọc 1 tuần 20 ms.
   - Chỉ Render free ngủ mới chậm (~50 s lần đầu).
 - **Sửa:**
-  - Ngày sinh thật của FLuw trong 6 file test (repo public) → 08/03/2006 (cùng 20 tuổi ở ngày test).
+  - Ngày sinh thật của FLuw trong 6 file test (repo public) → ngày giả.
   - Icon app là logo Flutter (thương hiệu của Google) → icon Fluw cho Android (kể cả adaptive) và iOS.
   - Không có trang giấy phép (BSD của Flutter/gói cần kèm thông báo; OFF yêu cầu ghi nguồn) → `AboutCard` + `showLicensePage`, `registerDataLicenses`.
   - Render free ngủ làm lần tìm đầu chậm → `wakeUpBackend` khi mở app.
