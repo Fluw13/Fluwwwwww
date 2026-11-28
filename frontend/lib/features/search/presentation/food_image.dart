@@ -8,6 +8,7 @@ IconData foodIconFor(FoodItem item) => switch ((item.facts.unit, item.source)) {
   (QuantityUnit.milliliter, _) => Icons.local_drink_outlined,
   (_, FoodSource.usda) => Icons.eco_outlined,
   (_, FoodSource.openFoodFacts) => Icons.inventory_2_outlined,
+  (_, FoodSource.custom) => Icons.edit_note_outlined,
 };
 
 /// A square of the Open Food Facts photo over an icon tile that shows while it loads, when it fails and when the

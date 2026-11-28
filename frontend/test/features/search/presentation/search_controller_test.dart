@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fluw/core/database/database_provider.dart';
 import 'package:fluw/core/network/api_client.dart';
 import 'package:fluw/core/network/api_client_provider.dart';
 import 'package:fluw/features/search/presentation/search_controller.dart';
@@ -11,12 +13,21 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import '../../../fixtures/food_api_samples.dart';
+import '../../../helpers/in_memory_database.dart';
+
+/// The user's own products are searched too; an empty database keeps these tests about the sources.
+Override _inMemoryDatabase() => appDatabaseProvider.overrideWith((ref) {
+  final database = openInMemoryDatabase();
+  ref.onDispose(database.close);
+  return database;
+});
 
 void main() {
   test('tìm hai lần liền: câu trả lời cũ về sau không đè kết quả mới', () async {
     final slow = Completer<http.Response>();
     final container = ProviderContainer(
       overrides: [
+        _inMemoryDatabase(),
         apiClientProvider.overrideWithValue(
           ApiClient(
             httpClient: MockClient((request) {
@@ -47,6 +58,7 @@ void main() {
     var calls = 0;
     final container = ProviderContainer(
       overrides: [
+        _inMemoryDatabase(),
         apiClientProvider.overrideWithValue(
           ApiClient(
             httpClient: MockClient((request) async {
@@ -73,6 +85,7 @@ void main() {
     var fail = true;
     final container = ProviderContainer(
       overrides: [
+        _inMemoryDatabase(),
         apiClientProvider.overrideWithValue(
           ApiClient(
             httpClient: MockClient((request) async {
@@ -110,6 +123,7 @@ void main() {
       final asked = <Map<String, String>>[];
       final container = ProviderContainer(
         overrides: [
+          _inMemoryDatabase(),
           apiClientProvider.overrideWithValue(
             ApiClient(
               httpClient: MockClient((request) async {

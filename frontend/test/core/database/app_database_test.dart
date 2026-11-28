@@ -38,9 +38,10 @@ void main() {
         'profile_preferences',
         'weight_entries',
         'note_entries',
+        'custom_products',
       ]),
     );
-    expect(database.schemaVersion, 5);
+    expect(database.schemaVersion, 6);
   });
 
   test('bảng hồ sơ chỉ nhận đúng một dòng có id cố định', () async {

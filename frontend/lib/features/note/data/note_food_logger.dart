@@ -1,7 +1,7 @@
+import 'package:fluw/core/database/row_id.dart';
 import 'package:fluw/core/diary/food_logger.dart';
 import 'package:fluw/core/diary/logged_food.dart';
 import 'package:fluw/core/diary/note_entry.dart';
-import 'package:fluw/features/note/data/note_id.dart';
 import 'package:fluw/features/note/data/note_repository.dart';
 
 /// The diary's side of [FoodLogger]: turns a food from any feature into a stored diary entry.
@@ -13,7 +13,7 @@ final class NoteFoodLogger implements FoodLogger {
   @override
   Future<void> log(LoggedFood food) => _repository.add(
     NoteEntry(
-      id: newNoteEntryId(),
+      id: newRowId(),
       name: food.name,
       sourceFoodId: food.sourceFoodId,
       facts: food.facts,

@@ -5,11 +5,14 @@ import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/empty_state.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
+import 'package:fluw/features/search/domain/custom_product_item.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
+import 'package:fluw/features/search/presentation/custom_product_form_screen.dart';
 import 'package:fluw/features/search/presentation/food_detail_screen.dart';
 import 'package:fluw/features/search/presentation/search_loading_view.dart';
 
-/// Opened by a scanned or typed barcode: looks the product up once, then shows its detail screen.
+/// Opened by a scanned or typed barcode: looks the product up once (the user's own products first, so a code they
+/// typed in from a label answers without the network), then shows its detail screen.
 class BarcodeLookupScreen extends ConsumerStatefulWidget {
   const BarcodeLookupScreen({required this.code, required this.onSearchByName, super.key});
 
@@ -23,7 +26,23 @@ class BarcodeLookupScreen extends ConsumerStatefulWidget {
 class _BarcodeLookupScreenState extends ConsumerState<BarcodeLookupScreen> {
   late Future<FoodItem?> _lookup = _start();
 
-  Future<FoodItem?> _start() => ref.read(foodApiProvider).lookUpBarcode(widget.code);
+  Future<FoodItem?> _start() async {
+    final api = ref.read(foodApiProvider);
+    final stored = await ref.read(customProductRepositoryProvider).findByBarcode(widget.code);
+    if (stored != null) {
+      return foodItemFromCustomProduct(stored);
+    }
+    return api.lookUpBarcode(widget.code);
+  }
+
+  Future<void> _addFromLabel() async {
+    final saved = await openCustomProductForm(context, barcode: widget.code);
+    if (saved != null && mounted) {
+      setState(() {
+        _lookup = Future.value(foodItemFromCustomProduct(saved));
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +68,8 @@ class _BarcodeLookupScreenState extends ConsumerState<BarcodeLookupScreen> {
                   }),
                   child: const Text('Thử lại'),
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton(onPressed: _addFromLabel, child: const Text('Nhập từ nhãn')),
               ],
             ),
           );
@@ -65,9 +86,13 @@ class _BarcodeLookupScreenState extends ConsumerState<BarcodeLookupScreen> {
                 EmptyState(
                   icon: Icons.search_off_outlined,
                   title: 'Chưa có sản phẩm này',
-                  message: 'Open Food Facts chưa có sản phẩm mã ${widget.code}. Bạn có thể tìm theo tên sản phẩm.',
+                  message:
+                      'Máy này và Open Food Facts chưa có sản phẩm mã ${widget.code}. Bạn có thể chép số liệu từ '
+                      'nhãn (lần sau quét sẽ ra ngay) hoặc tìm theo tên.',
                 ),
-                FilledButton(onPressed: widget.onSearchByName, child: const Text('Tìm theo tên')),
+                FilledButton(onPressed: _addFromLabel, child: const Text('Nhập từ nhãn')),
+                const SizedBox(height: AppSpacing.sm),
+                OutlinedButton(onPressed: widget.onSearchByName, child: const Text('Tìm theo tên')),
                 const SizedBox(height: AppSpacing.sm),
                 TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Quét mã khác')),
               ],

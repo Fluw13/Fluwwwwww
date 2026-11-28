@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/barcode/gtin.dart';
 import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_radius.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/section_card.dart';
-import 'package:fluw/features/scan/domain/gtin.dart';
 import 'package:fluw/features/scan/presentation/barcode_camera.dart';
 import 'package:fluw/features/scan/presentation/photo_recognition_panel.dart';
 import 'package:fluw/features/scan/presentation/scan_mode_switch.dart';

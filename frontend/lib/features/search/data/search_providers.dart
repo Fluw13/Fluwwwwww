@@ -1,7 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/database/database_provider.dart';
 import 'package:fluw/core/network/api_client_provider.dart';
+import 'package:fluw/features/search/data/custom_product_repository.dart';
 import 'package:fluw/features/search/data/food_api.dart';
 import 'package:fluw/features/search/data/recent_searches_storage.dart';
+
+final customProductRepositoryProvider = Provider<CustomProductRepository>(
+  (ref) => CustomProductRepository(ref.watch(appDatabaseProvider)),
+);
 
 final foodApiProvider = Provider<FoodApi>((ref) => FoodApi(ref.watch(apiClientProvider)));
 

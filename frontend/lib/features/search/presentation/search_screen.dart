@@ -4,9 +4,11 @@ import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/features/search/domain/card_nutrition.dart';
+import 'package:fluw/features/search/domain/custom_product_item.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/quick_filter.dart';
 import 'package:fluw/features/search/domain/search_response.dart';
+import 'package:fluw/features/search/presentation/custom_product_form_screen.dart';
 import 'package:fluw/features/search/presentation/food_result_card.dart';
 import 'package:fluw/features/search/presentation/quick_filter_bar.dart';
 import 'package:fluw/features/search/presentation/recent_food_sheet.dart';
@@ -68,6 +70,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     await ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery);
   }
 
+  Future<void> _addFromLabel() async {
+    final saved = await openCustomProductForm(context);
+    if (saved != null && mounted) {
+      widget.onOpenFood(foodItemFromCustomProduct(saved));
+    }
+  }
+
+  Widget _addFromLabelButton(String text) => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton.icon(onPressed: _addFromLabel, icon: const Icon(Icons.edit_note_outlined), label: Text(text)),
+  );
+
   void _clear() {
     _query.clear();
     ref.read(searchControllerProvider.notifier).clear();
@@ -105,9 +119,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       SearchIdle() => [
         RecentFoodsSection(onSelected: (food) => showRecentFoodSheet(context, food)),
         Text(
-          'Nhập tên thực phẩm rồi bấm tìm. Dữ liệu lấy từ Open Food Facts và USDA FoodData Central.',
+          'Nhập tên thực phẩm rồi bấm tìm. Dữ liệu lấy từ sản phẩm bạn tự nhập, Open Food Facts và USDA FoodData '
+          'Central.',
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _addFromLabelButton('Nhập sản phẩm từ nhãn'),
       ],
       SearchLoading() => [const SearchLoadingView()],
       SearchFailed(:final query, :final failure, :final englishQuery) => [
@@ -182,6 +199,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         FoodResultCard(item: item, onTap: () => widget.onOpenFood(item)),
         const SizedBox(height: AppSpacing.sm),
       ],
+      _addFromLabelButton('Không thấy sản phẩm? Nhập từ nhãn'),
     ];
   }
 }

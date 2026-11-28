@@ -804,11 +804,237 @@ i1.GeneratedColumn<int> _column_34(String aliasedName) =>
       type: i1.DriftSqlType.int,
       $customConstraints: 'NULL CHECK (pregnant_or_breastfeeding IN (0, 1))',
     );
+
+final class Schema6 extends i0.VersionedSchema {
+  Schema6({required super.database}) : super(version: 6);
+  @override
+  late final List<i1.DatabaseSchemaEntity> entities = [
+    profiles,
+    profileConditions,
+    profileAllergies,
+    profilePreferences,
+    weightEntries,
+    noteEntries,
+    customProducts,
+  ];
+  late final Shape7 profiles = Shape7(
+    source: i0.VersionedTable(
+      entityName: 'profiles',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_0,
+        _column_1,
+        _column_2,
+        _column_3,
+        _column_4,
+        _column_5,
+        _column_6,
+        _column_7,
+        _column_8,
+        _column_9,
+        _column_10,
+        _column_11,
+        _column_12,
+        _column_14,
+        _column_15,
+        _column_16,
+        _column_34,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape1 profileConditions = Shape1(
+    source: i0.VersionedTable(
+      entityName: 'profile_conditions',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(condition_key)'],
+      columns: [_column_13],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape3 profileAllergies = Shape3(
+    source: i0.VersionedTable(
+      entityName: 'profile_allergies',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(allergen_key)'],
+      columns: [_column_17, _column_18],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape4 profilePreferences = Shape4(
+    source: i0.VersionedTable(
+      entityName: 'profile_preferences',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(preference_key)'],
+      columns: [_column_19],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape5 weightEntries = Shape5(
+    source: i0.VersionedTable(
+      entityName: 'weight_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(date)'],
+      columns: [_column_20, _column_6],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape6 noteEntries = Shape6(
+    source: i0.VersionedTable(
+      entityName: 'note_entries',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_21,
+        _column_22,
+        _column_23,
+        _column_24,
+        _column_25,
+        _column_26,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_30,
+        _column_31,
+        _column_32,
+        _column_33,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+  late final Shape8 customProducts = Shape8(
+    source: i0.VersionedTable(
+      entityName: 'custom_products',
+      withoutRowId: false,
+      isStrict: false,
+      tableConstraints: ['PRIMARY KEY(id)'],
+      columns: [
+        _column_21,
+        _column_35,
+        _column_22,
+        _column_36,
+        _column_24,
+        _column_37,
+        _column_38,
+        _column_39,
+        _column_27,
+        _column_28,
+        _column_29,
+        _column_30,
+        _column_31,
+        _column_32,
+        _column_33,
+        _column_40,
+      ],
+      attachedDatabase: database,
+    ),
+    alias: null,
+  );
+}
+
+class Shape8 extends i0.VersionedTable {
+  Shape8({required super.source, required super.alias}) : super.aliased();
+  i1.GeneratedColumn<String> get id =>
+      columnsByName['id']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get barcode =>
+      columnsByName['barcode']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get name =>
+      columnsByName['name']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get brand =>
+      columnsByName['brand']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<String> get unit =>
+      columnsByName['unit']! as i1.GeneratedColumn<String>;
+  i1.GeneratedColumn<double> get packageAmount =>
+      columnsByName['package_amount']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get servingAmount =>
+      columnsByName['serving_amount']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<int> get labelPerServing =>
+      columnsByName['label_per_serving']! as i1.GeneratedColumn<int>;
+  i1.GeneratedColumn<double> get energyKcal =>
+      columnsByName['energy_kcal']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get proteinG =>
+      columnsByName['protein_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get carbohydratesG =>
+      columnsByName['carbohydrates_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get sugarsG =>
+      columnsByName['sugars_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get fatG =>
+      columnsByName['fat_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get saturatedFatG =>
+      columnsByName['saturated_fat_g']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<double> get sodiumMg =>
+      columnsByName['sodium_mg']! as i1.GeneratedColumn<double>;
+  i1.GeneratedColumn<int> get updatedAtUtcMs =>
+      columnsByName['updated_at_utc_ms']! as i1.GeneratedColumn<int>;
+}
+
+i1.GeneratedColumn<String> _column_35(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'barcode',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL UNIQUE',
+    );
+i1.GeneratedColumn<String> _column_36(String aliasedName) =>
+    i1.GeneratedColumn<String>(
+      'brand',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.string,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<double> _column_37(String aliasedName) =>
+    i1.GeneratedColumn<double>(
+      'package_amount',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.double,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<double> _column_38(String aliasedName) =>
+    i1.GeneratedColumn<double>(
+      'serving_amount',
+      aliasedName,
+      true,
+      type: i1.DriftSqlType.double,
+      $customConstraints: 'NULL',
+    );
+i1.GeneratedColumn<int> _column_39(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'label_per_serving',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL CHECK (label_per_serving IN (0, 1))',
+    );
+i1.GeneratedColumn<int> _column_40(String aliasedName) =>
+    i1.GeneratedColumn<int>(
+      'updated_at_utc_ms',
+      aliasedName,
+      false,
+      type: i1.DriftSqlType.int,
+      $customConstraints: 'NOT NULL',
+    );
 i0.MigrationStepWithVersion migrationSteps({
   required Future<void> Function(i1.Migrator m, Schema2 schema) from1To2,
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
   required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
+  required Future<void> Function(i1.Migrator m, Schema6 schema) from5To6,
 }) {
   return (currentVersion, database) async {
     switch (currentVersion) {
@@ -832,6 +1058,11 @@ i0.MigrationStepWithVersion migrationSteps({
         final migrator = i1.Migrator(database, schema);
         await from4To5(migrator, schema);
         return 5;
+      case 5:
+        final schema = Schema6(database: database);
+        final migrator = i1.Migrator(database, schema);
+        await from5To6(migrator, schema);
+        return 6;
       default:
         throw ArgumentError.value('Unknown migration from $currentVersion');
     }
@@ -843,11 +1074,13 @@ i1.OnUpgrade stepByStep({
   required Future<void> Function(i1.Migrator m, Schema3 schema) from2To3,
   required Future<void> Function(i1.Migrator m, Schema4 schema) from3To4,
   required Future<void> Function(i1.Migrator m, Schema5 schema) from4To5,
+  required Future<void> Function(i1.Migrator m, Schema6 schema) from5To6,
 }) => i0.VersionedSchema.stepByStepHelper(
   step: migrationSteps(
     from1To2: from1To2,
     from2To3: from2To3,
     from3To4: from3To4,
     from4To5: from4To5,
+    from5To6: from5To6,
   ),
 );

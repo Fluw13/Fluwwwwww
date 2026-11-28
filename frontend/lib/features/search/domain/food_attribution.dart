@@ -5,5 +5,7 @@ final class FoodAttribution {
   final String source;
   final String license;
   final String? imageLicense;
-  final Uri url;
+
+  /// Null for a product the user typed in: there is no page to link to.
+  final Uri? url;
 }

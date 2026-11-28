@@ -8,12 +8,14 @@ import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/portion_input.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/card_nutrition.dart';
+import 'package:fluw/features/search/domain/custom_product_item.dart';
 import 'package:fluw/features/search/domain/food_assessment.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
 import 'package:fluw/features/search/domain/food_source.dart';
 import 'package:fluw/features/search/domain/serving_size.dart';
 import 'package:fluw/features/search/presentation/add_to_note_bar.dart';
 import 'package:fluw/features/search/presentation/attribution_footer.dart';
+import 'package:fluw/features/search/presentation/custom_product_form_screen.dart';
 import 'package:fluw/features/search/presentation/detail_notice.dart';
 import 'package:fluw/features/search/presentation/food_detail_header.dart';
 import 'package:fluw/features/search/presentation/nutrient_table.dart';
@@ -99,10 +101,64 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     }
   }
 
+  Future<void> _editCustomProduct(String id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final stored = await ref.read(customProductRepositoryProvider).findById(id);
+    if (!mounted) {
+      return;
+    }
+    if (stored == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('Sản phẩm này không còn trên máy.')));
+      return;
+    }
+    final saved = await openCustomProductForm(context, product: stored);
+    if (saved != null && mounted) {
+      setState(() => _item = foodItemFromCustomProduct(saved));
+      final savedDefault = _defaultPortionFor(_item);
+      if (_portion.text == _defaultPortion) {
+        _portion.text = savedDefault;
+      }
+      _defaultPortion = savedDefault;
+    }
+  }
+
+  Future<void> _deleteCustomProduct(String id) async {
+    final name = _item.name ?? 'sản phẩm';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        scrollable: true,
+        title: Text('Xóa $name?'),
+        content: const Text('Sản phẩm bị xóa khỏi máy. Các món đã ghi trong Nhật Ký vẫn giữ nguyên số liệu.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Giữ lại')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Xóa')),
+        ],
+      ),
+    );
+    if (!(confirmed ?? false) || !mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await ref.read(customProductRepositoryProvider).delete(id);
+    } on Object catch (error, stackTrace) {
+      FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stackTrace, library: 'custom products'));
+      messenger.showSnackBar(SnackBar(content: Text('Chưa xóa được $name.')));
+      return;
+    }
+    messenger.showSnackBar(SnackBar(content: Text('Đã xóa $name.')));
+    if (mounted) {
+      navigator.pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final limits = ref.watch(personalLimitsProvider);
+    final customId = customProductIdOf(_item);
     final unit = _item.facts.unit;
     final (portionAmount, portionError) = parsePortion(_portion.text, unit);
     final portion = portionAmount == null ? null : _item.facts.forQuantity(portionAmount);
@@ -111,7 +167,23 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
     final allergens = checkAllergens(_item, limits);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết dinh dưỡng')),
+      appBar: AppBar(
+        title: const Text('Chi tiết dinh dưỡng'),
+        actions: [
+          if (customId != null) ...[
+            IconButton(
+              onPressed: () => _editCustomProduct(customId),
+              tooltip: 'Sửa sản phẩm',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              onPressed: () => _deleteCustomProduct(customId),
+              tooltip: 'Xóa sản phẩm',
+              icon: const Icon(Icons.delete_outline),
+            ),
+          ],
+        ],
+      ),
       bottomNavigationBar: AddToNoteBar(
         name: _item.name,
         sourceFoodId: _item.id,

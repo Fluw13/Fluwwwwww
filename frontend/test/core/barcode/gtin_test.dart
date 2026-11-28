@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fluw/features/scan/domain/gtin.dart';
+import 'package:fluw/core/barcode/gtin.dart';
 
 void main() {
   test('mã vạch hợp lệ: EAN-13, EAN-8, UPC-A, GTIN-14 (cùng mẫu với test backend)', () {

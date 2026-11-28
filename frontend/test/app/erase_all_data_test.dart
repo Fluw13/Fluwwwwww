@@ -70,6 +70,20 @@ void main() {
           ),
     );
     await tester.pumpAndSettle();
+    await tester.runAsync(
+      () => databaseOf(tester)
+          .into(databaseOf(tester).customProducts)
+          .insert(
+            CustomProductsCompanion.insert(
+              id: 'latte',
+              name: 'Trà sữa latte',
+              unit: 'ml',
+              labelPerServing: false,
+              updatedAtUtcMs: 0,
+            ),
+          ),
+    );
+    await tester.pumpAndSettle();
   }
 
   Future<Map<String, int>> rowCounts(WidgetTester tester) async {

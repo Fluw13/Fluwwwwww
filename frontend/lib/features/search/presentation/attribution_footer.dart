@@ -15,7 +15,7 @@ class AttributionFooter extends StatelessWidget {
       [
         'Nguồn: ${attribution.source} (${attribution.license})',
         if (imageLicense != null) 'Ảnh: ${attribution.source} ($imageLicense)',
-        attribution.url.toString(),
+        if (attribution.url case final url?) url.toString(),
       ].join('\n'),
       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
     );

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/core/database/app_database.dart';
+import 'package:fluw/core/database/row_id.dart';
 import 'package:fluw/core/diary/logged_food.dart';
 import 'package:fluw/core/diary/note_entry.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
@@ -9,7 +10,6 @@ import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
 import 'package:fluw/features/note/data/note_entry_mapper.dart';
 import 'package:fluw/features/note/data/note_food_logger.dart';
-import 'package:fluw/features/note/data/note_id.dart';
 import 'package:fluw/features/note/data/note_repository.dart';
 
 import '../../../helpers/in_memory_database.dart';
@@ -145,12 +145,9 @@ void main() {
   });
 
   test('id sinh ra không trùng và tăng theo thời gian', () {
-    final ids = {for (var index = 0; index < 1000; index++) newNoteEntryId(now: DateTime.utc(2026, 11, 11))};
+    final ids = {for (var index = 0; index < 1000; index++) newRowId(now: DateTime.utc(2026, 11, 11))};
     expect(ids, hasLength(1000));
-    expect(
-      newNoteEntryId(now: DateTime.utc(2026, 11, 11)).compareTo(newNoteEntryId(now: DateTime.utc(2026, 11, 12))),
-      lessThan(0),
-    );
+    expect(newRowId(now: DateTime.utc(2026, 11, 11)).compareTo(newRowId(now: DateTime.utc(2026, 11, 12))), lessThan(0));
   });
 
   test('LoggedFood từ chối khối lượng 0, âm hoặc không hữu hạn', () {

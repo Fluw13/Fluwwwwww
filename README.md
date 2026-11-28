@@ -11,8 +11,9 @@
 | Tính năng | Mô tả | Trạng thái |
 |---|---|---|
 | Tra cứu | Tìm calo, protein (đạm), đường, chất béo của đồ đóng gói, trái cây, đồ tươi, món nấu chín, bánh kẹo | Xong: tìm kiếm, lọc nhanh (đường ≤ 5 g, protein ≥ 20 g, dưới 200 kcal trong 100 g/ml), tìm gần đây, món đã ăn gần đây. Gõ tên đồ tươi bằng tiếng Việt ("ức gà luộc", "ca chua") thì app tự tìm thêm bằng tiếng Anh ở USDA. Món Việt chưa có |
-| Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm | Xong: quét mã vạch trên máy, nhập mã bằng tay, nhận diện tên món qua ảnh (Google Gemini, chỉ cho người dùng ở Việt Nam) rồi tra số liệu. Chưa thử Gemini thật và camera trên điện thoại thật |
+| Quét | Quét mã vạch sản phẩm, hoặc chụp ảnh để nhận diện thực phẩm | Xong: quét mã vạch trên máy (sản phẩm tự nhập ra ngay, không cần mạng), nhập mã bằng tay, nhận diện tên món qua ảnh (Google Gemini, chỉ cho người dùng ở Việt Nam) rồi tra số liệu. Chưa thử Gemini thật và camera trên điện thoại thật |
 | Thông tin sản phẩm | Tên, ảnh, thương hiệu, chỉ số dinh dưỡng theo khẩu phần, đối chiếu dị ứng và chỉ tiêu theo hồ sơ, ghi nguồn dữ liệu | Xong; chọn nhanh khẩu phần (khẩu phần trên bao bì, 50/100/150/200) |
+| Sản phẩm tự nhập | Chép tên, mã vạch, dung tích và bảng dinh dưỡng từ nhãn (theo 100 g/ml hoặc 1 khẩu phần) khi nguồn không có hoặc thiếu số liệu | Xong: chỉ lưu trên máy, quét lại mã là ra ngay, tìm được ở Tra Cứu, sửa/xóa được. Chưa đọc nhãn bằng camera |
 | Nhật ký | Lịch theo tuần, thêm/sửa/xóa món theo 4 khung giờ, tổng theo buổi và theo ngày, đánh giá cuối ngày | Xong: sửa khẩu phần, ngày, khung giờ của món đã ghi (có Hoàn tác) |
 | Hồ sơ sức khỏe | Chiều cao, cân nặng, ngày sinh, giới tính, vận động, hình thức tập, mục tiêu, mang thai/cho con bú, BMI, bệnh, dị ứng có mức độ, sở thích và chế độ ăn | Xong |
 | Gợi ý | Calo, protein, carb (bột đường), chất béo, đường, natri nên nạp; món nên/không nên dùng; nhắc theo lịch 10h, 17h, 22h (tự chỉnh được) | Xong: Trang chủ, gợi ý theo hồ sơ, đánh giá hôm qua, nhắc ghi bữa ăn (bật ở nút chuông), màn "Cách Fluw tính" ghi công thức và nguồn |
@@ -78,7 +79,7 @@ Bản đầy đủ: [`PRIVACY.md`](PRIVACY.md), cũng có trong app (Hồ Sơ �
 
 Căn cứ: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP (hiệu lực 1/1/2026). Thông tin sức khỏe là dữ liệu cá nhân nhạy cảm, nên app phải nói rõ dữ liệu nào được xử lý, để làm gì, ai nhận, và chỉ lưu khi bạn đồng ý.
 
-- Hồ sơ sức khỏe, Nhật ký, cân nặng, giờ nhắc, lịch sử tìm kiếm **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. App hỏi bạn đồng ý trước lần lưu hồ sơ đầu tiên. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
+- Hồ sơ sức khỏe, Nhật ký, cân nặng, sản phẩm tự nhập, giờ nhắc, lịch sử tìm kiếm **chỉ lưu trên điện thoại**; Fluw không gửi chúng lên máy chủ. App hỏi bạn đồng ý trước lần lưu hồ sơ đầu tiên. Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu app vào tài khoản của chính bạn.
 - Xóa hết: Hồ Sơ → **"Xóa toàn bộ dữ liệu trên máy"** (giữ lại chế độ Sáng/Tối), hoặc gỡ app.
 - Khi tra cứu, app gửi từ khóa hoặc mã vạch (kèm địa chỉ IP) lên máy chủ Fluw (Render, Hoa Kỳ); máy chủ hỏi tiếp Open Food Facts (Pháp) và USDA (Hoa Kỳ). Mỗi lần mở app, app gọi máy chủ một lần (`/health`, không kèm dữ liệu) để máy chủ gói miễn phí thức dậy sớm.
 - Ảnh sản phẩm tải thẳng từ Open Food Facts, nên họ thấy địa chỉ IP của bạn.

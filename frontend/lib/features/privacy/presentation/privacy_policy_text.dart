@@ -44,7 +44,7 @@ final class PolicySection {
 
 abstract final class PrivacyPolicy {
   static const String title = 'Chính sách quyền riêng tư và điều khoản sử dụng Fluw';
-  static const String version = 'Phiên bản 1, áp dụng từ ngày 18/11/2026.';
+  static const String version = 'Phiên bản 2, áp dụng từ ngày 28/11/2026.';
   static const String intro =
       'Fluw là ứng dụng tra cứu dinh dưỡng và ghi nhật ký ăn uống. Fluw do một nhà phát triển cá nhân làm '
       '(GitHub: Fluw13).';
@@ -67,7 +67,8 @@ abstract final class PrivacyPolicy {
       PolicyBullets([
         'Hồ sơ: tên gọi (nếu nhập), ngày sinh, giới tính, chiều cao, cân nặng, mục tiêu, mức vận động, hình thức tập, '
             'có mang thai hoặc cho con bú, bệnh nền, dị ứng, chế độ ăn và thói quen.',
-        'Nhật ký ăn uống, lịch sử cân nặng, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa chọn đồng ý của bạn.',
+        'Nhật ký ăn uống, lịch sử cân nặng, sản phẩm bạn tự nhập từ nhãn, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa '
+            'chọn đồng ý của bạn.',
       ]),
       PolicyParagraph(
         'Đây là dữ liệu sức khỏe, thuộc nhóm dữ liệu cá nhân nhạy cảm. Fluw chỉ dùng chúng trên máy để tính chỉ tiêu, '

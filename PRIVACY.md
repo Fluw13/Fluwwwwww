@@ -1,6 +1,6 @@
 # Chính sách quyền riêng tư và điều khoản sử dụng Fluw
 
-Phiên bản 1, áp dụng từ ngày 18/11/2026.
+Phiên bản 2, áp dụng từ ngày 28/11/2026.
 
 Fluw là ứng dụng tra cứu dinh dưỡng và ghi nhật ký ăn uống. Fluw do một nhà phát triển cá nhân làm (GitHub: Fluw13). Liên hệ, góp ý hoặc yêu cầu về dữ liệu: https://github.com/Fluw13/Fluwwwwww/issues
 
@@ -12,7 +12,7 @@ Fluw là ứng dụng tra cứu dinh dưỡng và ghi nhật ký ăn uống. Flu
 ## 2. Dữ liệu chỉ lưu trên điện thoại của bạn
 
 - Hồ sơ: tên gọi (nếu nhập), ngày sinh, giới tính, chiều cao, cân nặng, mục tiêu, mức vận động, hình thức tập, có mang thai hoặc cho con bú, bệnh nền, dị ứng, chế độ ăn và thói quen.
-- Nhật ký ăn uống, lịch sử cân nặng, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa chọn đồng ý của bạn.
+- Nhật ký ăn uống, lịch sử cân nặng, sản phẩm bạn tự nhập từ nhãn, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa chọn đồng ý của bạn.
 
 Đây là dữ liệu sức khỏe, thuộc nhóm dữ liệu cá nhân nhạy cảm. Fluw chỉ dùng chúng trên máy để tính chỉ tiêu, gợi ý, cảnh báo và nhắc nhở. **Fluw không gửi chúng lên máy chủ và không ai khác nhận được chúng.** Fluw chỉ lưu khi bạn đồng ý ở lần lưu hồ sơ đầu tiên.
 

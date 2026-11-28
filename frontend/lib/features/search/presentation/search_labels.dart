@@ -45,6 +45,7 @@ const String productGoneNote = 'Sản phẩm không còn trên Open Food Facts, 
 String foodSourceLabel(FoodSource source) => switch (source) {
   FoodSource.openFoodFacts => 'Open Food Facts',
   FoodSource.usda => 'USDA',
+  FoodSource.custom => 'Bạn tự nhập',
 };
 
 String nutrientLabel(Nutrient nutrient) => switch (nutrient) {

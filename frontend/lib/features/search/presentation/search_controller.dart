@@ -1,6 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
+import 'package:fluw/features/search/domain/custom_product_item.dart';
+import 'package:fluw/features/search/domain/food_item.dart';
+import 'package:fluw/features/search/domain/food_source.dart';
+import 'package:fluw/features/search/domain/search_response.dart';
+import 'package:fluw/features/search/domain/source_status.dart';
 import 'package:fluw/features/search/domain/vietnamese_food_glossary.dart';
 import 'package:fluw/features/search/presentation/search_state.dart';
 
@@ -33,15 +39,48 @@ final class SearchController extends Notifier<SearchState> {
     final usdaQuery = (english != null && isValid(english) ? english : null) ?? englishSearchTermFor(query);
     final request = ++_latestRequest;
     state = SearchLoading(query);
+    // Never fails, so it can run while the sources are asked without an unhandled error.
+    final storedSearch = _storedProducts(query);
     try {
       final response = await ref.read(foodApiProvider).search(query, englishQuery: usdaQuery);
+      final stored = await storedSearch;
       if (request == _latestRequest) {
-        state = SearchLoaded(response, englishQuery: usdaQuery);
+        final items = [...stored, ...response.items];
+        state = SearchLoaded(
+          SearchResponse(query: response.query, items: items, sources: response.sources),
+          englishQuery: usdaQuery,
+        );
       }
     } on ApiFailure catch (failure) {
+      final stored = await storedSearch;
       if (request == _latestRequest) {
-        state = SearchFailed(query, failure, englishQuery: usdaQuery);
+        // Offline the user's own products still answer; the list says a source is missing.
+        state = stored.isEmpty
+            ? SearchFailed(query, failure, englishQuery: usdaQuery)
+            : SearchLoaded(
+                SearchResponse(
+                  query: query,
+                  items: stored,
+                  sources: const {
+                    FoodSource.openFoodFacts: SourceStatus.unavailable,
+                    FoodSource.usda: SourceStatus.unavailable,
+                  },
+                ),
+                englishQuery: usdaQuery,
+              );
       }
+    }
+  }
+
+  /// The user's own products come first: they typed them from the label. A database error only loses them, so the
+  /// sources still answer.
+  Future<List<FoodItem>> _storedProducts(String query) async {
+    try {
+      final products = await ref.read(customProductRepositoryProvider).search(query);
+      return [for (final product in products) foodItemFromCustomProduct(product)];
+    } on Object catch (error, stackTrace) {
+      FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stackTrace, library: 'custom products'));
+      return const [];
     }
   }
 
