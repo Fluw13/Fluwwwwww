@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/search/search_request.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
@@ -23,7 +24,8 @@ import 'package:fluw/features/search/presentation/search_state.dart';
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({required this.onOpenFood, required this.onOpenScan, super.key});
 
-  final ValueChanged<FoodItem> onOpenFood;
+  /// Completes when the detail screen closes, so the list can show a product the user changed or deleted there.
+  final Future<void> Function(FoodItem item) onOpenFood;
 
   /// The barcode button in the search box opens the scan tab.
   final VoidCallback onOpenScan;
@@ -70,10 +72,20 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     await ref.read(searchControllerProvider.notifier).search(query, englishQuery: englishQuery);
   }
 
+  Future<void> _openFood(FoodItem item) async {
+    await widget.onOpenFood(item);
+    if (mounted) {
+      await ref.read(searchControllerProvider.notifier).refreshStoredProducts();
+    }
+  }
+
   Future<void> _addFromLabel() async {
     final saved = await openCustomProductForm(context);
     if (saved != null && mounted) {
-      widget.onOpenFood(foodItemFromCustomProduct(saved));
+      await ref.read(searchControllerProvider.notifier).refreshStoredProducts();
+      if (mounted) {
+        await _openFood(foodItemFromCustomProduct(saved));
+      }
     }
   }
 
@@ -137,12 +149,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: const Text('Thử lại'),
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _addFromLabelButton('Nhập sản phẩm từ nhãn'),
       ],
-      SearchLoaded(:final response, :final englishQuery) => _loaded(response, englishQuery, theme),
+      SearchLoaded(:final response, :final englishQuery, :final failure) => _loaded(
+        response,
+        englishQuery,
+        failure,
+        theme,
+      ),
     };
   }
 
-  List<Widget> _loaded(SearchResponse response, String? englishQuery, ThemeData theme) {
+  List<Widget> _loaded(SearchResponse response, String? englishQuery, ApiFailure? failure, ThemeData theme) {
     // Kept in the sources' order: a result without numbers is often the right product, whose numbers the detail
     // screen gets from the barcode lookup.
     final items = applyQuickFilters(response.items, _filters);
@@ -166,7 +185,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
-      if (response.isPartial)
+      if (failure != null) ...[
+        Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.xs),
+          child: Text(
+            '${apiFailureMessage(failure)} Chỉ hiện sản phẩm bạn tự nhập.',
+            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton(
+            onPressed: () =>
+                ref.read(searchControllerProvider.notifier).search(response.query, englishQuery: englishQuery),
+            child: const Text('Thử lại'),
+          ),
+        ),
+      ] else if (response.isPartial)
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
           child: Text(
@@ -196,7 +231,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           style: theme.textTheme.bodyMedium,
         ),
       for (final item in items) ...[
-        FoodResultCard(item: item, onTap: () => widget.onOpenFood(item)),
+        FoodResultCard(item: item, onTap: () => _openFood(item)),
         const SizedBox(height: AppSpacing.sm),
       ],
       _addFromLabelButton('Không thấy sản phẩm? Nhập từ nhãn'),

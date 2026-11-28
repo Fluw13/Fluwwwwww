@@ -17,6 +17,7 @@ class PersonalCheckCard extends StatelessWidget {
     required this.limits,
     required this.portionLabel,
     required this.isLoadingAllergens,
+    this.unknownAllergensNote,
     super.key,
   });
 
@@ -28,6 +29,9 @@ class PersonalCheckCard extends StatelessWidget {
   /// for that reason and not for lack of data.
   final String? portionLabel;
   final bool isLoadingAllergens;
+
+  /// Said instead of the default when allergens are unknown, e.g. why a product the user typed in has none.
+  final String? unknownAllergensNote;
 
   String _allergenName(String tag) => limits.allergenNames[tag] ?? tag;
 
@@ -105,7 +109,7 @@ class PersonalCheckCard extends StatelessWidget {
       AllergensUnknown() => _Notice(
         icon: Icons.help_outline,
         color: theme.colorScheme.onSurfaceVariant,
-        text: 'Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.',
+        text: unknownAllergensNote ?? 'Nguồn này không có dữ liệu dị ứng. Hãy đọc nhãn sản phẩm.',
       ),
       NoListedAllergenMatch(:final recordedTagCount) => _Notice(
         icon: Icons.info_outline,

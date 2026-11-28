@@ -12,9 +12,11 @@ Fluw là ứng dụng tra cứu dinh dưỡng và ghi nhật ký ăn uống. Flu
 ## 2. Dữ liệu chỉ lưu trên điện thoại của bạn
 
 - Hồ sơ: tên gọi (nếu nhập), ngày sinh, giới tính, chiều cao, cân nặng, mục tiêu, mức vận động, hình thức tập, có mang thai hoặc cho con bú, bệnh nền, dị ứng, chế độ ăn và thói quen.
-- Nhật ký ăn uống, lịch sử cân nặng, sản phẩm bạn tự nhập từ nhãn, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa chọn đồng ý của bạn.
+- Nhật ký ăn uống, lịch sử cân nặng, giờ nhắc, lịch sử tìm kiếm gần đây, các lựa chọn đồng ý của bạn.
 
 Đây là dữ liệu sức khỏe, thuộc nhóm dữ liệu cá nhân nhạy cảm. Fluw chỉ dùng chúng trên máy để tính chỉ tiêu, gợi ý, cảnh báo và nhắc nhở. **Fluw không gửi chúng lên máy chủ và không ai khác nhận được chúng.** Fluw chỉ lưu khi bạn đồng ý ở lần lưu hồ sơ đầu tiên.
+
+Sản phẩm bạn tự nhập từ nhãn (tên, hãng, mã vạch, số liệu dinh dưỡng) cũng chỉ lưu trên máy và không gửi đi. Đây không phải dữ liệu sức khỏe của bạn, nên Fluw lưu ngay khi bạn bấm lưu. Bạn sửa, xóa từng sản phẩm được, hoặc xóa hết cùng mọi dữ liệu khác.
 
 Nếu bạn bật sao lưu của Android (Google) hoặc iCloud, hệ điều hành có thể sao lưu dữ liệu của app vào tài khoản của chính bạn; việc này do bạn và Google/Apple quản lý.
 

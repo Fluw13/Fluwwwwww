@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/barcode/gtin.dart';
 import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/custom_product_item.dart';
@@ -45,9 +46,8 @@ final class SearchController extends Notifier<SearchState> {
       final response = await ref.read(foodApiProvider).search(query, englishQuery: usdaQuery);
       final stored = await storedSearch;
       if (request == _latestRequest) {
-        final items = [...stored, ...response.items];
         state = SearchLoaded(
-          SearchResponse(query: response.query, items: items, sources: response.sources),
+          SearchResponse(query: response.query, items: _merge(stored, response.items), sources: response.sources),
           englishQuery: usdaQuery,
         );
       }
@@ -67,9 +67,44 @@ final class SearchController extends Notifier<SearchState> {
                   },
                 ),
                 englishQuery: usdaQuery,
+                failure: failure,
               );
       }
     }
+  }
+
+  /// Reads the user's own products again for the search on screen, after one was added, changed or deleted; the
+  /// sources' results are kept, so no request is made.
+  Future<void> refreshStoredProducts() async {
+    final current = state;
+    if (current is! SearchLoaded) {
+      return;
+    }
+    final stored = await _storedProducts(current.response.query);
+    if (!identical(state, current)) {
+      return;
+    }
+    final fromSources = current.response.items.where((item) => item.source != FoodSource.custom).toList();
+    state = SearchLoaded(
+      SearchResponse(
+        query: current.response.query,
+        items: _merge(stored, fromSources),
+        sources: current.response.sources,
+      ),
+      englishQuery: current.englishQuery,
+      failure: current.failure,
+    );
+  }
+
+  /// A source's result with the barcode of a product the user typed in is left out: a scan of that code shows the
+  /// user's numbers, so the list must not offer the other ones too.
+  static List<FoodItem> _merge(List<FoodItem> stored, List<FoodItem> fromSources) {
+    final codes = [for (final item in stored) ?item.barcode];
+    return [
+      ...stored,
+      for (final item in fromSources)
+        if (item.barcode == null || !codes.any((code) => isSameGtin(code, item.barcode!))) item,
+    ];
   }
 
   /// The user's own products come first: they typed them from the label. A database error only loses them, so the

@@ -16,3 +16,8 @@ bool isValidGtin(String code) {
   }
   return (10 - sum % 10) % 10 == check;
 }
+
+/// True when two barcodes name the same product: a UPC-A label read as EAN-13 gets one more 0 in front.
+bool isSameGtin(String first, String second) => _withoutLeadingZeros(first) == _withoutLeadingZeros(second);
+
+String _withoutLeadingZeros(String code) => code.replaceFirst(RegExp('^0+'), '');

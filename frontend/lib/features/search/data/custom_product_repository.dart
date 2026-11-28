@@ -28,12 +28,11 @@ final class CustomProductRepository {
 
   /// Finds the product whether the barcode is read with or without leading zeros: a UPC-A label scanned as EAN-13
   /// gets one more 0 in front.
-  Future<CustomProduct?> findByBarcode(String code) async {
-    final rows = await (_database.select(
-      _database.customProducts,
-    )..where((table) => table.barcode.isIn(_barcodeForms(code)))).get();
-    return rows.map(customProductFromRow).nonNulls.firstOrNull;
-  }
+  Future<CustomProduct?> findByBarcode(String code) async =>
+      (await _rowsWithBarcode(code)).map(customProductFromRow).nonNulls.firstOrNull;
+
+  Future<List<CustomProductRow>> _rowsWithBarcode(String code) =>
+      (_database.select(_database.customProducts)..where((table) => table.barcode.isIn(_barcodeForms(code)))).get();
 
   /// Every word of [query] must appear in the name or brand, with or without Vietnamese marks; newest first. Reads
   /// every row: a personal list stays small, and SQLite cannot drop Vietnamese marks itself.
@@ -52,11 +51,12 @@ final class CustomProductRepository {
   }
 
   /// Adds the product, or replaces the stored one with the same id. Throws [DuplicateBarcodeException] when another
-  /// product already has its barcode, so a scan never has two answers.
+  /// product already has its barcode, so a scan never has two answers. Rows are checked as stored, so one this version
+  /// cannot read still names itself instead of failing on the unique column.
   Future<void> save(CustomProduct product) => _database.transaction(() async {
     if (product.barcode case final code?) {
-      final other = await findByBarcode(code);
-      if (other != null && other.id != product.id) {
+      final other = (await _rowsWithBarcode(code)).where((row) => row.id != product.id).firstOrNull;
+      if (other != null) {
         throw DuplicateBarcodeException(other.name);
       }
     }

@@ -9,6 +9,7 @@ import 'generated/schema_v2.dart' as v2;
 import 'generated/schema_v3.dart' as v3;
 import 'generated/schema_v4.dart' as v4;
 import 'generated/schema_v5.dart' as v5;
+import 'generated/schema_v6.dart' as v6;
 
 void main() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
@@ -210,6 +211,52 @@ void main() {
         expect(await newDb.select(newDb.profileAllergies).get(), const [
           v5.ProfileAllergiesData(allergenKey: 'milk', severityKey: 'mild'),
         ]);
+      },
+    );
+  });
+
+  test('v5 lên v6 giữ nguyên Nhật ký; bảng sản phẩm tự nhập mới để trống', () async {
+    const oldEntry = v5.NoteEntriesData(
+      id: 'pho',
+      name: 'Phở bò',
+      sourceFoodId: 'usda:1',
+      unit: 'g',
+      quantity: 350,
+      eatenAtUtcMs: 1762822800000,
+      energyKcal: 110,
+      proteinG: 8.5,
+      carbohydratesG: null,
+      sugarsG: null,
+      fatG: 3,
+      saturatedFatG: null,
+      sodiumMg: 400,
+    );
+    const expectedEntry = v6.NoteEntriesData(
+      id: 'pho',
+      name: 'Phở bò',
+      sourceFoodId: 'usda:1',
+      unit: 'g',
+      quantity: 350,
+      eatenAtUtcMs: 1762822800000,
+      energyKcal: 110,
+      proteinG: 8.5,
+      carbohydratesG: null,
+      sugarsG: null,
+      fatG: 3,
+      saturatedFatG: null,
+      sodiumMg: 400,
+    );
+
+    await verifier.testWithDataIntegrity(
+      oldVersion: 5,
+      newVersion: 6,
+      createOld: v5.DatabaseAtV5.new,
+      createNew: v6.DatabaseAtV6.new,
+      openTestedDatabase: AppDatabase.new,
+      createItems: (batch, oldDb) => batch.insert(oldDb.noteEntries, oldEntry),
+      validateItems: (newDb) async {
+        expect(await newDb.select(newDb.noteEntries).get(), [expectedEntry]);
+        expect(await newDb.select(newDb.customProducts).get(), isEmpty);
       },
     );
   });

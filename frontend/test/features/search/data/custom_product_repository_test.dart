@@ -112,4 +112,17 @@ void main() {
     expect([for (final product in await repository.search('trà')) product.id], ['good']);
     expect(await repository.findById('bad'), isNull);
   });
+
+  test('dòng không đọc được vẫn giữ mã của nó: lưu cùng mã báo trùng bằng tên dòng đó, không lỗi cột unique', () async {
+    final broken = customProductToRow(
+      _product('bad', name: 'Trà hỏng', barcode: '96385074'),
+      updatedAt: now,
+    );
+    await database.into(database.customProducts).insert(broken.copyWith(unit: const Value('cup')));
+
+    await expectLater(
+      repository.save(_product('new', barcode: '96385074')),
+      throwsA(isA<DuplicateBarcodeException>().having((error) => error.existingName, 'existingName', 'Trà hỏng')),
+    );
+  });
 }

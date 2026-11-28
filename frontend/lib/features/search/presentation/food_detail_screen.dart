@@ -8,6 +8,7 @@ import 'package:fluw/core/theme/app_spacing.dart';
 import 'package:fluw/core/widgets/portion_input.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/card_nutrition.dart';
+import 'package:fluw/features/search/domain/custom_product.dart';
 import 'package:fluw/features/search/domain/custom_product_item.dart';
 import 'package:fluw/features/search/domain/food_assessment.dart';
 import 'package:fluw/features/search/domain/food_item.dart';
@@ -103,7 +104,14 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
 
   Future<void> _editCustomProduct(String id) async {
     final messenger = ScaffoldMessenger.of(context);
-    final stored = await ref.read(customProductRepositoryProvider).findById(id);
+    final CustomProduct? stored;
+    try {
+      stored = await ref.read(customProductRepositoryProvider).findById(id);
+    } on Object catch (error, stackTrace) {
+      FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stackTrace, library: 'custom products'));
+      messenger.showSnackBar(const SnackBar(content: Text('Chưa mở được sản phẩm để sửa. Hãy thử lại.')));
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -205,7 +213,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
           if (_item.nutrientsSuspect)
             DetailNotice(
               icon: Icons.warning_amber_outlined,
-              text: suspectNutrientsNote,
+              text: customId == null ? suspectNutrientsNote : customSuspectNutrientsNote,
               color: theme.colorScheme.error,
             ),
           if (_productGone) DetailNotice(icon: Icons.history, text: productGoneNote, color: theme.colorScheme.tertiary),
@@ -250,6 +258,7 @@ class _FoodDetailScreenState extends ConsumerState<FoodDetailScreen> {
             limits: limits,
             portionLabel: portionAmount == null ? null : '${formatDecimal(portionAmount)} ${unit.symbol}',
             isLoadingAllergens: _isLoadingFull,
+            unknownAllergensNote: customId == null ? null : customUnknownAllergensNote,
           ),
           const SizedBox(height: AppSpacing.md),
           PortionNutrientGrid(portion: portion),

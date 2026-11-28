@@ -16,12 +16,15 @@ final class SearchLoading extends SearchState {
 }
 
 final class SearchLoaded extends SearchState {
-  const SearchLoaded(this.response, {this.englishQuery});
+  const SearchLoaded(this.response, {this.englishQuery, this.failure});
 
   final SearchResponse response;
 
   /// The English words USDA was searched with, shown so the user knows where its results come from.
   final String? englishQuery;
+
+  /// Set when the sources failed and only the user's own products answered, so the screen can say why and retry.
+  final ApiFailure? failure;
 }
 
 final class SearchFailed extends SearchState {

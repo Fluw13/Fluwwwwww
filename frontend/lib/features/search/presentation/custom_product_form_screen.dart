@@ -83,7 +83,7 @@ class _CustomProductFormScreenState extends ConsumerState<CustomProductFormScree
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kiểm lại các ô báo đỏ.')));
       case ValidCustomProduct(:final product):
         setState(() => _issues = null);
-        if (areNutrientsSuspect(product.facts.per100) && !await _confirmSuspect()) {
+        if (areNutrientsSuspect(product.facts.per100) && (!await _confirmSuspect() || !mounted)) {
           return;
         }
         await _store(product);

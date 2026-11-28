@@ -1,16 +1,20 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fluw/app/app_tab.dart';
+import 'package:fluw/core/database/app_database.dart';
 import 'package:fluw/core/nutrition/nutrient.dart';
 import 'package:fluw/core/nutrition/nutrients.dart';
 import 'package:fluw/core/nutrition/nutrition_facts.dart';
 import 'package:fluw/core/nutrition/quantity_unit.dart';
+import 'package:fluw/features/search/data/custom_product_repository.dart';
 import 'package:fluw/features/search/data/search_providers.dart';
 import 'package:fluw/features/search/domain/custom_product.dart';
 import 'package:fluw/features/search/presentation/custom_product_form_screen.dart';
 import 'package:fluw/features/search/presentation/food_detail_screen.dart';
+import 'package:fluw/features/search/presentation/food_result_card.dart';
 import 'package:fluw/features/search/presentation/search_controller.dart';
 import 'package:fluw/features/search/presentation/search_state.dart';
 import 'package:http/http.dart' as http;
@@ -218,7 +222,8 @@ void main() {
 
     expect(find.text('1 kết quả cho "tra sua"'), findsOneWidget);
     expect(find.text('Trà sữa latte'), findsOneWidget);
-    expect(find.text('Một nguồn dữ liệu đang lỗi nên có thể thiếu kết quả.'), findsOneWidget);
+    expect(find.textContaining('Chỉ hiện sản phẩm bạn tự nhập.'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Thử lại'), findsOneWidget);
   });
 
   testWidgets('Tra Cứu có mạng: sản phẩm tự nhập trước kết quả của nguồn', (tester) async {
@@ -287,5 +292,97 @@ void main() {
     }
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Tra Cứu: nguồn có sản phẩm cùng mã với sản phẩm tự nhập thì chỉ hiện bản tự nhập', (tester) async {
+    await pumpFluwApp(
+      tester,
+      httpClient: MockClient(
+        (request) async => _json(searchBody(request.url.queryParameters['q']!, [yoghurtSearchItem])),
+      ),
+    );
+    final barcode = yoghurtSearchItem['barcode']! as String;
+    await _saveStored(
+      tester,
+      CustomProduct(
+        id: 'mine',
+        name: 'Sữa chua dâu của tôi',
+        brand: null,
+        barcode: '0$barcode',
+        facts: NutritionFacts(per100: Nutrients({Nutrient.energyKcal: 90}), unit: QuantityUnit.gram),
+        packageAmount: null,
+        servingAmount: null,
+        labelPerServing: false,
+      ),
+    );
+    await tester.tap(find.text(AppTab.search.label).last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'sữa chua');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    final loaded = appContainer(tester).read(searchControllerProvider) as SearchLoaded;
+    expect([for (final item in loaded.response.items) item.name], ['Sữa chua dâu của tôi']);
+  });
+
+  testWidgets('xóa từ Chi tiết mở từ Tra Cứu: quay về danh sách thì sản phẩm không còn', (tester) async {
+    await pumpFluwApp(tester);
+    await _saveStored(tester, _latte());
+    await tester.tap(find.text(AppTab.search.label).last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'latte');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Trà sữa latte'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Xóa sản phẩm'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xóa'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FoodDetailScreen), findsNothing);
+    expect(find.text('0 kết quả cho "latte"'), findsOneWidget);
+    expect(find.byType(FoodResultCard), findsNothing);
+  });
+
+  testWidgets('database lỗi: màn tra mã vẫn hỏi máy chủ, không thành màn lỗi trắng', (tester) async {
+    final broken = AppDatabase(NativeDatabase.memory(setup: (_) => throw StateError('file database hỏng')));
+    addTearDown(() => tester.runAsync(broken.close));
+    await pumpFluwApp(
+      tester,
+      httpClient: MockClient((request) async => _json({'item': yoghurtProduct})),
+      overrides: [customProductRepositoryProvider.overrideWithValue(CustomProductRepository(broken))],
+    );
+    await scan(tester, yoghurtProduct['barcode']! as String);
+
+    expect(tester.takeException(), isNotNull, reason: 'lỗi database được báo lại, không bị nuốt im lặng');
+    expect(find.byType(FoodDetailScreen), findsOneWidget);
+    expect(find.text(yoghurtProduct['name']! as String), findsOneWidget);
+  });
+
+  testWidgets('quét mã A rồi sửa thành mã B trong form: lưu được, màn mã A không giả vờ là sản phẩm đó', (
+    tester,
+  ) async {
+    await pumpFluwApp(tester, httpClient: _emptyBackend([]));
+    await scan(tester, _code);
+    await _tapVisible(tester, find.widgetWithText(FilledButton, 'Nhập từ nhãn'));
+
+    await _enter(tester, 'Tên sản phẩm', 'Bánh quy');
+    await _enter(tester, 'Mã vạch (không bắt buộc)', '96385074');
+    await _enter(tester, 'Năng lượng (kcal)', '450');
+    await _save(tester);
+
+    expect(find.text('Đã lưu Bánh quy với mã khác mã $_code.'), findsOneWidget);
+    expect(find.text('Chưa có sản phẩm này'), findsOneWidget);
+    expect(
+      (await tester.runAsync(
+        () => appContainer(tester).read(customProductRepositoryProvider).findByBarcode('96385074'),
+      ))?.name,
+      'Bánh quy',
+    );
   });
 }

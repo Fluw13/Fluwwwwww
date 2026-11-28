@@ -40,6 +40,12 @@ String packageChipLabel(double amount, QuantityUnit unit) => switch (unit) {
 
 const String suspectNutrientsNote = 'Số liệu nguồn có thể sai — hãy đối chiếu nhãn trên bao bì.';
 
+const String customSuspectNutrientsNote =
+    'Số liệu bạn nhập có vẻ chưa khớp (năng lượng lệch so với protein, carb và chất béo). Hãy đối chiếu nhãn rồi bấm '
+    'Sửa.';
+
+const String customUnknownAllergensNote = 'Khi tự nhập, Fluw không hỏi thành phần dị ứng. Hãy đọc nhãn sản phẩm.';
+
 const String productGoneNote = 'Sản phẩm không còn trên Open Food Facts, số liệu có thể đã cũ.';
 
 String foodSourceLabel(FoodSource source) => switch (source) {

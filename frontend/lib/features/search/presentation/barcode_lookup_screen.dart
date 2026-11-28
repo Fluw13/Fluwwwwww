@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fluw/core/barcode/gtin.dart';
 import 'package:fluw/core/network/api_failure.dart';
 import 'package:fluw/core/network/api_failure_message.dart';
 import 'package:fluw/core/theme/app_spacing.dart';
@@ -28,19 +29,31 @@ class _BarcodeLookupScreenState extends ConsumerState<BarcodeLookupScreen> {
 
   Future<FoodItem?> _start() async {
     final api = ref.read(foodApiProvider);
-    final stored = await ref.read(customProductRepositoryProvider).findByBarcode(widget.code);
-    if (stored != null) {
-      return foodItemFromCustomProduct(stored);
+    try {
+      final stored = await ref.read(customProductRepositoryProvider).findByBarcode(widget.code);
+      if (stored != null) {
+        return foodItemFromCustomProduct(stored);
+      }
+    } on Object catch (error, stackTrace) {
+      // A broken database only loses the user's own products; the backend can still answer.
+      FlutterError.reportError(FlutterErrorDetails(exception: error, stack: stackTrace, library: 'custom products'));
     }
     return api.lookUpBarcode(widget.code);
   }
 
   Future<void> _addFromLabel() async {
     final saved = await openCustomProductForm(context, barcode: widget.code);
-    if (saved != null && mounted) {
+    if (saved == null || !mounted) {
+      return;
+    }
+    // The code can be corrected in the form; this page only shows a product that answers this code.
+    if (saved.barcode case final code? when isSameGtin(code, widget.code)) {
       setState(() {
         _lookup = Future.value(foodItemFromCustomProduct(saved));
       });
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Đã lưu ${saved.name} với mã khác mã ${widget.code}.')));
     }
   }
 
